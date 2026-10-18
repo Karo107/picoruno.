@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d2a">
+<title>ほしつなぎ</title>
+<meta name="description" content="長押しでふわりと上へ、はなすと下へ。夜空の星をつないで星座をつくる、やさしい音楽の横スクロールゲーム。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ほしつなぎ">
+<meta property="og:description" content="長押しだけで、夜空に星座をつくろう。">
+<meta property="og:url" content="https://karo107.github.io/picoruno./">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1131'/%3E%3Cpath d='M16 5l2.2 6.8L25 14l-6.8 2.2L16 23l-2.2-6.8L7 14l6.8-2.2z' fill='%23ffd98a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Quicksand:wght@500;600;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: one full-screen canvas (a quiet night sky over low hills) with a small HTML layer for score, light, sound settings and overlays. Single deliberate night look. */
+:root{
+  --sky:#0f1131;
+  --sky-low:#261c4a;
+  --star:#fff4d6;
+  --line:#a9d8ff;
+  --gold:#ffd98a;
+  --ink:#eef0fa;
+  --muted:#a3a7c9;
+  --panel:rgba(22,22,56,.92);
+  --display:"Klee One","Zen Maru Gothic","Hiragino Maru Gothic ProN",serif;
+  /* numbers: soft rounded figures that sit with the hand-lettered kana; kana in the same line falls back to Klee One */
+  --num:"Quicksand","Klee One","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage{position:relative;width:100%;height:100%;overflow:hidden}
+canvas,.hud{touch-action:none}
+.overlay{touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+canvas{display:block;width:100%;height:100%}
+/* no selection loupe, callout or tap highlight while holding on the play area */
+#stage,#stage *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage figure img{-webkit-touch-callout:default}
+
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  padding:14px 16px;pointer-events:none;z-index:3}
+.score{font-family:var(--num);font-weight:600;line-height:1;color:var(--star);text-shadow:0 0 16px rgba(255,230,170,.35)}
+.score .n{font-size:2.4rem;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums;display:inline-block;transform-origin:left bottom}
+.score .n.pop{animation:pop .45s ease-out}
+.score .unit{font-size:1rem;margin-left:4px;color:var(--muted)}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.22)}100%{transform:scale(1)}}
+.sub{margin-top:8px;font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.06em;display:flex;flex-direction:column;gap:6px}
+.light{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.bar{width:110px;height:5px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ffd98a,#fff4d6);border-radius:5px;transition:width .2s}
+.bar.hit{animation:barhit .6s ease-out}
+@keyframes barhit{0%,30%{background:rgba(255,159,184,.55);transform:scaleY(1.8)}100%{background:rgba(255,255,255,.12);transform:none}}
+.bar.low i{background:#ff9f9f}
+
+.right{position:relative;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:auto}
+.score{flex:1 1 auto;min-width:0}
+.iconbtn{white-space:nowrap;font-family:var(--body);font-size:.8rem;color:var(--ink);background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 14px;cursor:pointer}
+/* the panel floats below the button so opening it never pushes the score aside or off screen */
+.panel{position:absolute;top:calc(100% + 8px);right:0;z-index:4;background:#17173b;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;
+  width:min(270px,calc(100vw - 32px));box-sizing:border-box;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.panel h2{margin:0;font-size:.8rem;font-weight:700;color:var(--muted);letter-spacing:.1em}
+.row{display:grid;grid-template-columns:3.2em 1fr 2.4em;align-items:center;gap:10px;font-size:.85rem}
+.row.tim{grid-template-columns:3.2em 1fr}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;min-width:0}
+.seg button{flex:1;font-family:var(--body);font-size:.72rem;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:6px 4px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--gold);color:#1a1640;border-color:var(--gold);font-weight:700}
+.seg button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.78rem}
+input[type=range]{width:100%;accent-color:var(--gold);min-width:0}
+.iconbtn:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;
+  padding:72px 16px 24px;overflow-y:auto;text-align:center;z-index:2;
+  background:radial-gradient(ellipse at center,rgba(15,17,49,.6),rgba(15,17,49,.15) 70%)}
+.overlay>:first-child{margin-top:auto}
+.overlay>:last-child{margin-bottom:auto}
+.overlay h1{font-family:var(--display);font-weight:600;font-size:clamp(2.8rem,12vw,4.4rem);line-height:1.1;margin:0 0 -2px;letter-spacing:.1em;text-wrap:balance}
+/* title: ほし glows like a star, つなぎ is the pale blue of the lines that join them */
+.overlay h1 .hs{color:var(--gold);text-shadow:0 0 18px rgba(255,217,138,.55),0 0 2px rgba(255,236,190,.9)}
+.overlay h1 .tn{color:var(--line);text-shadow:0 0 14px rgba(169,216,255,.3)}
+.overlay p{margin:0;color:var(--muted);font-size:.95rem;line-height:1.8;max-width:32ch}
+.overlay .big{font-family:var(--num);font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums;font-size:3.4rem;color:var(--star);line-height:1}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:2px 0 0;width:min(360px,100%)}
+@media (min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr));width:min(520px,100%)}}
+#stage.ended .score,#stage.intro .score{visibility:hidden}
+.stats div{min-width:0;padding:8px 12px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.04)}
+.stats dt{font-size:.68rem;color:var(--muted);letter-spacing:.08em}
+.stats dd{margin:2px 0 0;font-family:var(--num);font-weight:700;font-size:1.3rem;color:var(--star);font-variant-numeric:tabular-nums}
+.combo{font-family:var(--num);font-weight:700;font-size:.95rem;color:var(--gold);min-height:1.1em;display:inline-block;transform-origin:left center}
+.sub #cons.flash{animation:flash .9s ease-out}
+@keyframes flash{0%,40%{color:#ff9fb8}100%{color:var(--muted)}}
+.combo.pop{animation:pop .4s ease-out}
+.btn.small{font-size:.85rem;padding:9px 20px}
+.subacts{display:flex;gap:22px;justify-content:center;align-items:center}
+.textlink{font-family:var(--body);font-size:.85rem;color:var(--muted);background:none;border:0;padding:6px 2px;cursor:pointer;text-decoration:none;border-bottom:1px solid rgba(163,167,201,.35)}
+.textlink:hover{color:var(--ink)}
+.textlink:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.overlay.pauseov{z-index:2;background:rgba(11,13,42,.72)}
+.pauseov .ptitle{font-family:var(--display);font-size:1.8rem;color:var(--ink);letter-spacing:.14em}
+.overlay.zukan{z-index:4;background:#0d0f2e;gap:12px}
+#stage.zk-open .overlay:not(.zukan),#stage.zk-open .hud .score{visibility:hidden}
+.zukan h2{margin:0;font-family:var(--display);font-weight:600;font-size:1.6rem;letter-spacing:.12em;color:var(--ink)}
+.zk-count{margin:0;color:var(--muted);font-size:.85rem}
+.zk-count b{font-family:var(--num);color:var(--gold);font-size:1.05rem}
+.zk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;width:min(560px,100%)}
+.zk-card{position:relative;min-width:0;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.035);padding:5px 5px 7px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.zk-card canvas{width:100%;height:auto;aspect-ratio:3/2;display:block}
+.zk-card .nm{font-family:var(--display);font-size:.66rem;line-height:1.3}
+.zk-card .meta{font-size:.56rem;color:var(--muted);font-family:var(--num)}
+.zk-card .new{position:absolute;top:4px;left:5px;font-size:.5rem;font-weight:700;letter-spacing:.08em;color:#1a1640;background:var(--gold);border-radius:999px;padding:1px 7px}
+.sharenote{margin:0;max-width:30ch;font-size:.78rem;line-height:1.6;color:var(--gold)}
+.zk-empty{margin:0;color:var(--muted);font-size:.9rem}
+.names{font-family:var(--display);color:var(--line);font-size:1rem;line-height:1.7}
+.actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:4px}
+.btn{font-family:var(--body);font-weight:700;font-size:1rem;color:#1a1640;background:var(--gold);text-decoration:none;
+  border:0;border-radius:999px;padding:12px 28px;cursor:pointer;display:inline-flex;align-items:center;box-shadow:0 6px 20px rgba(255,217,138,.22)}
+.overlay p.lead{color:var(--ink);font-size:1rem;letter-spacing:.06em;max-width:none;word-break:keep-all;overflow-wrap:anywhere}
+.howto{list-style:none;margin:4px 0 2px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;width:min(340px,100%)}
+.howto li{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 6px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);min-width:0}
+.howto b{font-size:.82rem;color:var(--gold);font-weight:700;letter-spacing:.06em}
+.howto span{font-size:.74rem;color:var(--muted)}
+.zkicon{position:absolute;top:14px;left:16px;z-index:5;display:none;flex-direction:column;align-items:center;gap:1px;
+  width:54px;padding:6px 0 5px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:var(--star);cursor:pointer;font-family:var(--body)}
+.zkicon svg{width:28px;height:28px}
+.zkicon span{font-size:.62rem;color:var(--muted);letter-spacing:.08em}
+.zkicon i{position:absolute;top:4px;right:6px;width:8px;height:8px;border-radius:50%;background:#ff9fb8;box-shadow:0 0 6px #ff9fb8}
+.zkicon:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+#stage.intro .zkicon,#stage.ended .zkicon{display:flex}
+#stage.zk-open .zkicon{display:none}
+.modes{display:flex;gap:10px;justify-content:center;margin-top:6px;width:min(340px,100%)}
+.mode{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1 1 0;min-width:0;padding:12px 8px;border-radius:18px;cursor:pointer;
+  font-family:var(--body);border:0;background:var(--gold);color:#1a1640;box-shadow:0 6px 20px rgba(255,217,138,.22)}
+.mode b{font-size:1.05rem;font-weight:700}
+.mode small{font-size:.72rem;opacity:.75}
+.mode.hard{background:transparent;color:var(--ink);border:1px solid rgba(255,159,184,.6);box-shadow:none}
+.mode.hard b{color:#ff9fb8}
+.mode:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+#stage.hard .light,#stage.hard .combo{display:none}
+#over.hard .normalOnly{display:none}
+#over.hard .stats{grid-template-columns:repeat(2,minmax(0,1fr));width:min(260px,100%)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.35);box-shadow:none}
+figure{margin:4px 0 0;max-width:min(360px,100%);display:flex;flex-direction:column;gap:6px}
+figure img{width:100%;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);-webkit-touch-callout:default;user-select:auto}
+figcaption{font-size:.72rem;color:var(--muted)}
+.hint{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:var(--muted);font-size:.8rem;pointer-events:none;transition:opacity .8s;z-index:1}
+.banner{position:absolute;left:0;right:0;top:24%;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:1;
+  padding:0 16px;text-align:center;--hue:#a9d8ff}
+.banner small{font-size:.72rem;letter-spacing:.2em;color:var(--muted)}
+.banner b{font-family:var(--display);font-weight:600;font-size:clamp(1.5rem,6vw,2.2rem);color:var(--hue);text-shadow:0 0 18px var(--hue)}
+.banner span{font-size:.75rem;color:var(--ink);opacity:.8}
+.banner.show{animation:bannerIn 2.9s ease forwards}
+@keyframes bannerIn{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.banner.show{animation:none}.score .n.pop{animation:none}}
+/* ---- landscape phones: short and wide, so screens split into two columns ---- */
+@media (orientation:landscape) and (max-height:540px){
+  .score .n{font-size:1.7rem}
+  .sub{margin-top:4px;gap:3px;font-size:.68rem}
+  .combo{font-size:.8rem}
+  .zkicon{width:46px;padding:4px 0 3px}.zkicon svg{width:22px;height:22px}
+  .overlay{padding:14px max(24px,env(safe-area-inset-right)) 14px max(24px,env(safe-area-inset-left))}
+  .overlay>:first-child,.overlay>:last-child{margin:0}
+  /* title: name on the left, how to play and the two modes on the right */
+  #title{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;align-content:center;align-items:center;column-gap:clamp(20px,5vw,56px);row-gap:12px}
+  #title h1{grid-column:1;grid-row:1;align-self:end;font-size:clamp(2.4rem,17vh,4rem)}
+  #title .lead{grid-column:1;grid-row:2;align-self:start}
+  #title .howto{grid-column:2;grid-row:1;align-self:end;width:100%;max-width:340px;justify-self:center;margin:0}
+  #title .modes{grid-column:2;grid-row:2;align-self:start;width:100%;max-width:340px;justify-self:center;margin:0}
+  .howto li{padding:6px 4px}
+  .mode{padding:9px 6px}
+  /* result: the score on the left, the picture and buttons on the right */
+  #over{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:center;align-items:center;column-gap:clamp(18px,4vw,48px);row-gap:6px;padding-top:56px}
+  #over>#overHead,#over>#finalNote,#over>.big,#over>.stats{grid-column:1}
+  #over>#overHead{grid-row:1}#over>#finalNote{grid-row:2}#over>.big{grid-row:3}#over>.stats{grid-row:4}
+  #over>figure{grid-column:2;grid-row:1/4;align-self:end;justify-self:center;max-width:min(330px,100%)}
+  #over>.actions{grid-column:2;grid-row:4}
+  #over>.subacts{grid-column:2;grid-row:5}
+  #over>.sharenote{grid-column:1/3;grid-row:6;justify-self:center}
+  #over .big{font-size:2.6rem}
+  #over .stats{grid-template-columns:repeat(2,minmax(0,1fr));width:min(300px,100%);justify-self:center}
+  #over.hard .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats div{padding:5px 8px}.stats dd{font-size:1.05rem}
+  figcaption{display:none}
+  .pauseov .ptitle{font-size:1.4rem}
+}
+</style>
+<style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"Hiragino Sans",sans-serif}
+</style>
+</head>
+<body>
+<div id="stage" class="intro">
+  <canvas id="c"></canvas>
+  <button class="zkicon" id="zkIcon" type="button" aria-label="星座ずかん">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M4 9.5c4-1.6 8-1.4 12 1v15c-4-2.4-8-2.6-12-1z" fill="rgba(255,244,214,.14)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M28 9.5c-4-1.6-8-1.4-12 1v15c4-2.4 8-2.6 12-1z" fill="rgba(255,244,214,.14)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M9.5 15.5l2.2-1.8 2.3 1.4M18.5 15l2.4 1.2 2.3-2" fill="none" stroke="#a9d8ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 1.8l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="#ffd98a"/>
+    </svg>
+    <span>ずかん</span><i id="zkDot" hidden></i>
+  </button>
+  <div class="hud">
+    <div class="score">
+      <span class="n" id="score">0</span><span class="unit" id="unit">点</span>
+      <div class="sub">
+        <span class="combo" id="combo"></span>
+        <span id="cons">星座まで あと 5 こ ・ 最高 0 点</span>
+        <span class="light">ひかり <span class="bar" id="bar"><i id="barFill"></i></span></span>
+      </div>
+    </div>
+    <div class="right">
+      <button class="iconbtn" id="gear" type="button" aria-expanded="false" aria-controls="panel">♪ 音量</button>
+      <div class="panel" id="panel" hidden>
+        <h2>音量バランス</h2>
+        <label class="row" for="vBgm"><span>メイン</span><input type="range" id="vBgm" min="0" max="100" step="1"><output id="oBgm">70</output></label>
+        <div class="row tim"><span>音色</span><div class="seg" id="seg" role="radiogroup" aria-label="音色">
+          <button type="button" data-t="celesta" role="radio">チェレスタ</button><button type="button" data-t="harp" role="radio">ハープ</button><button type="button" data-t="box" role="radio">オルゴール</button><button type="button" data-t="piano" role="radio">ピアノ</button></div></div>
+        <label class="row" for="vSe"><span>SE</span><input type="range" id="vSe" min="0" max="100" step="1"><output id="oSe">60</output></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="title">
+    <h1><span class="hs">ほし</span><span class="tn">つなぎ</span></h1>
+    <p class="lead">長押しだけで、<wbr>夜空に星座をつくろう</p>
+    <ul class="howto">
+      <li><b>長押し</b><span>ふわりと上へ</span></li>
+      <li><b>はなす</b><span>すうっと下へ</span></li>
+      <li><b>星を5つ</b><span>星座が生まれる</span></li>
+      <li><b>雲</b><span>ふれるとひかりが減る</span></li>
+    </ul>
+    <div class="modes">
+      <button class="mode" id="start" type="button"><b>ふつう</b><small>ひかりがなくなるまで</small></button>
+      <button class="mode hard" id="startHard" type="button"><b>ハード</b><small>1回でもミスしたら終わり</small></button>
+    </div>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <p id="overHead">夜が明けました</p>
+    <p id="finalNote">今夜のスコア</p>
+    <div class="big"><span id="final">0</span><span style="font-size:1.4rem" id="finalUnit"> 点</span></div>
+    <dl class="stats">
+      <div class="normalOnly"><dt>つないだ星</dt><dd id="stStars">0</dd></div>
+      <div class="normalOnly"><dt>最大コンボ</dt><dd id="stCombo">0</dd></div>
+      <div><dt>星座</dt><dd id="stCons">0</dd></div>
+      <div><dt>時間</dt><dd id="stTime">0:00</dd></div>
+    </dl>
+    <figure id="cardWrap" hidden><img id="card" alt="今夜つないだ星座の画像"><figcaption>画像を長押しで保存して、投稿に添付できます</figcaption></figure>
+    <div class="actions">
+      <button class="btn ghost" id="toTitle" type="button">タイトルへ</button>
+      <button class="btn" id="retry" type="button">もういちど</button>
+    </div>
+    <div class="subacts">
+      <button class="textlink" id="shareImg" type="button">画像つきでシェア</button>
+      <a class="textlink" id="share" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    </div>
+    <p class="sharenote" id="shareNote" hidden>この画面では画像を直接わたせません。上の画像を長押しで保存してから、投稿に添付してください。</p>
+  </div>
+
+  <div class="overlay pauseov" id="pause" hidden>
+    <p class="ptitle">ひとやすみ</p>
+    <p>つづきは、準備ができたらどうぞ</p>
+    <div class="actions">
+      <button class="btn ghost" id="pauseTitle" type="button">タイトルへ</button>
+      <button class="btn" id="resumeBtn" type="button">つづける</button>
+    </div>
+  </div>
+
+  <div class="overlay zukan" id="zukan" hidden>
+    <h2>星座ずかん</h2>
+    <p class="zk-count" id="zkCount"></p>
+    <div class="zk-grid" id="zkGrid"></div>
+    <p class="zk-empty" id="zkEmpty" hidden>星を5つつなぐと、ここに星座が記録されます。</p>
+    <button class="btn" id="zkClose" type="button">とじる</button>
+  </div>
+  <div class="banner" id="banner" hidden><small>あたらしい星座</small><b id="bName"></b><span>が生まれました</span></div>
+  <div class="hint" id="hint" style="opacity:0">長押しで上へ ・ はなすと下へ</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const cv=$('c'), g=cv.getContext('2d'), stage=$('stage');
+const GAME_URL='https://karo107.github.io/picoruno./';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let W=0,H=0,DPR=1,u=1, starfield=null;
+
+function resize(){
+  const oldH=H;
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=stage.clientWidth; H=stage.clientHeight;
+  if(oldH>0&&H>0&&Math.abs(H-oldH)>.5&&typeof rescaleWorld==='function'&&(state==='play'||state==='dead')) rescaleWorld(H/oldH);
+  cv.width=W*DPR; cv.height=H*DPR; g.setTransform(DPR,0,0,DPR,0,0);
+  u=H/600; makeStarfield();
+}
+function makeStarfield(){
+  const s=512; starfield=document.createElement('canvas'); starfield.width=s; starfield.height=s;
+  const x=starfield.getContext('2d');
+  for(let i=0;i<220;i++){x.fillStyle=`rgba(230,230,255,${.15+Math.random()*.45})`;const r=Math.random()<.9?.6:1.2;x.beginPath();x.arc(Math.random()*s,Math.random()*s,r,0,7);x.fill()}
+}
+
+/* ---------------- sound ---------------- */
+let ac=null, bgmBus=null, seBus=null, verb=null, nextBeat=0, beatIdx=0;
+let vol={bgm:70,se:60,timbre:'celesta',v:2};
+try{const v=JSON.parse(localStorage.getItem('hoshi-vol')||'null'); if(v&&typeof v.bgm==='number'){ vol.bgm=v.bgm; vol.se=v.se; if(v.v===2&&v.timbre) vol.timbre=v.timbre; }}catch(e){}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+// an original lullaby in F major, 3/4 time — music box melody over a soft waltz
+const CH={
+  F:{bass:41,acc:[57,60,65],arp:[65,69,72,77]},
+  Dm:{bass:38,acc:[57,62,65],arp:[62,65,69,74]},
+  Bb:{bass:46,acc:[58,62,65],arp:[62,65,70,74]},
+  C:{bass:48,acc:[55,60,64],arp:[60,64,67,72]},
+  Am:{bass:45,acc:[57,60,64],arp:[60,64,69,72]},
+  Gm:{bass:43,acc:[55,58,62],arp:[62,67,70,74]},
+};
+const SONG=[ // [chord, melody as [note, beats]...] — 0 is a rest
+  ['F', [[72,2],[69,1]]],
+  ['Dm',[[74,1.5],[72,.5],[69,1]]],
+  ['Bb',[[70,2],[74,1]]],
+  ['C', [[72,3]]],
+  ['F', [[69,2],[72,1]]],
+  ['Am',[[76,1.5],[74,.5],[72,1]]],
+  ['Bb',[[74,1],[70,1],[67,1]]],
+  ['C', [[72,3]]],
+  ['F', [[77,2],[76,1]]],
+  ['Bb',[[74,2],[70,1]]],
+  ['Gm',[[70,1.5],[69,.5],[67,1]]],
+  ['C', [[72,2],[0,1]]],
+  ['Dm',[[74,1],[77,1],[74,1]]],
+  ['Bb',[[72,1.5],[70,.5],[67,1]]],
+  ['C', [[67,1],[69,1],[70,1]]],
+  ['F', [[65,3]]],
+];
+const SCALE=[65,67,69,72,74,77,79,81,84,86,89]; // F pentatonic, low → high (for star sounds)
+const BEAT=60/70; // one quarter note
+let barIdx=0;
+
+function gainFor(v,max){return Math.pow(v/100,2)*max}
+function applyVolume(){
+  if(!ac) return;
+  bgmBus.gain.setTargetAtTime(gainFor(vol.bgm,.9),ac.currentTime,.08);
+  seBus.gain.setTargetAtTime(gainFor(vol.se,1),ac.currentTime,.05);
+}
+function initAudio(){
+  if(ac){ if(ac.state==='suspended') ac.resume(); return; }
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+  ac=new AC();
+  verb=ac.createConvolver();
+  const len=ac.sampleRate*3.6, buf=ac.createBuffer(2,len,ac.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.8)}
+  verb.buffer=buf; verb.connect(ac.destination);
+  const mkBus=wet=>{const b=ac.createGain(); b.connect(ac.destination); const s=ac.createGain(); s.gain.value=wet; b.connect(s); s.connect(verb); return b;};
+  bgmBus=mkBus(.55); seBus=mkBus(.85);
+  bgmBus.gain.value=gainFor(vol.bgm,.9); seBus.gain.value=gainFor(vol.se,1);
+  nextBeat=ac.currentTime+.2; barIdx=0; barLog=[];
+  setInterval(schedule,90);
+}
+function voice(bus,freq,t,dur,{type='sine',gain=.1,attack=.01,release=1.2,cut=2400}={}){
+  const o=ac.createOscillator(), v=ac.createGain(), f=ac.createBiquadFilter();
+  o.type=type; o.frequency.value=freq; f.type='lowpass'; f.frequency.value=cut;
+  v.gain.setValueAtTime(0,t); v.gain.linearRampToValueAtTime(gain,t+attack);
+  v.gain.setValueAtTime(gain,t+Math.max(attack,dur-release));
+  v.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(f); f.connect(v); v.connect(bus); o.start(t); o.stop(t+dur+.05);
+}
+// what the music is doing right now: each scheduled bar is logged so sound effects can find the beat and the chord
+let barLog=[];
+function barAt(time){
+  let b=barLog[0];
+  for(const x of barLog){ if(x.t<=time) b=x; else break; }
+  return b;
+}
+function curChord(){ const b=ac&&barAt(ac.currentTime); return b?CH[b.chord]:CH.F; }
+// the chord that will be sounding at time t (not just now), and when that bar ends;
+// a note landing in the last moments of a bar takes the next bar's chord instead
+function chordFor(t){
+  let b=barAt(t); if(!b) return {ch:CH.F,end:t+3};
+  let end=b.t+3*b.beat;
+  if(end-t<.28){ const nb=barLog.find(x=>x.t>b.t); if(nb){ b=nb; end=b.t+3*b.beat; } }
+  return {ch:CH[b.chord],end};
+}
+
+// ---- instruments ----
+// music box: a clear bell tone with a faint high shimmer
+function musicBox(bus,m,t,vel){
+  voice(bus,mtof(m),t,2.6,{gain:vel*.7,attack:.004,release:2.5,cut:3200});
+  voice(bus,mtof(m)*2.01,t,1,{gain:vel*.12,attack:.004,release:.95,cut:5000});
+}
+// harp: a plucked string — bright for an instant, then a long, warm ring
+const HP=[1,.5,.26,.14,.07], HSUM=HP.reduce((a,b)=>a+b,0);
+function harp(bus,m,t,vel){
+  const f=mtof(m), len=clamp(5.2-(m-48)*.055,1.8,5.2);
+  const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=.4;
+  lp.frequency.setValueAtTime(5200,t); lp.frequency.exponentialRampToValueAtTime(1500,t+.18); lp.frequency.exponentialRampToValueAtTime(800,t+len);
+  lp.connect(bus);
+  HP.forEach((a,k)=>{
+    const n=k+1, fr=f*n; if(fr>9000) return;
+    const o=ac.createOscillator(), gn=ac.createGain(), amp=vel*a/HSUM, d=len*(1-k*.16);
+    o.type= k===0 ? 'triangle' : 'sine';
+    o.frequency.value=fr*(1+(k%2?.0008:0));
+    gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(amp,t+.003);
+    gn.gain.exponentialRampToValueAtTime(amp*.55,t+.12);
+    gn.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(gn); gn.connect(lp); o.start(t); o.stop(t+d+.05);
+  });
+}
+// piano: stretched partials, two strings a hair apart, tone darkening as it rings
+const PARTIALS=[1,.42,.22,.13,.07,.04], PSUM=PARTIALS.reduce((a,b)=>a+b,0);
+function piano(bus,m,t,vel){
+  const f=mtof(m), len=clamp(4.2-(m-48)*.06,1.4,5.5);
+  const lp=ac.createBiquadFilter(); lp.type='lowpass';
+  lp.frequency.setValueAtTime(clamp(900+vel*28000,900,5200),t);
+  lp.frequency.exponentialRampToValueAtTime(600,t+len*.8);
+  lp.connect(bus);
+  PARTIALS.forEach((a,k)=>{
+    const n=k+1, fr=f*n*Math.sqrt(1+.00035*n*n); if(fr>9000) return;
+    const d=len*(1-k*.13), amp=vel*a/PSUM;
+    [1,1.0012].forEach((det,s)=>{
+      const o=ac.createOscillator(), gn=ac.createGain();
+      o.frequency.value=fr*det;
+      gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(amp*(s?.45:1),t+.006);
+      gn.gain.exponentialRampToValueAtTime(amp*.35*(s?.45:1),t+.25);
+      gn.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(gn); gn.connect(lp); o.start(t); o.stop(t+d+.05);
+    });
+  });
+}
+// celesta: little hammers on tuned steel bars — a round, starry tone with a brief metallic glint
+function celesta(bus,m,t,vel){
+  const f=mtof(m), len=clamp(3.4-(m-60)*.04,1.6,3.6);
+  const parts=[[1,1,len],[2,.22,len*.6],[3.98,.16,.28],[8.1,.06,.12]];
+  parts.forEach(([n,a,d],k)=>{
+    const fr=f*n; if(fr>11000) return;
+    [1,1.0018].forEach((det,s)=>{
+      const o=ac.createOscillator(), gn=ac.createGain(), amp=vel*a*(s?.35:1)/1.4;
+      o.frequency.value=fr*det;
+      gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(amp,t+.002);
+      gn.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(gn); gn.connect(bus); o.start(t); o.stop(t+d+.05);
+    });
+  });
+}
+const INSTR={celesta,box:musicBox,harp,piano};
+const LOUD={celesta:.95,box:.72,harp:1.05,piano:1};
+function play(bus,m,t,vel){ const k=vol.timbre in INSTR?vol.timbre:'celesta'; INSTR[k](bus,m,t,vel*LOUD[k]); }
+
+function schedule(){
+  // nextBeat holds the start time of the next bar
+  while(nextBeat<ac.currentTime+.6){
+    const i=barIdx%SONG.length, pass=Math.floor(barIdx/SONG.length)%3, [name,mel]=SONG[i], ch=CH[name], t=nextBeat;
+    const sway=1+(i%4===3?.07:0); // breathe a little at the end of each phrase
+    barLog.push({t,beat:BEAT*sway,chord:name}); if(barLog.length>8) barLog.shift();
+    // a faint pad under everything, holding the chord
+    const cel=vol.timbre==='celesta';
+    if(cel){ // with the celesta, a hushed string section carries the harmony underneath
+      ch.acc.forEach((m,k)=>[-.004,.004].forEach(dt=>voice(bgmBus,mtof(m)*(1+dt),t,BEAT*3*sway+1.4,{type:'sawtooth',gain:.0042,attack:1.1,release:1.5,cut:850})));
+    } else {
+      ch.acc.forEach((m,k)=>voice(bgmBus,mtof(m)*(1+(k%2?.002:-.002)),t,BEAT*3*sway+1.2,{type:'triangle',gain:.011,attack:.9,release:1.4,cut:700}));
+    }
+    // waltz: low note on 1, a quiet chord on 2 and 3
+    if(cel) voice(bgmBus,mtof(ch.bass),t,BEAT*3*sway+.6,{gain:.07,attack:.04,release:1.6,cut:400});
+    else play(bgmBus,ch.bass,t,.075);
+    [0,1].forEach(k=>play(bgmBus,ch.acc[k],t+BEAT*sway+k*.014,.024));
+    [1,2].forEach(k=>play(bgmBus,ch.acc[k],t+BEAT*2*sway+k*.014,.021));
+    // melody: as written, then an octave up and quieter, then a slow rolled chord in its place
+    let bt=0;
+    mel.forEach(([m,b])=>{
+      if(m){
+        const at=t+bt*BEAT*sway;
+        if(pass===0) play(bgmBus,m,at,.07);
+        else if(pass===1) play(bgmBus,m+12,at,.045);
+      }
+      bt+=b;
+    });
+    if(pass===2){ ch.arp.forEach((m,k)=>play(bgmBus,m+12,t+k*BEAT*.5*sway,.03-k*.003)); }
+    nextBeat+=BEAT*3*sway; barIdx++;
+  }
+}
+
+// ---- sound effects, fitted to the music ----
+// timing: a star's note lands on the music's next sixteenth note when one is close; otherwise it plays at once, so it never feels late
+function onGrid(now){
+  const b=barAt(now); if(!b) return now;
+  const step=b.beat/4, k=Math.ceil((now-b.t)/step-1e-6), tq=b.t+k*step;
+  return (tq-now<.09) ? tq : now;
+}
+// pitch: only notes of the chord that is sounding, so every star harmonises; higher stars ring higher
+function chordTones(ch,lo,hi){
+  const pcs=new Set([ch.bass,...ch.acc,...ch.arp].map(m=>m%12)), out=[];
+  for(let m=lo;m<=hi;m++) if(pcs.has(m%12)) out.push(m);
+  return out;
+}
+function seStar(y){
+  if(!ac) return;
+  const now=ac.currentTime+.005, t=onGrid(now), {ch,end}=chordFor(t), tones=chordTones(ch,72,93);
+  const m=tones[clamp(Math.round((1-y/H)*(tones.length-1)),0,tones.length-1)];
+  // let the note ring only until the chord changes, so it never hangs over a chord it doesn't belong to
+  const dur=clamp(end-t+.2,.45,2.2);
+  voice(seBus,mtof(m),t,dur,{gain:.04,attack:.012,release:dur-.02,cut:2600});
+  voice(seBus,mtof(m)*2,t+.02,Math.min(1.1,dur),{gain:.009,attack:.012,release:Math.min(1,dur-.05),cut:4000});
+}
+function seConstellation(){
+  if(!ac) return;
+  // a rolled chord that starts on the music's next beat
+  const now=ac.currentTime, b=barAt(now); let t=now+.05;
+  if(b){ const k=Math.ceil((now-b.t)/b.beat); t=Math.max(now+.03,b.t+k*b.beat); if(t-now>.5) t=now+.05; }
+  const {ch}=chordFor(t);
+  [...ch.arp,ch.arp[0]+12].forEach((m,i)=>play(seBus,m+12,t+i*.1,.05));
+}
+function seCloud(){
+  if(!ac) return;
+  const t=ac.currentTime+.01, len=ac.sampleRate*.7, b=ac.createBuffer(1,len,ac.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+  const s=ac.createBufferSource(), f=ac.createBiquadFilter(), v=ac.createGain();
+  s.buffer=b; f.type='lowpass'; f.frequency.setValueAtTime(700,t); f.frequency.exponentialRampToValueAtTime(160,t+.6);
+  v.gain.setValueAtTime(0,t); v.gain.linearRampToValueAtTime(.16,t+.08); v.gain.exponentialRampToValueAtTime(.0001,t+.7);
+  s.connect(f); f.connect(v); v.connect(seBus); s.start(t);
+}
+function seDawn(){
+  if(!ac) return;
+  // the closing chord follows whatever chord the music is on
+  const t=ac.currentTime+.05, {ch}=chordFor(t);
+  [ch.bass+24,...ch.acc.map(m=>m+12)].sort((a,b)=>a-b).forEach((m,i)=>voice(seBus,mtof(m),t+i*.25,3.2,{type:'triangle',gain:.022,attack:.3,release:2.6,cut:1600}));
+}
+
+/* settings panel */
+const gear=$('gear'), panel=$('panel');
+function syncSeg(){ document.querySelectorAll('#seg button').forEach(b=>{const on=b.dataset.t===vol.timbre;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on))}); }
+document.querySelectorAll('#seg button').forEach(b=>b.addEventListener('click',()=>{
+  initAudio(); vol.timbre=b.dataset.t; syncSeg();
+  try{localStorage.setItem('hoshi-vol',JSON.stringify(vol))}catch(e){}
+  if(ac){const t=ac.currentTime+.05; [65,69,72,77].forEach((m,i)=>play(bgmBus,m,t+i*.12,.06));}
+}));
+syncSeg();
+function syncSliders(){ $('vBgm').value=vol.bgm; $('vSe').value=vol.se; $('oBgm').textContent=vol.bgm; $('oSe').textContent=vol.se; }
+syncSliders();
+gear.addEventListener('click',()=>{ panel.hidden=!panel.hidden; gear.setAttribute('aria-expanded',String(!panel.hidden)); if(!panel.hidden) pauseGame(); });
+let seTestT=0;
+['vBgm','vSe'].forEach(id=>$(id).addEventListener('input',e=>{
+  initAudio();
+  if(id==='vBgm') vol.bgm=+e.target.value; else vol.se=+e.target.value;
+  syncSliders(); applyVolume();
+  try{localStorage.setItem('hoshi-vol',JSON.stringify(vol))}catch(err){}
+  if(id==='vSe' && performance.now()-seTestT>350){ seTestT=performance.now(); setTimeout(()=>seStar(H*.35),60); }
+}));
+document.querySelector('.right').addEventListener('pointerdown',e=>e.stopPropagation());
+
+/* ---------------- game ---------------- */
+const PRE=['ねむる','ちいさな','まいごの','あくびする','ひだまりの','しずかな','ゆらめく','とおくの','やさしい','ないしょの','はじめての','うたう'];
+const NOUN=['くじら','ねこ','ひつじ','てがみ','コップ','ふね','うさぎ','かさ','ほうき','さかな','まど','きつね','ランプ','いす','ふうせん','かぎ'];
+const GROUP=5;
+let mode='normal', bestHard=0, paused=false;
+try{bestHard=+localStorage.getItem('hoshi-best-hard')||0}catch(e){}
+let state='title', holding=false, score=0, points=0, best=0, light=100, inv=0, simT=0, deadT=0;
+try{best=+localStorage.getItem('hoshi-best-pts')||0}catch(e){}
+let pressT=-9, wasHolding=false, camX=0, me={x:0,y:0,vy:0}, tail=[], stars=[], clouds=[], chain=[], groups=[], sparks=[], fading=[], shield=0, combo=0, maxCombo=0, playTime=0, nextX=0, lastY=.5, lastGap=0, spawnN=0, waiting=true, usedNames=new Set();
+// every screen shows the same distance ahead of the fairy (in game units), so no device sees further than another:
+// the fairy is placed so that this distance reaches the right edge, and on wide screens anything beyond it fades into night mist
+const AHEAD=()=>.38*H;
+const PX=()=>clamp(W-AHEAD(),W*.18,W*.75);
+function fogA(sx){ const f0=PX()+AHEAD()-.05*H, f1=PX()+AHEAD()+.03*H; return clamp((f1-sx)/(f1-f0),0,1); }
+
+function updateHud(){
+  const left=GROUP-chain.length%GROUP;
+  if(mode==='hard'){
+    // hard mode counts stars in a row; one miss ends the night
+    $('score').textContent=score; $('unit').textContent='こ';
+    $('cons').textContent=`ハード ・ 星座まで あと ${left} こ ・ 最高 ${bestHard} こ`;
+  } else {
+    $('score').textContent=points.toLocaleString('ja-JP'); $('unit').textContent='点';
+    $('cons').textContent=`星座まで あと ${left} こ ・ 最高 ${best.toLocaleString('ja-JP')} 点`;
+  }
+  const cb=$('combo'); cb.textContent=combo>=2?`${combo} コンボ`:''; 
+  $('barFill').style.width=clamp(light,0,100)+'%';
+  $('bar').classList.toggle('low',light<25);
+}
+function reset(){
+  camX=0; score=0; points=0; light=100; inv=0; simT=0;
+  me={x:PX(),y:H*.5,vy:0}; tail=[]; stars=[]; clouds=[]; chain=[]; groups=[]; sparks=[]; fading=[]; popTexts=[]; shield=0; combo=0; maxCombo=0; playTime=0; usedNames=new Set();
+  nextX=PX()+.18*H; lastY=.45; lastGap=0; spawnN=0; waiting=true; reach={x:PX(),states:[{y:H*.5,vy:0}]};
+  genIt=null;
+  while(nextX<W*1.6){ const it=spawnStep(); while(!it.next().done); }
+  updateHud();
+}
+/* ---- level generation that is checked against the real movement ----
+   Before a star (and any cloud in front of it) is placed, the game flies the gap itself:
+   from every way you could have reached the previous star, it tries holding and releasing in 0.1 s steps,
+   using exactly the same movement as you. A star is only placed where it can be reached, and a cloud
+   is only kept if there is still a way past it that catches the star. The ways that worked carry on to the next gap. */
+const SIM_DT=1/60, SIM_STEP=9, REACT_F=0, REACT_CLOUD_F=0;   // (a late-reaction allowance was tried and made things worse; layouts are instead checked with 0.15 s control steps)   // layouts must be passable even if you only change what you do every 0.15 s
+const speedFor=sc=>Math.min(225,115+sc*2.4)*u;
+let reach={x:0,states:[{y:300,vy:0}]};
+function simStep(s,hold){
+  const target=hold?-250*u:250*u, r=7*u;
+  s.vy+=(target-s.vy)*Math.min(1,SIM_DT*3.2);
+  s.y+=s.vy*SIM_DT;
+  if(s.y<r+8*u){s.y=r+8*u;s.vy=Math.max(0,s.vy)}
+  if(s.y>H-r-26*u){s.y=H-r-26*u;s.vy=Math.min(0,s.vy)}
+}
+function cloudHits(c,x,y){
+  // worst case over the cloud's whole bob, with a little extra room
+  const r=7*u;
+  return c.blobs.some(b=>{
+    const bx=c.x+b.dx, by=c.y+b.dy, dy=Math.max(0,Math.abs(y-by)-c.amp);
+    return Math.hypot(bx-x,dy) < b.r*.6+r+7*u;   // planning keeps well clear of clouds
+  });
+}
+// fly from x0 to x1; returns every state at the moment it crosses x1
+function* flyGap(starts,x0,x1,speed,cloud){
+  const key=s=>Math.round(s.y/(4*u))+':'+Math.round(s.vy/(20*u));
+  const dx=speed*SIM_DT;
+  // human reaction: right after a star you keep doing what you were doing for a quarter second
+  // before you can change course, so every placement must still work after that delay
+  let cur=[], out=[];
+  for(const s0 of starts){
+    const t={x:x0,y:s0.y,vy:s0.vy}, hold=s0.vy<0; let dead=false;
+    for(let f=0;f<(cloud?REACT_CLOUD_F:REACT_F);f++){ simStep(t,hold); t.x+=dx; if(cloud&&cloudHits(cloud,t.x,t.y)){dead=true;break} if(t.x>=x1) break; }
+    if(!dead) cur.push(t);
+  }
+  let guard=0;
+  while(cur.length && guard++<200){
+    const nxt=new Map();
+    for(const s of cur) for(const hold of [true,false]){
+      const t={x:s.x,y:s.y,vy:s.vy}; let dead=false, done=false;
+      for(let f=0;f<SIM_STEP;f++){
+        simStep(t,hold); t.x+=dx;
+        if(cloud&&cloudHits(cloud,t.x,t.y)){dead=true;break}
+        if(t.x>=x1){done=true;break}
+      }
+      if(dead) continue;
+      if(done){ out.push({y:t.y,vy:t.vy}); continue; }
+      const k=key(t); if(!nxt.has(k)) nxt.set(k,t);
+    }
+    cur=[...nxt.values()];
+    if(cur.length>220){ cur.sort(()=>Math.random()-.5); cur.length=220; }
+    yield;
+  }
+  return out;
+}
+function thin(list,n){
+  const m=new Map(); for(const s of list){const k=Math.round(s.y/(4*u))+':'+Math.round(s.vy/(25*u)); if(!m.has(k)) m.set(k,s);}
+  let a=[...m.values()]; if(a.length>n){a.sort(()=>Math.random()-.5); a.length=n;} return a;
+}
+const CATCH=9; // the planned line must pass within 9u of the star; the real catch range is 17u, leaving room for human timing
+// ---- constellation collection (kept in this browser) ----
+const ZK_KEY='hoshi-zukan', ZK_TOTAL=PRE.length*NOUN.length;
+let zukan={}, newThisRun=new Set();
+try{ zukan=JSON.parse(localStorage.getItem(ZK_KEY)||'{}')||{}; }catch(e){ zukan={}; }
+function recordZukan(gr){
+  const today=new Date(); const d=`${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+  const rel=gr.rel.map(r=>[Math.round(r.dx/u*10)/10,Math.round(r.dy/u*10)/10]);
+  const e=zukan[gr.name];
+  if(!e){ zukan[gr.name]={hue:gr.hue,n:1,first:d,last:Date.now(),shapes:[{rel,d}]}; newThisRun.add(gr.name); }
+  else { e.n++; e.last=Date.now(); zkShapes(e).length=1; /* one shape per name: the first one found */ }
+  try{ localStorage.setItem(ZK_KEY,JSON.stringify(zukan)); }catch(err){}
+}
+function zkShapes(e){ if(!e.shapes){ e.shapes=e.rel?[{rel:e.rel,d:e.first}]:[]; delete e.rel; } return e.shapes; }
+function drawShape(cv,entry){
+  const w=300,h=200; cv.width=w; cv.height=h; const x=cv.getContext('2d');
+  x.clearRect(0,0,w,h);
+  const pts=entry.rel, xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const sc=Math.min((w-50)/Math.max(1,maxX-minX),(h-50)/Math.max(1,maxY-minY),3);
+  const ox=(w-(maxX-minX)*sc)/2, oy=(h-(maxY-minY)*sc)/2;
+  const P=p=>[ox+(p[0]-minX)*sc, oy+(p[1]-minY)*sc];
+  x.lineCap='round'; x.lineWidth=3; x.strokeStyle=entry.hue; x.shadowColor=entry.hue; x.shadowBlur=8;
+  x.beginPath(); pts.forEach((p,i)=>{const [a,b]=P(p); i?x.lineTo(a,b):x.moveTo(a,b)}); x.stroke();
+  x.fillStyle='#fff8e4'; x.shadowColor='#fff4d6'; x.shadowBlur=12;
+  pts.forEach(p=>{const [a,b]=P(p); x.beginPath(); for(let i=0;i<8;i++){const an=i*Math.PI/4-Math.PI/2, rr=i%2?3.5:10; x.lineTo(a+Math.cos(an)*rr,b+Math.sin(an)*rr)} x.closePath(); x.fill();});
+}
+function openZukan(){
+  const names=Object.keys(zukan).sort((a,b)=>(zukan[b].last||0)-(zukan[a].last||0));
+  $('zkCount').innerHTML=`見つけた星座 <b>${names.length}</b> / ${ZK_TOTAL}`;
+  const grid=$('zkGrid'); grid.textContent='';
+  $('zkEmpty').hidden=names.length>0;
+  for(const nm of names){
+    const e=zukan[nm], card=document.createElement('div'); card.className='zk-card';
+    const shapes=zkShapes(e);
+    const cv=document.createElement('canvas'); drawShape(cv,{rel:shapes[0].rel,hue:e.hue}); card.appendChild(cv);
+    if(newThisRun.has(nm)){ const b=document.createElement('span'); b.className='new'; b.textContent='NEW'; card.appendChild(b); }
+    const t=document.createElement('div'); t.className='nm'; t.textContent=nm; t.style.color=e.hue; card.appendChild(t);
+    const m=document.createElement('div'); m.className='meta'; m.textContent=`${e.first} ・ ${e.n}回`; card.appendChild(m);
+    grid.appendChild(card);
+  }
+  $('zukan').hidden=false; stage.classList.add('zk-open'); $('zukan').scrollTop=0; $('zkClose').focus({preventScroll:true});
+}
+function closeZukan(){ $('zkDot').hidden=true; $('zukan').hidden=true; stage.classList.remove('zk-open'); }
+
+function pauseGame(){
+  if(state!=='play'||waiting||paused) return;
+  paused=true; holding=false; $('pause').hidden=false;
+}
+function resumeGame(){
+  if(!paused) return;
+  paused=false; $('pause').hidden=true; last=performance.now();
+  panel.hidden=true; gear.setAttribute('aria-expanded','false');
+  if(ac&&ac.state!=='running') ac.resume();
+}
+// screen size changed mid-run: scale every position, size and speed by the same factor, then keep the fairy at its spot
+function rescaleWorld(k){
+  const sp=o=>{o.x*=k; o.y*=k;};
+  me.x*=k; me.y*=k; me.vy*=k;
+  tail.forEach(sp); stars.forEach(sp); chain.forEach(sp); popTexts.forEach(sp);
+  sparks.forEach(q=>{sp(q); q.vx*=k; q.vy*=k;});
+  clouds.forEach(c=>{sp(c); c.amp*=k; c.blobs.forEach(b=>{b.dx*=k; b.dy*=k; b.r*=k;});});
+  groups.forEach(q=>{ if(!q) return; q.cx*=k; q.cy*=k; q.oy*=k; if(q.ox!=null) q.ox*=k; q.rel.forEach(r=>{r.dx*=k; r.dy*=k;}); });
+  fading.forEach(f=>f.pts.forEach(sp));
+  reach.x*=k; reach.states.forEach(q=>{q.y*=k; q.vy*=k;});
+  nextX*=k; lastGap*=k; camX*=k;
+  genIt=null;
+  // keep the fairy where the new screen wants it
+  const want=me.x-PX(), shift=want-camX; camX=want;
+  groups.forEach(q=>{ if(q&&q.ox!=null) q.ox+=shift*.75; });
+  if(state==='play') pauseGame();
+}
+
+// keep generating ahead of the player, a few milliseconds per frame
+let genIt=null;
+function pumpGen(budgetMs){
+  const end=performance.now()+budgetMs;
+  while(nextX<camX+W*2.2){
+    if(!genIt) genIt=spawnStep();
+    let r; do{ r=genIt.next(); }while(!r.done&&performance.now()<end);
+    if(r.done) genIt=null; else break;
+    if(performance.now()>=end) break;
+  }
+  // safety net: never let the player reach the edge of what has been generated
+  while(nextX<camX+W*1.05){ if(!genIt) genIt=spawnStep(); while(!genIt.next().done); genIt=null; }
+}
+function* spawnStep(){
+  const gap=(120+Math.random()*80)*u;
+  const k=spawnN, speed=speedFor(k);
+  const x0=reach.x, x1=nextX;
+  const prevY=lastY*H;
+  // where could you be when you reach this star's column? (checked from each way you might have arrived)
+  const origins0=thin(reach.states,7);
+  const per=[];
+  for(const o of origins0){ const l=yield* flyGap([o],x0,x1,speed,null); per.push(l.filter(s=>s.y>.14*H&&s.y<.76*H)); }
+  const arrive=[].concat(...per);
+  const okFor=y=>per.filter(list=>list.some(s=>Math.abs(s.y-y)<CATCH*u)).length;
+  const need=Math.ceil(per.length*.9);
+  let want=clamp(lastY+(Math.random()*2-1)*.32,.16,.74);
+  if(Math.random()<.35) want=clamp(want+(.45-want)*.5,.16,.74);
+  if(k<3) want=[.47,.42,.4][k];
+  let ty=want*H;
+  if(okFor(ty)<need){
+    // move the star to the nearest height that almost every arrival can still reach
+    const cands=arrive.map(s=>s.y).sort((a,b)=>Math.abs(a-want*H)-Math.abs(b-want*H));
+    const found=cands.find(y=>okFor(y)>=need);
+    if(found!==undefined) ty=found;
+    else if(cands.length){ // nothing reaches 90%: take the height the most arrivals can reach
+      let bestY=cands[0], bestN=-1; for(const y of cands){ const n=okFor(y); if(n>bestN){bestN=n; bestY=y;} } ty=bestY; }
+    else ty=reach.states[0].y; // (never expected) stay level with where you are
+  }
+  const hits=list=>list.filter(s=>Math.abs(s.y-ty)<CATCH*u);
+  let ok=hits(arrive);
+  // A cloud is placed beside or across the natural path. It is kept only if
+  //  - it really gets in the way (it cuts off a good share of the lines that would have caught the star), and
+  //  - almost every way you might have arrived still has a line past it that catches the star.
+  if(state==='play' && k>4 && Math.random()<Math.min(.85,.45+k*.008)){
+    const me_r=7*u, line=x=>prevY+(ty-prevY)*clamp((x-x0)/(x1-x0),0,1);
+    const base=per.map(list=>hits(list).length), baseGood=base.filter(n=>n>0).length, baseSum=base.reduce((a,b)=>a+b,0);
+    for(let tries=0;tries<10;tries++){
+      const R=(24+Math.random()*16)*u, n=2+(Math.random()<.35?1:0), blobs=[];
+      for(let i=0;i<n;i++) blobs.push({dx:(i-(n-1)/2)*R*.62+(Math.random()-.5)*R*.2,dy:(Math.random()-.5)*R*.45,r:R*(.75+Math.random()*.35)});
+      const amp=(5+Math.min(10,k*.12))*u;
+      const cx=x0+(x1-x0)*(.3+Math.random()*.4);
+      const side=Math.random()<.5?-1:1, off=(tries<3?.4:.8)*R+Math.random()*R*.9;
+      const cy=line(cx)+side*off;
+      const inGap=blobs.every(b=>{const bx=cx+b.dx,tr=b.r*.6+me_r;return bx-tr>x0+12*u&&bx+tr<x1-12*u;});
+      if(!inGap) continue;
+      if(cy<30*u||cy>H-50*u) continue;
+      const c={x:cx,y:cy,blobs,ph:Math.random()*6,amp};
+      let good=0, sum=0, pass=[];
+      for(let i=0;i<origins0.length;i++){ if(!base[i]) continue; const r=hits(yield* flyGap([origins0[i]],x0,x1,speed,c)); sum+=r.length; if(r.length>=3){good++; pass.push(...r);} }
+      const matters=sum<=baseSum*.8, fair=good>=Math.ceil(baseGood*.85);
+      if(matters&&fair&&pass.length){ clouds.push(c); ok=pass; break; }
+    }
+  }
+  if(!ok.length) ok=arrive.length?[arrive[0]]:[{y:ty,vy:0}];
+  reach={x:x1,states:thin(ok,40)};
+  lastY=ty/H; spawnN++;
+  stars.push({x:nextX,y:ty,got:false,tw:Math.random()*6,s:.9+Math.random()*.6});
+  lastGap=gap; nextX+=gap;
+}
+function newName(){
+  for(let k=0;k<30;k++){const n=PRE[Math.floor(Math.random()*PRE.length)]+NOUN[Math.floor(Math.random()*NOUN.length)]+'座'; if(!usedNames.has(n)){usedNames.add(n);return n}}
+  return 'なまえのない座';
+}
+function collect(st,silent){
+  st.got=true;
+  const gi=Math.floor(chain.length/GROUP);
+  chain.push({x:st.x,y:st.y,gi});
+  if(!groups[gi]) groups[gi]={done:false,name:'',glow:0,cx:0,cy:0,t:0,rel:[],hue:HUES[gi%HUES.length],ox:null,oy:0};
+  if(!silent){ score++; combo++; maxCombo=Math.max(maxCombo,combo);
+    // scoring: 100 per star, raised by the running combo (+4% each, up to ×3)
+    const pts=Math.round(100*(1+Math.min(combo,50)*.04)/10)*10; points+=pts;
+    popText(st.x,st.y-20*u,'+'+pts,'#ffd98a'); light=Math.min(100,light+starGain());
+    if(combo>=2){const c=$('combo'); c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');} seStar(st.y); const s=$('score'); s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); }
+  burst(st.x,st.y,'#fff4d6',8);
+  if(chain.length%GROUP===0){
+    const pts=chain.slice(-GROUP), gr=groups[gi];
+    gr.done=true; gr.name=newName(); gr.glow=1; gr.t=0; gr.ox=null;
+    gr.cx=pts.reduce((a,p)=>a+p.x,0)/GROUP; gr.cy=pts.reduce((a,p)=>a+p.y,0)/GROUP;
+    gr.rel=pts.map(p=>({dx:p.x-gr.cx,dy:p.y-gr.cy}));
+    const nDone=groups.filter(g=>g.done).length;
+    gr.oy=(46+((nDone-1)%3)*34)*u;  // its place in the upper sky once it rises
+    if(!silent){
+      seConstellation();
+      points+=1000; popText(gr.cx,Math.min(...pts.map(p=>p.y))-44*u,'星座 +1000',gr.hue);
+      showBanner(gr.name,gr.hue); recordZukan(gr);
+      pts.forEach(p=>burst(p.x,p.y,gr.hue,6));
+    }
+  }
+  updateHud();
+}
+const HUES=['#a9d8ff','#ffc6df','#c6f0c0','#ffe39a','#d8c8ff'];
+let bannerT=null;
+function showBanner(name,hue){
+  const b=$('banner'); $('bName').textContent=name; b.style.setProperty('--hue',hue);
+  b.hidden=false; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  clearTimeout(bannerT); bannerT=setTimeout(()=>{b.hidden=true},2900);
+}
+let popTexts=[];
+function popText(x,y,text,col){ popTexts.push({x,y,text,col,t:0}); }
+function unravel(st,hadCombo){
+  // missing a star loosens the constellation you were building
+  st.missT=0;
+  const k=chain.length%GROUP;
+  if(k){
+    const pts=chain.splice(-k);
+    const cx=pts.reduce((a,p)=>a+p.x,0)/k, cy=Math.min(...pts.map(p=>p.y));
+    fading.push({pts,t:0});
+    const c=$('cons'); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+  }
+  updateHud();
+}
+// ---- light balance ----
+// late (score 60+): drain and speed are at their peak. Each star pays back the light used to reach even the farthest next star,
+// with only a thin margin, so a perfect run never fades out — but every miss costs a lot and takes many stars to earn back.
+const late=()=>clamp(score/60,0,1);
+const drainRate=()=>Math.min(9,3.5+score*.09);
+const runSpeed=()=>Math.min(225,115+score*2.4)*u;
+const starGain=()=>drainRate()*(200*u/runSpeed())*(1.6-.5*late());   // 200u = the widest gap between stars
+const missCost=()=>12+12*late();
+function flashBar(){const b=$('bar'); b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit');}
+function burst(x,y,c,n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(20+Math.random()*60)*u;sparks.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.5+Math.random()*.6,c})}}
+
+function cloudY(c){return c.y+Math.sin(simT*.8+c.ph)*(c.amp||12*u)}
+function start(m){
+  if(m==='normal'||m==='hard') mode=m;
+  stage.classList.toggle('hard',mode==='hard'); $('over').classList.toggle('hard',mode==='hard');
+  initAudio(); if(ac&&ac.state!=='running') ac.resume();
+  if(document.activeElement&&document.activeElement.blur) document.activeElement.blur();   // so Space now means "hold", not "press the button again"
+  paused=false; $('pause').hidden=true;
+  newThisRun=new Set(); state='title'; reset(); state='play';
+  $('title').hidden=true; $('over').hidden=true; stage.classList.remove('ended','intro');
+  const h=$('hint'); h.textContent='長押しでスタート'; h.style.opacity=1;
+}
+function begin(){
+  if(!waiting) return; waiting=false;
+  const h=$('hint'); h.textContent='長押しで上へ ・ はなすと下へ'; setTimeout(()=>{ if(!waiting) h.style.opacity=0 },2200);
+}
+function dawn(reason){
+  state='dead'; deadT=0; holding=false; seDawn();
+  const hard=mode==='hard';
+  let isBest;
+  if(hard){ isBest=score>0&&score>bestHard; if(isBest){bestHard=score;try{localStorage.setItem('hoshi-best-hard',bestHard)}catch(e){}} }
+  else { isBest=points>0&&points>best; if(isBest){best=points;try{localStorage.setItem('hoshi-best-pts',best)}catch(e){}} }
+  updateHud();
+  const done=groups.filter(g=>g.done);
+  const P=hard?String(score):points.toLocaleString('ja-JP');
+  $('overHead').textContent=reason==='cloud'?'雲にふれて、夜が明けました':reason==='miss'?'星をとりのがして、夜が明けました':'夜が明けました';
+  $('final').textContent=P;
+  $('finalUnit').textContent=hard?' こ':' 点';
+  $('finalNote').textContent=hard?(isBest?'ハード・連続でつないだ星 — 最高記録！':'ハード・連続でつないだ星'):(isBest?'今夜のスコア — 最高記録！':'今夜のスコア');
+  $('stStars').textContent=score;
+  $('stCombo').textContent=maxCombo;
+  $('stCons').textContent=done.length;
+  const sec=Math.round(playTime);
+  $('stTime').textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+  const nNew=newThisRun.size;
+  $('zkDot').hidden=nNew===0;
+  const last=done.length?done[done.length-1].name:'';
+  const text=hard?`「ほしつなぎ」ハードモードで、星を ${score} こ連続でつなぎました${isBest?'（自己ベスト）':''}✨\n星座を ${done.length} つ見つけました\n#ほしつなぎ`:`「ほしつなぎ」で ${P} 点${isBest?'（自己ベスト）':''}✨\n星を ${score} こつないで、星座を ${done.length} つ見つけました（最大 ${maxCombo} コンボ）${last?`\nさいごに生まれたのは「${last}」`:''}\n#ほしつなぎ`;
+  $('share').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(GAME_URL);
+  try{$('card').src=makeCard(P,done,hard);$('cardWrap').hidden=false}catch(e){$('cardWrap').hidden=true}
+  prepareImageShare(text);
+  setTimeout(()=>{$('over').hidden=false;stage.classList.add('ended');$('retry').focus({preventScroll:true})},1400);
+}
+
+function update(dt){
+  if(paused) return;
+  simT+=dt;
+  sparks.forEach(s=>{s.x+=s.vx*dt;s.y+=s.vy*dt;s.vx*=.97;s.vy*=.97;s.life-=dt}); sparks=sparks.filter(s=>s.life>0);
+  groups.forEach(gr=>{gr.glow=Math.max(0,gr.glow-dt*.5); if(gr.done) gr.t+=dt;});
+  fading.forEach(f=>f.t+=dt); fading=fading.filter(f=>f.t<1.7);
+  popTexts.forEach(p=>p.t+=dt); popTexts=popTexts.filter(p=>p.t<1.8);
+  stars.forEach(st=>{ if(st.missT!=null) st.missT+=dt; });
+  if(state==='dead'){deadT+=dt;return}
+
+  const playing=state==='play';
+  if(playing&&waiting){ // hover in place until the first press
+    me.y=H*.5+Math.sin(simT*2.4)*6*u; me.vy=0; me.x=camX+PX();
+    pushTail();
+    return;
+  }
+  const speed=playing?runSpeed():70*u;
+  camX+=speed*dt;
+
+  let target;
+  if(playing) target=holding?-250*u:250*u;
+  else { // title screen: drift toward the next star on its own
+    const nx=stars.find(s=>!s.got&&s.x>camX+PX()-4*u);
+    target=nx?clamp((nx.y-me.y)*2.4,-220*u,220*u):0;
+  }
+  me.vy+=(target-me.vy)*Math.min(1,dt*(playing?3.2:2));
+  me.y+=me.vy*dt;
+  const r=7*u;
+  if(me.y<r+8*u){me.y=r+8*u;me.vy=Math.max(0,me.vy)}
+  if(me.y>H-r-26*u){me.y=H-r-26*u;me.vy=Math.min(0,me.vy)}
+  me.x=camX+PX();
+  pushTail();
+
+  for(const st of stars){
+    if(!st.got && Math.hypot(st.x-me.x,st.y-me.y)<r+(playing?10:16)*u) collect(st,!playing);
+  }
+  if(playing){
+    playTime+=dt;
+    inv=Math.max(0,inv-dt); shield=Math.max(0,shield-dt);
+    if(mode!=='hard') light-=drainRate()*dt;
+    for(const st of stars){ if(!st.got&&!st.missed&&st.x<me.x-(r+12*u)){ st.missed=true; const c0=combo; combo=0; if(mode==='hard'){ st.missT=0; unravel(st,c0); updateHud(); dawn('miss'); return; } light-=missCost(); flashBar(); unravel(st,c0); } }
+    if(inv===0&&shield===0){
+      for(const c of clouds){
+        const cy=cloudY(c);
+        if(c.blobs.some(b=>Math.hypot(c.x+b.dx-me.x,cy+b.dy-me.y)<b.r*.6+r*.7)){   // forgiving touch: only the inner cloud counts
+          if(mode==='hard'){ seCloud(); burst(me.x,me.y,'#b7b3d9',14); combo=0; updateHud(); dawn('cloud'); return; } light-=40; inv=.9; combo=0; flashBar(); seCloud(); burst(me.x,me.y,'#b7b3d9',10); break;
+        }
+      }
+    }
+    updateHud();
+    if(light<=0){light=0;updateHud();dawn('light');return}
+  }
+  stars=stars.filter(s=>s.x>camX-40*u);
+  clouds=clouds.filter(c=>c.x>camX-200*u);
+  pumpGen(4);
+}
+
+/* ---------------- draw ---------------- */
+function drawSky(){
+  const sg=g.createLinearGradient(0,0,0,H);
+  sg.addColorStop(0,'#0b0d2a'); sg.addColorStop(.65,'#1a1840'); sg.addColorStop(1,'#2d1f52');
+  g.fillStyle=sg; g.fillRect(0,0,W,H);
+  g.save(); g.globalAlpha=.9; g.translate(-(camX*.08)%512,0);
+  for(let x=0;x<W+512;x+=512) for(let y=0;y<H;y+=512) g.drawImage(starfield,x,y);
+  g.restore();
+  if(state==='dead'){
+    const a=clamp(deadT/2.2,0,1);
+    const dg=g.createLinearGradient(0,H*.3,0,H);
+    dg.addColorStop(0,'rgba(255,170,150,0)'); dg.addColorStop(.7,`rgba(255,170,150,${.35*a})`); dg.addColorStop(1,`rgba(255,215,160,${.6*a})`);
+    g.fillStyle=dg; g.fillRect(0,0,W,H);
+  }
+}
+function hills(par,base,amp,col){
+  g.fillStyle=col; g.beginPath(); g.moveTo(0,H);
+  const off=camX*par;
+  for(let x=0;x<=W+20;x+=20){const wx=(x+off)/u;g.lineTo(x,H-base*u-(Math.sin(wx*.006)*amp+Math.sin(wx*.017+1)*amp*.4)*u)}
+  g.lineTo(W,H); g.closePath(); g.fill();
+}
+function drawClouds(){
+  for(const c of clouds){
+    const cx=c.x-camX, cy=cloudY(c);
+    if(cx<-200*u||cx>W+200*u) continue;
+    const fa=fogA(cx-40*u); if(fa<=0) continue;
+    g.globalAlpha=fa;
+    for(const b of c.blobs){
+      const gr=g.createRadialGradient(cx+b.dx,cy+b.dy,0,cx+b.dx,cy+b.dy,b.r);
+      gr.addColorStop(0,'rgba(150,140,198,.62)'); gr.addColorStop(.55,'rgba(122,112,172,.42)'); gr.addColorStop(1,'rgba(90,80,140,0)');
+      g.fillStyle=gr; g.beginPath(); g.arc(cx+b.dx,cy+b.dy,b.r,0,7); g.fill();
+    }
+    g.globalAlpha=1;
+  }
+}
+function starShape(x,y,R,col,glow){
+  g.save(); g.shadowColor=col; g.shadowBlur=glow;
+  g.fillStyle=col; g.beginPath();
+  for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2, rr=i%2?R*.38:R; g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}
+  g.closePath(); g.fill(); g.restore();
+}
+function drawChain(){
+  g.lineCap='round';
+  for(let i=1;i<chain.length;i++){
+    const a=chain[i-1], b=chain[i]; if(a.gi!==b.gi) continue;
+    const gr=groups[a.gi], ax=a.x-camX, bx=b.x-camX; if(bx<-40||ax>W+40||(gr&&gr.done)) continue;
+    g.strokeStyle=`rgba(169,216,255,${.45+(gr&&gr.done?.25+gr.glow*.3:0)})`;
+    g.lineWidth=(1.4+(gr&&gr.glow?gr.glow*1.6:0))*u;
+    g.beginPath(); g.moveTo(ax,a.y); g.lineTo(bx,b.y); g.stroke();
+  }
+  for(const p of chain){ if(groups[p.gi]&&groups[p.gi].done) continue; const x=p.x-camX; if(x<-20||x>W+20) continue; starShape(x,p.y,7*u,'#fff4d6',12*u)}
+  // an unfinished constellation that came loose: it flashes rose, its lines snap back, and its stars fall away
+  const ROSE='255,159,184', GREY='154,150,184';
+  for(const f of fading){
+    const t=f.t, flash=t<.4, a=clamp(1-(t-.4)/1.2,0,1), fall=t>.4?Math.pow(t-.4,2)*170*u:0;
+    const pts=f.pts.map((p,i)=>({x:p.x-camX,y:p.y+fall*(i%2?1:.75)}));
+    g.lineCap='round';
+    if(flash){
+      const blink=Math.floor(t*12)%2?.45:1;
+      g.strokeStyle=`rgba(${ROSE},${.95*blink})`; g.lineWidth=2.6*u;
+      g.beginPath(); pts.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)); g.stroke();
+    } else {
+      const r=clamp((t-.4)/.55,0,1);
+      g.strokeStyle=`rgba(${ROSE},${.8*a})`; g.lineWidth=1.8*u;
+      for(let i=1;i<pts.length;i++){
+        const p=pts[i-1], q=pts[i], mx=(p.x+q.x)/2, my=(p.y+q.y)/2;
+        g.beginPath(); g.moveTo(p.x,p.y); g.lineTo(p.x+(mx-p.x)*(1-r),p.y+(my-p.y)*(1-r));
+        g.moveTo(q.x,q.y); g.lineTo(q.x+(mx-q.x)*(1-r),q.y+(my-q.y)*(1-r)); g.stroke();
+      }
+    }
+    pts.forEach(p=>{
+      g.globalAlpha=flash?1:a;
+      starShape(p.x,p.y,(flash?7:5.5*(.5+.5*a))*u, flash?`rgb(${ROSE})`:`rgb(${GREY})`, flash?14*u:4*u);
+    });
+    g.globalAlpha=1;
+  }
+}
+const ease=x=>x<0?0:x>1?1:x*x*(3-2*x);
+function consPose(gr){
+  // 0–1.6s: shines where you drew it. 1.6–3s: rises and shrinks into the upper sky. After: stays there, drifting slowly.
+  const wx=gr.cx-camX;
+  if(gr.t>=1.6 && gr.ox===null) gr.ox=wx+camX*.25;
+  if(gr.ox===null) return {x:wx,y:gr.cy,s:1,k:0};
+  const bx=gr.ox-camX*.25, e=ease((gr.t-1.6)/1.4);
+  return {x:wx+(bx-wx)*e, y:gr.cy+(gr.oy-gr.cy)*e, s:1-.62*e, k:e};
+}
+function hexA(h,a){const n=parseInt(h.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`}
+function drawConstellations(){
+  g.lineCap='round'; g.textAlign='center';
+  for(const gr of groups){
+    if(!gr.done) continue;
+    const P=consPose(gr); if(P.x<-160*u||P.x>W+160*u) continue;
+    const pts=gr.rel.map(r=>({x:P.x+r.dx*P.s,y:P.y+r.dy*P.s}));
+    const a=(.95-.55*P.k)*(.85+.15*Math.sin(simT*1.3+gr.cx));
+    // a soft halo behind the figure while it is fresh
+    if(P.k<1){
+      const ring=clamp(gr.t/.9,0,1), R=(40+ring*90)*u;
+      g.strokeStyle=hexA(gr.hue,(1-ring)*.5*(1-P.k)); g.lineWidth=2*u;
+      g.beginPath(); g.arc(P.x,P.y,R,0,7); g.stroke();
+    }
+    g.save(); g.shadowColor=gr.hue; g.shadowBlur=(10+gr.glow*14)*u*P.s;
+    g.strokeStyle=hexA(gr.hue,a); g.lineWidth=Math.max(.8,(1.8+gr.glow*1.6)*u*P.s);
+    // the lines draw themselves in, star to star
+    const prog=clamp(gr.t/.8,0,1)*(pts.length-1);
+    g.beginPath(); g.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length;i++){
+      if(i-1>prog) break;
+      const f=clamp(prog-(i-1),0,1), q=pts[i-1], p=pts[i];
+      g.lineTo(q.x+(p.x-q.x)*f,q.y+(p.y-q.y)*f);
+    }
+    g.stroke(); g.restore();
+    pts.forEach(p=>starShape(p.x,p.y,Math.max(2.2*u,7.5*u*P.s),'#fff8e4',(8+6*(1-P.k))*u));
+    const top=Math.min(...pts.map(p=>p.y));
+    g.fillStyle=hexA(gr.hue,(.95-.6*P.k));
+    g.font=`600 ${Math.round((16-6*P.k)*u)}px "Klee One","Zen Maru Gothic",serif`;
+    g.fillText(gr.name,P.x,P.k<.5? Math.max(36*u,top-16*u) : P.y+Math.max(...gr.rel.map(r=>r.dy))*P.s+14*u);
+  }
+}
+function drawStars(){
+  for(const s of stars){
+    if(s.got) continue; const x=s.x-camX; if(x<-20||x>W+20) continue;
+    const fa=fogA(x); if(fa<=0) continue;
+    if(s.missT!=null){
+      const k=clamp(1-s.missT/1.1,0,1); if(k<=0) continue;
+      g.globalAlpha=k; starShape(x,s.y+s.missT*s.missT*90*u,5*u,'#8f8bb0',0); g.globalAlpha=1; continue;
+    }
+    const tw=.75+.25*Math.sin(simT*2.2+s.tw);
+    g.globalAlpha=fa; starShape(x,s.y,6*u*s.s*tw,'#ffe9b0',10*u); g.globalAlpha=1;
+  }
+}
+function pushTail(){
+  // keep about half a second of path, whatever the screen's refresh rate
+  tail.push({x:me.x,y:me.y,t:simT});
+  while(tail.length&&simT-tail[0].t>.5) tail.shift();
+  if(state==='play'&&!waiting&&Math.random()<.35)
+    sparks.push({x:me.x-6*u,y:me.y+(Math.random()-.5)*6*u,vx:-(10+Math.random()*20)*u,vy:(Math.random()-.3)*14*u,life:.5+Math.random()*.4,c:'#ffe7b0'});
+}
+// smooth the recorded points with a Catmull-Rom curve so the trail has no corners or beads
+function smoothPath(pts,sub){
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(pts.length-1,i+2)];
+    for(let s=0;s<sub;s++){
+      const t=s/sub, t2=t*t, t3=t2*t;
+      out.push({
+        x:.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+        y:.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)});
+    }
+  }
+  out.push(pts[pts.length-1]);
+  return out;
+}
+// the trail is one filled ribbon that tapers from the body to nothing
+function ribbon(pts,wMax,col0,col1){
+  const n=pts.length; if(n<3) return;
+  const L=[],R=[];
+  for(let i=0;i<n;i++){
+    const a=pts[Math.max(0,i-1)], b=pts[Math.min(n-1,i+1)];
+    let dx=b.x-a.x, dy=b.y-a.y; const d=Math.hypot(dx,dy)||1; dx/=d; dy/=d;
+    const k=i/(n-1), w=wMax*Math.pow(k,1.4);
+    L.push([pts[i].x-dy*w,pts[i].y+dx*w]); R.push([pts[i].x+dy*w,pts[i].y-dx*w]);
+  }
+  const gr=g.createLinearGradient(pts[0].x,pts[0].y,pts[n-1].x,pts[n-1].y);
+  gr.addColorStop(0,col0); gr.addColorStop(1,col1);
+  g.fillStyle=gr; g.beginPath(); g.moveTo(L[0][0],L[0][1]);
+  for(let i=1;i<n;i++) g.lineTo(L[i][0],L[i][1]);
+  for(let i=n-1;i>=0;i--) g.lineTo(R[i][0],R[i][1]);
+  g.closePath(); g.fill();
+}
+function drawMe(){
+  if(state==='dead') return;
+  const blink=inv>0&&Math.floor(simT*10)%2===0, a=blink?.35:1;
+  const x=me.x-camX, y=me.y;
+  if(tail.length>2){
+    const pts=smoothPath(tail.map(p=>({x:p.x-camX,y:p.y})).concat([{x,y}]),3);
+    g.save(); g.globalCompositeOperation='lighter';
+    ribbon(pts,13*u,'rgba(255,200,120,0)',`rgba(255,200,120,${.22*a})`);
+    ribbon(pts,6*u,'rgba(255,236,190,0)',`rgba(255,240,205,${.55*a})`);
+    ribbon(pts,2.2*u,'rgba(255,255,240,0)',`rgba(255,255,245,${.9*a})`);
+    g.restore();
+  }
+  // soft glow around the body
+  const gl=g.createRadialGradient(x,y,0,x,y,25*u);
+  gl.addColorStop(0,`rgba(255,240,200,${.55*a})`); gl.addColorStop(.4,`rgba(255,215,150,${.2*a})`); gl.addColorStop(1,'rgba(255,200,120,0)');
+  g.fillStyle=gl; g.beginPath(); g.arc(x,y,25*u,0,7); g.fill();
+
+  // a tiny fluffy fairy: a round puff of down with two small soft wings. No face.
+  const R=7*u, v=clamp(me.vy/(250*u),-1,1);   // drawn size only; the catch/collision radius stays 7u in update()
+  const tilt=v*.28;
+  // wings beat quickly while rising and drift slowly while gliding down
+  // wings stay calm: a slow breathing sway, one soft beat each time you press, and a gentle fold while gliding down
+  if(holding&&!wasHolding) pressT=simT; wasHolding=holding;
+  const since=simT-pressT, beat=since<.45?Math.sin(since/.45*Math.PI):0;
+  const sway=Math.sin(simT*2.2)*.03, fold=clamp(v,0,1)*.1;
+  const flap=sway+beat*.15-fold;
+  g.save(); g.translate(x,y); g.rotate(tilt); g.globalAlpha=a;
+  const wing=(sd,back)=>{
+    const R2=R*1.1; g.save();
+    // both wings grow from the upper back and sweep back-and-up, away from the direction of travel;
+    // the far wing sits a little higher and more upright, the near wing lower and swept further back
+    g.translate(back?-R*.12:-R*.32, back?-R*.6:-R*.42);
+    g.rotate((back?-.38:-.82)+flap*1.3);
+    g.scale(1,.95+beat*.05);
+    // pearly membrane: milky at the root, a faint lilac-to-aqua sheen toward the tip
+    const wg=g.createLinearGradient(0,0,R2*.2,-R2*1.8);
+    wg.addColorStop(0,`rgba(255,252,244,${back?.42:.72})`);
+    wg.addColorStop(.55,`rgba(226,214,255,${back?.2:.36})`);
+    wg.addColorStop(1,`rgba(196,236,255,${back?.12:.24})`);
+    const shape=()=>{ g.beginPath(); g.moveTo(0,0);
+      g.bezierCurveTo(-R2*.95,-R2*.45,-R2*.85,-R2*1.85,R2*.05,-R2*1.75);
+      g.bezierCurveTo(R2*.6,-R2*1.6,R2*.38,-R2*.55,0,0); };
+    shape(); g.fillStyle=wg; g.fill();
+    // two fine veins from the root
+    g.strokeStyle=`rgba(255,255,255,${back?.18:.38})`; g.lineWidth=.55*u; g.lineCap='round';
+    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-R2*.35,-R2*.9,-R2*.15,-R2*1.55);
+    g.moveTo(0,0); g.quadraticCurveTo(R2*.1,-R2*.8,R2*.25,-R2*1.35); g.stroke();
+    // a brighter rim
+    shape(); g.strokeStyle=`rgba(255,255,255,${back?.25:.55})`; g.lineWidth=.7*u; g.stroke();
+    g.restore();
+  };
+  wing(-1,true);             // far wing, fainter
+  // ---- body: a ball of warm down, lit from the upper left, with a little light glowing inside ----
+  const hsh=i=>{const t=Math.sin(i*127.1)*43758.5453; return t-Math.floor(t);};
+  g.shadowColor='rgba(255,226,170,.85)'; g.shadowBlur=10*u;
+  const core=g.createRadialGradient(-R*.35,-R*.4,R*.05,R*.1,R*.12,R*1.15);
+  core.addColorStop(0,'#fffef9'); core.addColorStop(.5,'#fff3de'); core.addColorStop(1,'#f3d3a2');
+  g.fillStyle=core; g.beginPath(); g.arc(0,0,R*.92,0,7); g.fill(); g.shadowBlur=0;
+  // soft inner tufts give the surface a cottony unevenness
+  for(let i=0;i<12;i++){
+    const an=i/12*Math.PI*2+hsh(i)*.5, d=R*(.45+.25*hsh(i+20)), rr=R*(.32+.12*hsh(i+40));
+    const px=Math.cos(an)*d, py=Math.sin(an)*d, lit=.5+.5*Math.cos(an+2.35);
+    const tg=g.createRadialGradient(px,py,0,px,py,rr);
+    tg.addColorStop(0,`rgba(255,253,245,${.25+.35*lit})`); tg.addColorStop(1,'rgba(255,240,215,0)');
+    g.fillStyle=tg; g.beginPath(); g.arc(px,py,rr,0,7); g.fill();
+  }
+  // fine fur along the edge, swept back a little by the flight and breathing gently
+  g.lineCap='round';
+  const sweep=.35+.15*Math.abs(v);
+  for(let i=0;i<64;i++){
+    const an=i/64*Math.PI*2+(hsh(i)-.5)*.12;
+    const len=R*(.2+.2*hsh(i+7))*(1+.07*Math.sin(simT*3.2+i));
+    const d0=R*(.72+.1*hsh(i+3));
+    const bx=Math.cos(an)*d0, by=Math.sin(an)*d0;
+    const ex=bx+Math.cos(an)*len-sweep*len*(.6+.4*Math.abs(Math.sin(an))), ey=by+Math.sin(an)*len;
+    const cxp=(bx+ex)/2-Math.sin(an)*len*.18, cyp=(by+ey)/2+Math.cos(an)*len*.18;
+    const lit=.5+.5*Math.cos(an+2.35);
+    g.strokeStyle=`rgba(255,${246-Math.round(20*(1-lit))},${226-Math.round(40*(1-lit))},${.22+.33*lit})`;
+    g.lineWidth=(.4+.35*hsh(i+11))*u;
+    g.beginPath(); g.moveTo(bx,by); g.quadraticCurveTo(cxp,cyp,ex,ey); g.stroke();
+  }
+  // the little light inside
+  g.save(); g.globalCompositeOperation='lighter';
+  const inner=g.createRadialGradient(R*.08,R*.1,0,R*.08,R*.1,R*.75);
+  inner.addColorStop(0,`rgba(255,214,140,${.32+.08*Math.sin(simT*2.6)})`); inner.addColorStop(1,'rgba(255,200,120,0)');
+  g.fillStyle=inner; g.beginPath(); g.arc(R*.08,R*.1,R*.75,0,7); g.fill(); g.restore();
+  // a soft highlight where the light catches the down
+  const hl=g.createRadialGradient(-R*.32,-R*.36,0,-R*.32,-R*.36,R*.38);
+  hl.addColorStop(0,'rgba(255,255,255,.75)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=hl; g.beginPath(); g.arc(-R*.32,-R*.36,R*.38,0,7); g.fill();
+  wing(1,false);             // near wing, in front
+  g.restore();
+}
+function draw(){
+  drawSky();
+  drawConstellations();
+  hills(.15,70,26,'#1a1538');
+  drawChain(); drawStars(); drawClouds();
+  hills(.4,30,14,'#0f0c24');
+  drawMe();
+  g.textAlign='center';
+  popTexts.forEach(p=>{
+    const k=p.t<.15?p.t/.15:clamp(1-(p.t-.9)/.9,0,1);
+    g.globalAlpha=k; g.fillStyle=p.col; g.font=`700 ${Math.round(16*u)}px "Quicksand","Klee One","Zen Maru Gothic",sans-serif`;
+    g.shadowColor='rgba(0,0,0,.6)'; g.shadowBlur=6*u;
+    g.fillText(p.text,p.x-camX,Math.max(30*u,p.y-p.t*22*u)); g.shadowBlur=0;
+  });
+  g.globalAlpha=1;
+  sparks.forEach(s=>{g.globalAlpha=clamp(s.life,0,1);g.fillStyle=s.c;g.beginPath();g.arc(s.x-camX,s.y,1.6*u,0,7);g.fill()});
+  g.globalAlpha=1;
+}
+
+/* result image: the constellations you drew tonight */
+// Share the result image together with the text through the phone's share sheet (pick X there).
+// X's own post link can't carry an image, so this only appears where the browser can share files.
+let lastCard=null, shareData=null;
+function prepareImageShare(text){
+  shareData=null; $('shareNote').hidden=true;
+  if(!lastCard||!navigator.share||!navigator.canShare||!window.File) return;
+  lastCard.toBlob(blob=>{
+    if(!blob) return;
+    const file=new File([blob],'hoshitsunagi.png',{type:'image/png'});
+    const data={files:[file], text:text+'\n'+GAME_URL};
+    try{ if(navigator.canShare(data)) shareData=data; }catch(e){}
+  },'image/png');
+}
+function makeCard(n,done,hard){
+  const c=document.createElement('canvas'); c.width=1200; c.height=630; const x=c.getContext('2d');
+  const sg=x.createLinearGradient(0,0,0,630); sg.addColorStop(0,'#0b0d2a'); sg.addColorStop(.7,'#1a1840'); sg.addColorStop(1,'#2d1f52');
+  x.fillStyle=sg; x.fillRect(0,0,1200,630);
+  x.drawImage(starfield,0,0); x.drawImage(starfield,512,0); x.drawImage(starfield,1024,0); x.drawImage(starfield,0,512); x.drawImage(starfield,512,512);
+  // each constellation of the night in its own little patch of sky (the last six)
+  const show=done.slice(-6), cols=show.length>4?3:Math.max(1,Math.min(2,show.length)), rows=Math.ceil(show.length/cols)||1;
+  const bx=560,by=70,bw=580,bh=480, cw=bw/cols, chh=bh/rows;
+  show.forEach((gr,i)=>{
+    const cx=bx+cw*(i%cols)+cw/2, cy=by+chh*Math.floor(i/cols)+chh/2-10;
+    const xs=gr.rel.map(r=>r.dx), ys=gr.rel.map(r=>r.dy);
+    const w=Math.max(...xs)-Math.min(...xs)||1, h=Math.max(...ys)-Math.min(...ys)||1;
+    const sc=Math.min((cw-40)/w,(chh-60)/h,2.2);
+    const mx=(Math.max(...xs)+Math.min(...xs))/2, my=(Math.max(...ys)+Math.min(...ys))/2;
+    const P=r=>[cx+(r.dx-mx)*sc, cy+(r.dy-my)*sc];
+    x.lineCap='round'; x.lineWidth=3; x.strokeStyle=gr.hue; x.shadowColor=gr.hue; x.shadowBlur=10;
+    x.beginPath(); gr.rel.forEach((r,k)=>{const [px,py]=P(r); k?x.lineTo(px,py):x.moveTo(px,py)}); x.stroke();
+    x.fillStyle='#fff4d6'; x.shadowColor='#fff4d6'; x.shadowBlur=14;
+    gr.rel.forEach(r=>{const [px,py]=P(r);x.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4-Math.PI/2,rr=k%2?4:11;x.lineTo(px+Math.cos(a)*rr,py+Math.sin(a)*rr)}x.closePath();x.fill()});
+    x.shadowBlur=0; x.fillStyle=gr.hue; x.textAlign='center'; x.font=`600 ${cols>2?20:24}px "Klee One",serif`;
+    x.fillText(gr.name,cx,cy+(Math.max(...ys)-my)*sc+34); x.textAlign='left';
+  });
+  x.font='600 60px "Klee One","Zen Maru Gothic",serif';
+  x.save(); x.shadowColor='rgba(255,217,138,.6)'; x.shadowBlur=18; x.fillStyle='#ffd98a'; x.fillText('ほし',80,130); x.restore();
+  x.fillStyle='#a9d8ff'; x.fillText('つなぎ',80+x.measureText('ほし').width,130);
+  x.fillStyle='#a3a7c9'; x.font='500 28px "Zen Maru Gothic",sans-serif'; x.fillText(hard?'ハード・連続でつないだ星':'今夜のスコア',84,230);
+  x.fillStyle='#fff4d6'; x.font=`700 ${String(n).length>6?100:120}px "Quicksand","Klee One",sans-serif`; x.fillText(String(n),76,370);
+  const w=x.measureText(String(n)).width; x.font='600 44px "Klee One",serif'; x.fillText(hard?'こ':'点',90+w,370);
+  if(!done.length){x.fillStyle='#a3a7c9';x.font='600 30px "Klee One",serif';x.fillText('星座はこれから',84,500)}
+  x.fillStyle='#a3a7c9'; x.font='500 26px "Zen Maru Gothic",sans-serif'; x.fillText(hard?`ハードモード ・ 星座 ${done.length}`:`星 ${score} こ ・ 最大 ${maxCombo} コンボ ・ 星座 ${done.length}`,84,430);
+  lastCard=c;
+  return c.toDataURL('image/png');
+}
+
+let last=performance.now();
+function loop(now){const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop)}
+
+/* input */
+['pointerdown','touchend'].forEach(t=>document.addEventListener(t,()=>{ if(ac&&ac.state!=='running'&&!document.hidden) ac.resume(); },{passive:true}));
+stage.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.right,.overlay,.zkicon')) return;
+  if(!panel.hidden){panel.hidden=true;gear.setAttribute('aria-expanded','false')}
+  if(state==='play'){holding=true;begin();e.preventDefault()}
+});
+window.addEventListener('pointerup',()=>holding=false);
+window.addEventListener('pointercancel',()=>holding=false);
+window.addEventListener('blur',()=>{ holding=false; pauseGame(); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ pauseGame(); if(ac&&ac.state==='running') ac.suspend(); }
+  else if(ac&&!paused) ac.resume();
+});
+// iOS shows a magnifier when a finger is held still; stopping the touch's default action on the play area prevents it.
+// Buttons, sliders, the result screen and the result image keep their normal touch behaviour.
+const isUI=t=>t.closest&&t.closest('.right,.overlay,button,input,a,figure');
+stage.addEventListener('touchstart',e=>{ if(!isUI(e.target)) e.preventDefault(); },{passive:false});
+stage.addEventListener('touchmove',e=>{ if(!isUI(e.target)) e.preventDefault(); },{passive:false});
+document.addEventListener('selectstart',e=>{ if(!(e.target.closest&&e.target.closest('input'))) e.preventDefault(); });
+stage.addEventListener('contextmenu',e=>{if(!e.target.closest('figure'))e.preventDefault()});
+window.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,textarea,select')) return;
+  if(paused){ if(e.code==='Space'||e.code==='Enter'){ e.preventDefault(); resumeGame(); } return; }
+  if((e.code==='Space'||e.code==='Enter')&&e.target.closest&&e.target.closest('button,a')) return;
+  if(e.code==='Escape'&&!$('zukan').hidden){ closeZukan(); return; }
+  if(!$('zukan').hidden) return;
+  if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();
+    if(state==='play'){ holding=true; begin(); }
+    else if(!e.repeat&&(state==='title'||(state==='dead'&&!$('over').hidden))) start();
+  }
+});
+window.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowUp')holding=false});
+$('start').addEventListener('click',()=>start('normal'));
+$('startHard').addEventListener('click',()=>start('hard'));
+$('retry').addEventListener('click',()=>start());
+$('toTitle').addEventListener('click',()=>{
+  state='title'; holding=false; reset();
+  $('over').hidden=true; $('title').hidden=false; $('hint').style.opacity=0;
+  stage.classList.remove('ended','hard'); stage.classList.add('intro');
+  $('startHard').focus({preventScroll:true}); $('start').focus({preventScroll:true});
+});
+$('zkIcon').addEventListener('click',openZukan);
+$('zkClose').addEventListener('click',closeZukan);
+$('resumeBtn').addEventListener('click',resumeGame);
+$('shareImg').addEventListener('click',()=>{
+  // must run straight from the tap: the file was prepared when the result screen opened
+  // where the share sheet can't take files (some browsers, in-app previews), explain how to attach the image by hand
+  const fallback=()=>{ $('shareNote').hidden=false; $('cardWrap').scrollIntoView({block:'center',behavior:'smooth'}); };
+  if(!shareData){ fallback(); return; }
+  navigator.share(shareData).catch(err=>{ if(!err||err.name!=='AbortError') fallback(); });
+});
+$('pauseTitle').addEventListener('click',()=>{ paused=false; $('pause').hidden=true; $('toTitle').click(); });
+window.addEventListener('resize',()=>{resize(); if(state==='title') reset();});
+
+resize(); reset(); requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
