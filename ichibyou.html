@@ -31,6 +31,9 @@
   --ok:#7fae73;
   --ng:#d9706a;
   --gold:#e3c26b;
+  --btn1:#e8877f;      /* メインのボタン：くすみコーラル */
+  --btn2:#fbe9b7;      /* サブのボタン：たまご色 */
+  --btn3:#cfe3ef;      /* 共有まわり：みずいろ */
   --pop:"Mochiy Pop One","Zen Maru Gothic",sans-serif;
   --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
   --box:clamp(220px,min(calc(100vw - 32px),calc(100svh - 330px)),420px);
@@ -44,13 +47,28 @@ button{font-family:inherit;color:inherit}
 .wrap{max-width:460px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));box-sizing:border-box;min-height:100svh;display:flex;flex-direction:column}
 .screen{display:flex;flex-direction:column;align-items:center;flex:1}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:999px;cursor:pointer;
-  font-family:var(--pop);font-size:1.05rem;padding:14px 22px;min-height:52px;box-sizing:border-box;width:100%;
-  background:var(--ink);color:var(--card);box-shadow:0 4px 0 #3e332d;transition:transform .08s,box-shadow .08s;text-decoration:none}
-.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #3e332d}
-.btn.light{background:var(--card);color:var(--ink);border:2px solid var(--ink);box-shadow:0 4px 0 var(--ink)}
-.btn.light:active{box-shadow:0 1px 0 var(--ink)}
-.btn small{font-family:var(--body);font-size:.78rem;font-weight:700;opacity:.8}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;border:3px solid var(--ink);border-radius:20px;cursor:pointer;
+  font-family:var(--pop);font-size:1.05rem;padding:12px 20px;min-height:56px;box-sizing:border-box;width:100%;
+  background:var(--btn1);color:#fff;text-shadow:0 2px 0 rgba(91,77,69,.35);box-shadow:4px 4px 0 var(--ink);
+  transition:transform .08s,box-shadow .08s;text-decoration:none}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn.light{background:var(--btn2);color:var(--ink);text-shadow:none}
+.btn.sky{background:var(--btn3);color:var(--ink);text-shadow:none}
+.btn.plain{background:var(--card);color:var(--ink);text-shadow:none;font-size:.95rem;min-height:48px}
+.btn .bi{width:26px;height:26px;flex:none}
+.btn small{font-family:var(--body);font-size:.78rem;font-weight:700;background:rgba(255,255,255,.35);border-radius:999px;padding:2px 9px;text-shadow:none}
+.btn.light small,.btn.sky small{background:rgba(255,255,255,.7)}
+.btn small:empty{display:none}
+/* つぎへ：答えたら画面の下に出る大きなボタン（スクロールしなくても見える） */
+.nextbar{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;justify-content:center;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:linear-gradient(rgba(247,242,232,0),var(--bg) 35%);animation:barin .25s ease-out}
+.nextbar .btn{max-width:428px;min-height:62px;font-size:1.2rem;animation:nudge 1.6s ease-in-out .6s infinite}
+.nextbar .btn .arw{width:26px;height:26px;flex:none}
+@keyframes barin{from{transform:translateY(100%)}}
+@keyframes nudge{0%,100%{transform:none}50%{transform:translateY(-3px)}}
+#play.has-next{padding-bottom:96px}
 .btn:focus-visible,.choice:focus-visible,.iconbtn:focus-visible,.mini:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .iconbtn{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:.8rem;cursor:pointer;font-weight:700}
 
@@ -87,14 +105,21 @@ button{font-family:inherit;color:inherit}
 
 .box{position:relative;width:var(--box);height:var(--box);border-radius:22px;overflow:hidden;background:var(--card);box-shadow:0 0 0 3px var(--ink);flex:none}
 .box>svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--ink);color:var(--card);text-align:center;z-index:3}
+.cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:var(--ink);color:var(--card);text-align:center;z-index:3}
 .cover .big{font-family:var(--pop);font-size:clamp(3.4rem,22vw,6rem);line-height:1}
 .cover .count{animation:cpop .42s ease-out}
 @keyframes cpop{0%{transform:scale(1.6);opacity:0}40%{opacity:1}100%{transform:scale(1)}}
 .cover .q{font-family:var(--pop);font-size:clamp(4rem,26vw,7rem);line-height:1;opacity:.25}
 .cover .hint{font-size:.85rem;opacity:.8;line-height:1.7}
-.seeBtn{font-family:var(--pop);font-size:1.25rem;background:var(--card);color:var(--ink);border:none;border-radius:999px;padding:16px 30px;cursor:pointer;box-shadow:0 4px 0 #3e332d}
-.seeBtn:active{transform:translateY(3px);box-shadow:0 1px 0 #3e332d}
+/* 見るボタン：カメラのシャッターボタン */
+.seeBtn{width:132px;height:132px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-family:var(--pop);font-size:1.2rem;color:#fff;text-shadow:0 2px 0 rgba(91,77,69,.35);cursor:pointer;
+  background:var(--btn1);border:4px solid var(--card);box-shadow:0 0 0 6px var(--btn1),0 0 0 9px var(--card),0 6px 0 9px rgba(0,0,0,.25);
+  transition:transform .08s}
+.seeBtn svg{width:46px;height:46px}
+.seeBtn:hover{transform:scale(1.04)}
+.seeBtn:active{transform:scale(.94)}
+.seeBtn:focus-visible{outline:3px solid var(--gold);outline-offset:12px}
 .shutter{position:absolute;left:0;right:0;height:50%;background:var(--ink);z-index:4;transition:transform .12s ease-in}
 .shutter.t{top:0;transform:translateY(-101%)}
 .shutter.b{bottom:0;transform:translateY(101%)}
@@ -109,8 +134,9 @@ button{font-family:inherit;color:inherit}
 .prompt.wait{font-family:var(--body);font-size:.9rem;color:var(--sub);font-weight:700}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
 .choice{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;min-height:60px;padding:8px 10px;box-sizing:border-box;
-  background:var(--card);border:2px solid var(--ink);border-radius:16px;box-shadow:0 3px 0 var(--ink);cursor:pointer;font-weight:700;font-size:1rem;transition:transform .08s,box-shadow .08s}
-.choice:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+  background:var(--card);border:3px solid var(--ink);border-radius:18px;box-shadow:3px 3px 0 var(--ink);cursor:pointer;font-weight:700;font-size:1rem;transition:transform .08s,box-shadow .08s}
+.choice:hover:not([disabled]){background:#fff7e0}
+.choice:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .choice[disabled]{cursor:default}
 .choice .k{position:absolute;top:4px;left:8px;font-size:.62rem;color:var(--sub);font-family:var(--body)}
 .choice .num{font-family:var(--pop);font-size:1.6rem;line-height:1}
@@ -120,8 +146,8 @@ button{font-family:inherit;color:inherit}
 .choice .quad{width:34px;height:34px;flex:none;display:grid;grid-template-columns:1fr 1fr;gap:2px}
 .choice .quad i{border-radius:4px;background:var(--line)}
 .choice .quad i.on{background:var(--ink)}
-.choice.right{background:#e3f0dc;border-color:var(--ok);box-shadow:0 3px 0 var(--ok)}
-.choice.wrong{background:#f6dedb;border-color:var(--ng);box-shadow:0 3px 0 var(--ng)}
+.choice.right{background:#e3f0dc;border-color:var(--ok);box-shadow:3px 3px 0 var(--ok)}
+.choice.wrong{background:#f6dedb;border-color:var(--ng);box-shadow:3px 3px 0 var(--ng)}
 .choice.dim{opacity:.45}
 .choice.right::after,.choice.wrong::after{position:absolute;right:8px;top:4px;font-family:var(--pop);font-size:.95rem}
 .choice.right::after{content:"○";color:var(--ok)}
@@ -190,8 +216,8 @@ button{font-family:inherit;color:inherit}
   </div>
   <p class="lead">絵が見えるのは、たった1秒。<br>消えたあとに、質問がきます。</p>
   <div class="menu">
-    <button class="btn" id="dailyBtn" type="button">今日の5問 <small id="dailyNo"></small></button>
-    <button class="btn light" id="endlessBtn" type="button">れんぞくチャレンジ <small id="bestTxt"></small></button>
+    <button class="btn" id="dailyBtn" type="button"><svg class="bi" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16c3.5-6 8-9 13-9s9.5 3 13 9c-3.5 6-8 9-13 9S6.5 22 3 16z" fill="#fffdf8" stroke="#5b4d45" stroke-width="2.4" stroke-linejoin="round"/><circle cx="16" cy="16" r="5.2" fill="#5b4d45"/><circle cx="17.8" cy="14.2" r="1.6" fill="#fffdf8"/></svg>今日の5問 <small id="dailyNo"></small></button>
+    <button class="btn light" id="endlessBtn" type="button"><svg class="bi" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c1 5 7 7.5 7 15a7 7 0 0 1-14 0c0-4 2-6 3.5-7.5.3 2.4 1.3 3.8 2.8 4.3C14.6 11 14 7 16 3z" fill="#e8877f" stroke="#5b4d45" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 17c1.6 1.6 3 3 3 5a3 3 0 0 1-6 0c0-2 1.4-3.4 3-5z" fill="#fbe9b7"/></svg>れんぞくチャレンジ <small id="bestTxt"></small></button>
   </div>
   <div class="meta" id="meta"></div>
   <p class="rules">
@@ -224,7 +250,7 @@ button{font-family:inherit;color:inherit}
     <div class="under"><span id="underL"></span><span class="timer" id="timer"></span></div>
     <p class="verdict" id="verdict" hidden></p>
     <p class="notice" id="notice" hidden></p>
-    <button class="btn" id="nextBtn" type="button" hidden>つぎへ</button>
+    <div class="nextbar" id="nextBar" hidden><button class="btn" id="nextBtn" type="button"><span id="nextLabel">つぎの問題へ</span><svg class="arw" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#fffdf8"/><path d="M13 9.5l7 6.5-7 6.5" fill="none" stroke="#e8877f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   </div>
 </section>
 
@@ -244,11 +270,11 @@ button{font-family:inherit;color:inherit}
   <div class="minis" id="minis"></div>
   <p class="minis-note" id="minisNote">タップすると、その問題の絵をもう一度見られます</p>
   <div class="row">
-    <a class="btn" id="xBtn" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
-    <button class="btn light" id="imgBtn" type="button">画像でシェア</button>
+    <a class="btn" style="background:var(--ink)" id="xBtn" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    <button class="btn sky" id="imgBtn" type="button">画像でシェア</button>
   </div>
   <button class="btn light" id="againBtn" type="button">れんぞくチャレンジ</button>
-  <button class="btn light" id="homeBtn" type="button">タイトルへ</button>
+  <button class="btn plain" id="homeBtn" type="button">タイトルへ</button>
   <p class="next" id="nextDaily"></p>
 </section>
 
@@ -259,7 +285,7 @@ button{font-family:inherit;color:inherit}
     <h2 id="rvTitle"></h2>
     <div class="bigscene" id="rvScene"></div>
     <p id="rvText"></p>
-    <button class="btn light" id="rvClose" type="button">とじる</button>
+    <button class="btn plain" id="rvClose" type="button">とじる</button>
   </div>
 </div>
 
@@ -270,9 +296,9 @@ button{font-family:inherit;color:inherit}
     <p>スマホは画像を長押しでも保存できます</p>
     <div class="row">
       <button class="btn" id="shareGo" type="button">シェア・保存</button>
-      <button class="btn light" id="copyTxt" type="button">文をコピー</button>
+      <button class="btn sky" id="copyTxt" type="button">文をコピー</button>
     </div>
-    <button class="btn light" id="shareClose" type="button">とじる</button>
+    <button class="btn plain" id="shareClose" type="button">とじる</button>
   </div>
 </div>
 
@@ -598,7 +624,7 @@ function renderTop(){
   }
 }
 function clearAsk(){
-  $('choices').innerHTML=''; $('verdict').hidden=true; $('nextBtn').hidden=true; $('timer').textContent=''; $('underL').textContent='';
+  $('choices').innerHTML=''; $('verdict').hidden=true; $('nextBar').hidden=true; $('play').classList.remove('has-next'); $('timer').textContent=''; $('underL').textContent='';
   $('prompt').className='prompt wait';
 }
 function ready(notice){
@@ -607,7 +633,7 @@ function ready(notice){
   $('box').classList.remove('shut'); $('sceneHost').innerHTML=''; $('flashbar').hidden=true;
   $('notice').hidden=!notice; $('notice').textContent=notice||'';
   $('cover').hidden=false;
-  $('cover').innerHTML=`<button class="seeBtn" id="seeBtn" type="button">見る</button><span class="hint">見えるのは1秒だけ。<br>なにを聞かれるかは、見たあとに出ます</span>`;
+  $('cover').innerHTML=`<button class="seeBtn" id="seeBtn" type="button"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16c3.5-6 8-9 13-9s9.5 3 13 9c-3.5 6-8 9-13 9S6.5 22 3 16z" fill="#fffdf8"/><circle cx="16" cy="16" r="5.2" fill="#5b4d45"/><circle cx="17.8" cy="14.2" r="1.6" fill="#fffdf8"/></svg>見る</button><span class="hint">見えるのは1秒だけ。<br>なにを聞かれるかは、見たあとに出ます</span>`;
   $('seeBtn').onclick=flash;
   $('prompt').textContent='じゅんびができたら「見る」';
   try{$('seeBtn').focus({preventScroll:true})}catch(e){}
@@ -686,8 +712,8 @@ function answer(j){
                 :`ざんねん… こたえは「${ansLabel}」<small>${q.absent?KINDS[q.absent].name+'は どこにも いませんでした':'点線で かこんだところを 見てね'}</small>`;
   renderTop();
   const last=G.mode==='daily'?G.i>=4:!ok;
-  $('nextBtn').textContent=last?'結果を見る':'つぎへ';
-  $('nextBtn').hidden=false;
+  $('nextLabel').textContent=last?'結果を見る':'つぎの問題へ';
+  $('nextBar').hidden=false; $('play').classList.add('has-next');
   try{$('nextBtn').focus({preventScroll:true})}catch(e){}
 }
 function next(){
@@ -829,6 +855,7 @@ async function copyText(){
 $('dailyBtn').onclick=()=>{ac();startDaily()};
 $('endlessBtn').onclick=()=>{ac();startEndless()};
 $('nextBtn').onclick=next;
+$('box').addEventListener('click',()=>{if(G.phase==='reveal')next()});
 $('quitBtn').onclick=quit;
 $('againBtn').onclick=startEndless;
 $('homeBtn').onclick=()=>{refreshTitle();show('title')};
