@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f7f2e8">
-<title>1秒だけ見ていい</title>
+<title>1秒みた？</title>
 <meta name="description" content="絵が見えるのは、たった1秒。消えたあとに「何こあった？」「何いろだった？」と聞かれる記憶ゲーム。毎日5問、結果は「あなたの目は〇〇レベル」と診断されます。">
 <meta property="og:type" content="website">
-<meta property="og:title" content="1秒だけ見ていい">
+<meta property="og:title" content="1秒みた？">
 <meta property="og:description" content="見えるのは1秒だけ。あなたの目は何レベル？毎日5問の記憶ゲーム。">
 <meta property="og:url" content="https://runococco.github.io/picoruno./ichibyou.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -208,7 +208,7 @@ button{font-family:inherit;color:inherit}
 
 <!-- ===== タイトル ===== -->
 <section class="screen" id="title">
-  <h1 class="logo"><span class="one">1</span>秒だけ<br>見ていい</h1>
+  <h1 class="logo"><span class="one">1</span>秒<br>みた？</h1>
   <div class="peek" aria-hidden="true">
     <svg id="peekArt" viewBox="0 0 360 240"></svg>
     <div class="lid top"></div><div class="lid bot"></div>
@@ -265,7 +265,7 @@ button{font-family:inherit;color:inherit}
     <p class="cmt" id="rCmt"></p>
     <div class="grid" id="rGrid"></div>
     <p class="score" id="rScore"></p>
-    <p class="site">#1秒だけ見ていい ・ picoruno.</p>
+    <p class="site">#1秒みた ・ picoruno.</p>
   </div>
   <div class="minis" id="minis"></div>
   <p class="minis-note" id="minisNote">タップすると、その問題の絵をもう一度見られます</p>
@@ -772,8 +772,8 @@ function showResult(){
   // シェア文
   const grid=daily?[0,1,2,3,4].map(j=>ans[j]&&ans[j].ok?'🟩':'🟥').join(''):'';
   const text=daily
-    ?`1秒だけ見ていい #${dayNo(G.date)}\n${grid} ${nOk}/5（${pts}点）\nわたしの目は「${T.name}」でした👁\n#1秒だけ見ていい`
-    :`1秒だけ見ていい れんぞくチャレンジ\n${nOk}問れんぞく正解！わたしの目は「${T.name}」👁\n#1秒だけ見ていい`;
+    ?`1秒みた？ #${dayNo(G.date)}\n${grid} ${nOk}/5（${pts}点）\nわたしの目は「${T.name}」でした👁\n#1秒みた`
+    :`1秒みた？ れんぞくチャレンジ\n${nOk}問れんぞく正解！わたしの目は「${T.name}」👁\n#1秒みた`;
   lastShare={text,title:T.name,daily,nOk,pts,k,grid:daily?[0,1,2,3,4].map(j=>!!(ans[j]&&ans[j].ok)):null,head:$('rMode').textContent,date:daily?G.date:''};
   $('xBtn').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(GAME_URL);
   $('againBtn').textContent=daily?'れんぞくチャレンジ':'もういちど';
@@ -808,7 +808,7 @@ async function makeShareImage(){
   c.fillStyle='#F7F2E8'; c.fillRect(0,0,W,H);
   c.fillStyle='#FFFDF8'; rr(c,60,60,W-120,H-120,56); c.fill(); c.lineWidth=8; c.strokeStyle='#5B4D45'; c.stroke();
   c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#8E8077';
-  c.font='40px '+POP; c.fillText('1秒だけ見ていい',W/2,150);
+  c.font='40px '+POP; c.fillText('1秒みた？',W/2,150);
   c.font=BODY; c.fillText(S.head+(S.date?'　'+S.date.replace(/-/g,'.'):''),W/2,208);
   const im=await svgImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 34 34" width="320" height="320">${tierIconSvg(TIERS[S.k].id)}</svg>`);
   if(im) c.drawImage(im,W/2-150,245,300,300);
@@ -824,7 +824,7 @@ async function makeShareImage(){
     c.fillStyle='#5B4D45'; c.font='64px '+POP; c.fillText(`${S.nOk} 問れんぞく せいかい`,W/2,860);
     c.fillStyle='#8E8077'; c.font=BODY; c.fillText('あなたは何問いける？',W/2,935);
   }
-  c.fillStyle='#8E8077'; c.font='600 26px "Zen Maru Gothic",sans-serif'; c.fillText('#1秒だけ見ていい ・ runococco.github.io/picoruno.',W/2,992);
+  c.fillStyle='#8E8077'; c.font='600 26px "Zen Maru Gothic",sans-serif'; c.fillText('#1秒みた ・ runococco.github.io/picoruno.',W/2,992);
   return cv;
 }
 let shareBlob=null;
