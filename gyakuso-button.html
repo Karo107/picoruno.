@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d1f26">
+<title>逆走ボタン</title>
+<meta name="description" content="おした方向と逆に進む。しかも10秒ごとにルールが変わる。60秒で脳がバグる、脳バグ率診断つきのミニゲーム。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="逆走ボタン">
+<meta property="og:description" content="おした方向と逆に進む。10秒ごとにルールが変わる、60秒の脳バグゲーム。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./gyakuso-button.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23e8382f'/%3E%3Crect x='6' y='13' width='20' height='6' rx='2' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+/* Layout: a road-sign look. HUD on top, a 7x7 asphalt field in the middle (canvas), a big cross-shaped pad at the bottom.
+   Overlays (title, result, pause) sit above everything. Single deliberate dark look. */
+:root{
+  --asphalt:#1d1f26;
+  --asphalt2:#2a2d36;
+  --ink:#f6f3ea;
+  --muted:#a9abb5;
+  --sign:#e8382f;
+  --sign-dk:#b8231c;
+  --yellow:#ffd23f;
+  --mint:#5fe0b7;
+  --display:"Dela Gothic One","Zen Maru Gothic","Hiragino Sans",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:var(--asphalt);color:var(--ink);font-family:var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#app{position:relative;height:100%;height:100dvh;display:flex;flex-direction:column;max-width:560px;margin:0 auto;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);box-sizing:border-box}
+button{font-family:inherit;color:inherit}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px 14px 6px}
+.score{font-family:var(--display);font-size:1.6rem;line-height:1;font-variant-numeric:tabular-nums;min-width:3em}
+.score small{font-size:.8rem;color:var(--muted);margin-left:3px}
+.score.pop{animation:pop .35s ease-out}
+@keyframes pop{30%{transform:scale(1.18)}}
+.rule{justify-self:center;text-align:center;min-width:0}
+.rule small{display:block;font-size:.66rem;color:var(--muted);letter-spacing:.12em}
+.rule b{display:inline-block;font-family:var(--display);font-weight:400;font-size:1.05rem;background:var(--yellow);color:#1d1f26;
+  padding:4px 10px;border-radius:6px;white-space:nowrap;margin-top:2px;font-size:min(1.05rem,4.2vw)}
+.rule b.flash{animation:flash .5s ease-out}
+@keyframes flash{0%{transform:scale(1.15);background:#fff}100%{transform:none}}
+.right{display:flex;align-items:center;gap:4px}
+.time{font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums;min-width:1.6em;text-align:right}
+.time.low{color:var(--sign)}
+.icon{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);
+  font-size:1rem;cursor:pointer;display:grid;place-items:center;padding:0}
+.icon:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.segbar{height:6px;margin:4px 16px 0;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+.segbar i{display:block;height:100%;width:0;border-radius:6px;
+  background:repeating-linear-gradient(-45deg,var(--yellow) 0 8px,#1d1f26 8px 14px)}
+
+/* field */
+.field{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center;padding:10px 12px}
+canvas{display:block;touch-action:none}
+.banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;
+  background:var(--sign);border:4px solid #fff;border-radius:18px;padding:12px 22px 14px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  width:max-content;max-width:calc(100% - 48px);box-sizing:border-box}
+.banner small{display:block;font-size:.75rem;letter-spacing:.2em;font-weight:700}
+.banner b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;line-height:1.25;margin:2px 0 4px}
+.banner span{display:block;font-size:.85rem;font-weight:700}
+.banner.show{animation:bannerIn 1.5s ease-out forwards}
+.banner.quick{animation:bannerIn .9s ease-out forwards}
+@keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-8deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08) rotate(2deg)}
+  20%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+.warn{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:1rem;color:#1d1f26;
+  background:var(--yellow);padding:4px 14px;border-radius:999px;pointer-events:none;white-space:nowrap;animation:blink .5s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.count{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-family:var(--display);font-size:5.5rem;
+  color:#fff;text-shadow:0 6px 0 var(--sign-dk)}
+.count.go{animation:pop .4s ease-out}
+
+/* pad */
+.pad{flex:none;display:grid;grid-template-columns:repeat(3,min(23vw,96px));grid-template-rows:repeat(3,min(17vw,70px));gap:6px;
+  justify-content:center;padding:6px 0 16px;touch-action:none}
+.pad button{border:none;border-radius:16px;background:#3a3e4a;box-shadow:0 5px 0 #15171c;font-size:1.8rem;cursor:pointer;
+  touch-action:none;display:grid;place-items:center;transition:transform .05s}
+.pad button.down,.pad button:active{transform:translateY(4px);box-shadow:0 1px 0 #15171c;background:#4a4f5d}
+.pad button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.pad [data-d="0"]{grid-area:1/2}.pad [data-d="3"]{grid-area:2/1}.pad [data-d="1"]{grid-area:2/3}.pad [data-d="2"]{grid-area:3/2}
+.pad .hub{grid-area:2/2;border-radius:50%;margin:10px;background:var(--sign);border:3px solid #fff;display:grid;place-items:center}
+.pad .hub i{width:56%;height:20%;background:#fff;border-radius:3px}
+
+/* overlays */
+.overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;
+  padding:24px 20px calc(24px + env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;
+  background:#1a1b21;text-align:center;-webkit-overflow-scrolling:touch}
+.logo{display:flex;align-items:center;gap:14px;margin:0}
+.logo .sign{width:74px;height:74px;flex:none;border-radius:50%;background:var(--sign);border:4px solid #fff;display:grid;place-items:center;
+  box-shadow:0 6px 0 var(--sign-dk);animation:wobble 2.4s ease-in-out infinite}
+.logo .sign i{width:58%;height:20%;background:#fff;border-radius:3px}
+@keyframes wobble{50%{transform:rotate(-12deg)}}
+.logo span:not(.sign){font-family:var(--display);font-weight:400;font-size:2.6rem;line-height:1.05;text-align:left}
+.logo span em{font-style:normal;display:inline-block;transform:scaleX(-1)}
+.lead{margin:0;font-size:1rem;font-weight:700;line-height:1.7}
+.lead mark{background:var(--yellow);color:#1d1f26;padding:0 4px;border-radius:4px}
+.howto{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(100%,380px)}
+.howto li{background:rgba(255,255,255,.06);border-radius:12px;padding:10px 8px;font-size:.8rem;line-height:1.5;color:var(--muted)}
+.howto b{display:block;color:var(--ink);font-size:.9rem}
+.modes{display:flex;flex-direction:column;gap:10px;width:min(100%,340px)}
+.mode{border:none;border-radius:16px;padding:14px 16px;cursor:pointer;background:var(--yellow);color:#1d1f26;box-shadow:0 5px 0 #b38f17}
+.mode b{display:block;font-family:var(--display);font-weight:400;font-size:1.3rem}
+.mode small{display:block;font-size:.78rem;font-weight:700;margin-top:2px}
+.mode.free{background:#3a3e4a;color:var(--ink);box-shadow:0 5px 0 #15171c}
+.mode:active{transform:translateY(3px);box-shadow:0 2px 0 #15171c}
+.mode:focus-visible,.btn:focus-visible,.textlink:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.keys{margin:0;font-size:.74rem;color:var(--muted)}
+.back{font-size:.8rem;color:var(--muted)}
+.back a{color:var(--muted)}
+
+.res-head{margin:0;font-size:.85rem;color:var(--muted);letter-spacing:.1em}
+.diag{background:var(--sign);border:4px solid #fff;border-radius:20px;padding:12px 18px 14px;width:min(100%,360px);box-sizing:border-box}
+.diag small{display:block;font-size:.78rem;font-weight:700}
+.diag b{display:block;font-family:var(--display);font-weight:400;font-size:2.1rem;line-height:1.3}
+.diag p{margin:4px 0 0;font-size:.85rem;font-weight:700;line-height:1.6}
+.rate{font-family:var(--display);font-size:1.1rem}
+.rate span{font-size:3.2rem;color:var(--yellow);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0;width:min(100%,380px)}
+.stats div{background:rgba(255,255,255,.06);border-radius:10px;padding:8px 4px}
+.stats dt{font-size:.68rem;color:var(--muted)}
+.stats dd{margin:2px 0 0;font-family:var(--display);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.worst{margin:0;font-size:.9rem;font-weight:700}
+.worst b{background:var(--yellow);color:#1d1f26;padding:1px 8px;border-radius:5px;font-weight:900}
+.best{margin:0;font-size:.8rem;color:var(--mint);font-weight:700}
+figure{margin:0;width:min(100%,380px)}
+figure img{display:block;width:100%;border-radius:12px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+figcaption{font-size:.72rem;color:var(--muted);margin-top:6px}
+.actions{display:flex;gap:10px}
+.btn{border:none;border-radius:999px;padding:12px 22px;font-size:.95rem;font-weight:900;cursor:pointer;background:var(--yellow);color:#1d1f26;
+  box-shadow:0 4px 0 #b38f17}
+.btn.ghost{background:#3a3e4a;color:var(--ink);box-shadow:0 4px 0 #15171c}
+.subacts{display:flex;gap:18px;align-items:center}
+.textlink{background:none;border:none;color:var(--ink);font-size:.9rem;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
+.note{margin:0;font-size:.75rem;color:var(--muted);max-width:340px}
+.ptitle{font-family:var(--display);font-size:2rem;margin:0}
+
+@media (min-height:760px){ .pad{grid-template-rows:repeat(3,76px)} }
+@media (max-height:600px){ .howto{display:none} .logo .sign{width:56px;height:56px} .logo span:not(.sign){font-size:2rem} }
+/* landscape phones: the pad moves beside the field so the field keeps its size */
+@media (max-height:520px) and (min-aspect-ratio:4/3){
+  #app{max-width:900px;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr)}
+  .hud,.segbar{grid-column:1/-1}
+  .field{grid-column:1;grid-row:3}
+  .pad{grid-column:2;grid-row:3;align-self:center;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);padding:0 16px 0 0}
+}
+@media (prefers-reduced-motion:reduce){ .logo .sign{animation:none} .warn{animation:none} }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="score" id="score" aria-live="off">0<small>点</small></div>
+    <div class="rule"><small>いまのルール</small><b id="ruleName">—</b></div>
+    <div class="right">
+      <span class="time" id="time">60</span>
+      <button class="icon" id="pauseBtn" type="button" aria-label="一時停止">⏸</button>
+      <button class="icon" id="muteBtn" type="button" aria-label="音を消す">🔊</button>
+    </div>
+  </header>
+  <div class="segbar" aria-hidden="true"><i id="segbar"></i></div>
+
+  <div class="field" id="field">
+    <canvas id="c" aria-label="ゲーム画面"></canvas>
+    <div class="warn" id="warn" hidden></div>
+    <div class="banner" id="banner" hidden><small id="bSmall">ルール変更</small><b id="bName"></b><span id="bDesc"></span></div>
+    <div class="count" id="count" hidden></div>
+  </div>
+
+  <div class="pad" id="pad">
+    <button type="button" data-d="0" aria-label="上">▲</button>
+    <button type="button" data-d="3" aria-label="左">◀</button>
+    <div class="hub" aria-hidden="true"><i></i></div>
+    <button type="button" data-d="1" aria-label="右">▶</button>
+    <button type="button" data-d="2" aria-label="下">▼</button>
+  </div>
+
+  <div class="overlay" id="title">
+    <h1 class="logo"><span class="sign" aria-hidden="true"><i></i></span><span>逆走<br>ボ<em>タ</em>ン</span></h1>
+    <p class="lead">おした方向と、<wbr><mark>逆</mark>に進む。<br>…はずが、<wbr><mark>10秒ごとにルールが変わる</mark>。</p>
+    <ul class="howto">
+      <li><b>コインをあつめる</b>60秒でいくつ取れるか</li>
+      <li><b>ルールが変わる</b>上下だけ逆、さかさま、勝手に歩く…</li>
+      <li><b>トゲ・壁に注意</b>ぶつかるとコンボが切れる</li>
+      <li><b>最後の10秒</b>カオス。2.5秒ごとに変わる</li>
+    </ul>
+    <div class="modes">
+      <button class="mode" id="startDaily" type="button"><b id="dailyLabel">今日のお題</b><small id="dailySub">ルールの順番はみんな同じ。くらべっこしよう</small></button>
+      <button class="mode free" id="startFree" type="button"><b>フリープレイ</b><small id="freeSub">毎回ちがうルールの順番</small></button>
+    </div>
+    <p class="keys">画面の矢印ボタン ／ キーボードの矢印キー・WASD</p>
+    <p class="back"><a href="./">picoruno. のゲームいちらんへ</a></p>
+  </div>
+
+  <div class="overlay" id="over" hidden>
+    <p class="res-head" id="resHead">結果</p>
+    <div class="diag"><small>あなたの脳は…</small><b id="dTitle">—</b><p id="dComment"></p></div>
+    <div class="rate">脳バグ率 <span id="rRate">0</span>%</div>
+    <dl class="stats">
+      <div><dt>スコア</dt><dd id="sScore">0</dd></div>
+      <div><dt>コイン</dt><dd id="sCoins">0</dd></div>
+      <div><dt>最大コンボ</dt><dd id="sCombo">0</dd></div>
+      <div><dt>ゴツン</dt><dd id="sBump">0</dd></div>
+    </dl>
+    <p class="worst" id="worst" hidden>いちばんバグったルール：<b id="worstName"></b></p>
+    <p class="best" id="best" hidden></p>
+    <figure id="cardWrap" hidden><img id="card" alt="結果の画像"><figcaption>画像を長押し（右クリック）で保存して、投稿に添付できます</figcaption></figure>
+    <div class="actions">
+      <button class="btn ghost" id="toTitle" type="button">タイトルへ</button>
+      <button class="btn" id="retry" type="button">もういちど</button>
+    </div>
+    <div class="subacts">
+      <button class="textlink" id="shareImg" type="button">画像つきでシェア</button>
+      <a class="textlink" id="share" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    </div>
+    <p class="note" id="shareNote" hidden>この画面では画像を直接わたせません。上の画像を保存してから、投稿に添付してください。</p>
+  </div>
+
+  <div class="overlay" id="pause" hidden>
+    <p class="ptitle">ひとやすみ</p>
+    <p class="note">タイマーは止まっています</p>
+    <div class="actions">
+      <button class="btn ghost" id="pauseTitle" type="button">タイトルへ</button>
+      <button class="btn" id="resume" type="button">つづける</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const GAME_URL='https://runococco.github.io/picoruno./gyakuso-button.html';
+const N=7, SEG=10, TOTAL=60, CHAOS_STEP=2.5;
+const DX=[0,1,0,-1], DY=[-1,0,1,0];
+const ARROW=['↑','→','↓','←'];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===== rules ===== */
+let perm=[2,3,0,1];
+const RULES={
+  zenbu:  {name:'ぜんぶ逆',   desc:'おした方向と、ぜんぶ逆に進む',      map:d=>(d+2)%4},
+  joge:   {name:'上下だけ逆', desc:'上と下だけ逆。左右はそのまま',      map:d=>d===0?2:d===2?0:d},
+  sayu:   {name:'左右だけ逆', desc:'左と右だけ逆。上下はそのまま',      map:d=>d===1?3:d===3?1:d},
+  kaiten: {name:'90°ずれる',  desc:'↑で→、→で↓。右回りにずれる',       map:d=>(d+1)%4},
+  shojiki:{name:'逆じゃない', desc:'…今だけ、おした方向にそのまま進む', map:d=>d},
+  shuffle:{name:'シャッフル', desc:'どのボタンがどこへ行くかは、ひみつ', map:d=>perm[d]},
+  sakasa: {name:'画面さかさま',desc:'画面がひっくり返る。操作はふつう', map:d=>d, flip:true},
+  auto:   {name:'勝手に歩く', desc:'止まらない。おすと「逆」を向く',    map:d=>(d+2)%4, auto:true},
+};
+const MID_POOL=['joge','sayu','kaiten','shojiki','shuffle','sakasa','auto'];
+const CHAOS_POOL=['zenbu','joge','sayu','kaiten','shojiki','sakasa'];
+
+/* ===== seeded random ===== */
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffled(arr,rnd){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* the daily puzzle follows Japan's calendar day, whatever the player's timezone */
+function jstDay(){const d=new Date(Date.now()+9*3600e3);return{y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate()}}
+function dayKey(){const j=jstDay();return`${j.y}${String(j.m).padStart(2,'0')}${String(j.d).padStart(2,'0')}`}
+function dailyNo(){const j=jstDay();return Math.max(1,Math.round((Date.UTC(j.y,j.m-1,j.d)-Date.UTC(2026,9,23))/864e5)+1)}
+
+function buildSchedule(rnd){
+  const segs=[];
+  const mids=shuffled(MID_POOL,rnd).slice(0,4);
+  ['zenbu',...mids].forEach((r,i)=>segs.push({t0:i*SEG,t1:(i+1)*SEG,rule:r,chaos:false}));
+  let prev=mids[3];
+  for(let t=5*SEG;t<TOTAL-1e-6;t+=CHAOS_STEP){
+    const opts=CHAOS_POOL.filter(r=>r!==prev);
+    const r=opts[Math.floor(rnd()*opts.length)];
+    segs.push({t0:t,t1:Math.min(TOTAL,t+CHAOS_STEP),rule:r,chaos:true}); prev=r;
+  }
+  // a shuffle that never leaves a button pointing where it says
+  let p; do{p=shuffled([0,1,2,3],rnd)}while(p.some((v,i)=>v===i));
+  return{segs,perm:p};
+}
+
+/* ===== storage ===== */
+const store={
+  get(k,def){try{const v=localStorage.getItem(k);return v===null?def:JSON.parse(v)}catch(e){return def}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+
+/* ===== sound ===== */
+let actx=null, muted=!!store.get('gyakuso-mute',false);
+function ensureAudio(){
+  if(muted) return;
+  try{
+    if(!actx){const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; actx=new AC()}
+    if(actx.state==='suspended') actx.resume();
+  }catch(e){actx=null}
+}
+function tone(freq,dur,type='square',vol=.06,slide=0,delay=0){
+  if(muted||!actx) return;
+  try{
+    const t=actx.currentTime+delay, o=actx.createOscillator(), g=actx.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),t+dur);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t+dur+.02);
+  }catch(e){}
+}
+const sfx={
+  move(){tone(520+Math.random()*80,.05,'square',.025)},
+  coin(c){const b=880*Math.pow(1.06,Math.min(c,12));tone(b,.08,'square',.05);tone(b*1.5,.12,'square',.05,0,.06)},
+  egg(){[0,.07,.14,.21].forEach((d,i)=>tone(660*Math.pow(1.26,i),.12,'triangle',.07,0,d))},
+  bump(){tone(140,.14,'sawtooth',.06,-60)},
+  spike(){tone(220,.25,'sawtooth',.07,-150)},
+  rule(){tone(392,.1,'square',.06);tone(523,.1,'square',.06,0,.1);tone(784,.2,'square',.06,0,.2)},
+  tick(){tone(1200,.04,'square',.04)},
+  go(){tone(784,.25,'square',.06)},
+  end(){[0,.12,.24].forEach((d,i)=>tone(523*Math.pow(1.25,i),.18,'triangle',.07,0,d))}
+};
+function setMute(m){muted=m;store.set('gyakuso-mute',m);$('muteBtn').textContent=m?'🔇':'🔊';$('muteBtn').setAttribute('aria-label',m?'音を出す':'音を消す');if(!m)ensureAudio()}
+
+/* ===== state ===== */
+let state='title';            // title | count | play | end
+let paused=false;
+let mode='daily', sched=null, segIdx=-1;
+let t=0, countT=0, lastCountShown=0;
+let px=3,py=3,prevX=3,prevY=3,moveA=1,facing=0,heading=0,autoT=0,stunUntil=-1;
+let coin=null, egg=null, spikes=new Set();
+let score=0, coins=0, combo=0, maxCombo=0, lastCoinT=-99, bumps=0;
+let stats={};                 // rule -> {m:moves, b:bugs}
+let fieldRnd=Math.random;
+let popups=[], parts=[], shake=0, flipA=0, bugMark=-9, lastBugPop=-9, lastWarn=-1;
+let resultText='';
+
+const key=(x,y)=>x+','+y;
+const inside=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
+const curSeg=()=>sched&&sched.segs[segIdx]||null;
+const curRule=()=>{const s=curSeg();return s?s.rule:'zenbu'};
+
+/* place a spike only if every free cell stays reachable, so a coin can never be walled in */
+function connectedWith(extra){
+  const block=new Set(spikes); block.add(extra);
+  let total=0, start=null;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++) if(!block.has(key(x,y))){total++; if(!start) start=[x,y]}
+  if(!start) return false;
+  const seen=new Set([key(...start)]), q=[start];
+  while(q.length){const [x,y]=q.pop();for(let d=0;d<4;d++){const nx=x+DX[d],ny=y+DY[d],k=key(nx,ny);if(inside(nx,ny)&&!block.has(k)&&!seen.has(k)){seen.add(k);q.push([nx,ny])}}}
+  return seen.size===total;
+}
+function freeCells(minDist){
+  const out=[];
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const k=key(x,y);
+    if(spikes.has(k)||(x===px&&y===py)) continue;
+    if(coin&&coin.x===x&&coin.y===y) continue;
+    if(egg&&egg.x===x&&egg.y===y) continue;
+    if(Math.abs(x-px)+Math.abs(y-py)<minDist) continue;
+    out.push([x,y]);
+  }
+  return out;
+}
+function pick(arr){return arr.length?arr[Math.floor(fieldRnd()*arr.length)]:null}
+function spawnCoin(){
+  let c=pick(freeCells(3))||pick(freeCells(1));
+  coin=c?{x:c[0],y:c[1],born:t}:null;
+}
+function addSpikes(n){
+  for(let i=0;i<n;i++){
+    const cand=shuffled(freeCells(2),fieldRnd);
+    const ok=cand.find(([x,y])=>connectedWith(key(x,y)));
+    if(ok) spikes.add(key(ok[0],ok[1]));
+  }
+}
+function distToCoin(x,y){return coin?Math.abs(coin.x-x)+Math.abs(coin.y-y):0}
+
+function resetRun(m){
+  mode=m;
+  const seed=m==='daily'?(+dayKey())^0x5eed:Math.floor(Math.random()*2**31);
+  const s=buildSchedule(mulberry(seed));
+  sched=s; perm=s.perm; segIdx=-1;
+  fieldRnd=mulberry(seed^0x9e3779b9);
+  t=0; px=py=prevX=prevY=3; moveA=1; facing=0; heading=0; autoT=0; stunUntil=-1;
+  spikes=new Set(); coin=null; egg=null;
+  score=0; coins=0; combo=0; maxCombo=0; lastCoinT=-99; bumps=0;
+  stats={}; popups=[]; parts=[]; shake=0; flipA=0; bugMark=-9; lastBugPop=-9; lastWarn=-1;
+  spawnCoin();
+  updateScore(false); $('time').textContent=TOTAL; $('time').classList.remove('low');
+  $('warn').hidden=true; $('banner').hidden=true;
+  setRuleChip(sched.segs[0].rule);
+  $('segbar').style.width='0%';
+}
+
+function start(m){
+  ensureAudio();
+  resetRun(m);
+  ['title','over','pause'].forEach(id=>$(id).hidden=true);
+  paused=false; state='count'; countT=3; lastCountShown=0;
+  showBanner(sched.segs[0],'さいしょのルール',false);
+}
+
+/* ===== moves ===== */
+function record(rule,bug){
+  const s=stats[rule]||(stats[rule]={m:0,b:0});
+  s.m++; if(bug) s.b++;
+}
+function press(d){
+  if(state!=='play'||paused) return;
+  ensureAudio();
+  if(t<stunUntil) return;
+  const rule=curRule(), R=RULES[rule], md=R.map(d);
+  if(R.auto){ heading=md; autoT=0; step(md,rule,true); }
+  else step(md,rule,true);
+}
+function step(md,rule,byPlayer){
+  facing=md;
+  const nx=px+DX[md], ny=py+DY[md], before=distToCoin(px,py);
+  let bug=false;
+  if(!inside(nx,ny)){
+    bug=true; bumps++; combo=0; sfx.bump(); shake=.25;
+    popup(px,py,'ゴツン','#ffd23f');
+    if(RULES[rule].auto) heading=(heading+2)%4;
+  }else if(spikes.has(key(nx,ny))){
+    bug=true; combo=0; sfx.spike(); shake=.35; stunUntil=t+.5;
+    score=Math.max(0,score-50); updateScore(false);
+    popup(px,py,'いたっ！ -50','#ff6b62');
+    if(RULES[rule].auto) heading=(heading+2)%4;
+  }else{
+    prevX=px; prevY=py; px=nx; py=ny; moveA=0;
+    if(byPlayer) sfx.move();
+    if(distToCoin(px,py)>before) bug=true;
+    collect();
+  }
+  if(byPlayer){
+    record(rule,bug);
+    if(bug){ bugMark=t; if(inside(nx,ny)&&!spikes.has(key(nx,ny))&&t-lastBugPop>.7){lastBugPop=t;popup(px,py,'脳バグ！','#c9b6ff')} }
+  }
+}
+function collect(){
+  if(coin&&coin.x===px&&coin.y===py){
+    combo=(t-lastCoinT<=3)?combo+1:1; lastCoinT=t; maxCombo=Math.max(maxCombo,combo);
+    const pts=100+Math.min(combo-1,10)*20;
+    score+=pts; coins++; updateScore(true); sfx.coin(combo);
+    popup(px,py,combo>1?`+${pts} ×${combo}`:`+${pts}`,'#ffd23f');
+    burst(px,py,'#ffd23f',12);
+    spawnCoin();
+    if(!egg&&coins>=3&&fieldRnd()<.22){const c=pick(freeCells(3));if(c) egg={x:c[0],y:c[1],until:t+4.5}}
+  }
+  if(egg&&egg.x===px&&egg.y===py){
+    score+=300; updateScore(true); sfx.egg();
+    popup(px,py,'金のたまご +300','#fff2a8'); burst(px,py,'#fff2a8',18); egg=null;
+  }
+}
+function popup(x,y,text,color){popups.push({x,y,text,color,a:0})}
+function burst(x,y,color,n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=1.5+Math.random()*2.5;parts.push({x:x+.5,y:y+.5,vx:Math.cos(a)*s,vy:Math.sin(a)*s,a:0,color})}}
+
+/* ===== HUD ===== */
+function updateScore(pop){
+  const el=$('score'); el.firstChild.nodeValue=score;
+  if(pop){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
+}
+function setRuleChip(rule){
+  const b=$('ruleName'); b.textContent=RULES[rule].name;
+  b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+}
+function showBanner(seg,small,quick){
+  const R=RULES[seg.rule], el=$('banner');
+  $('bSmall').textContent=small; $('bName').textContent=R.name; $('bDesc').textContent=R.desc;
+  el.hidden=false; el.className='banner'; void el.offsetWidth; el.className='banner '+(quick?'quick':'show');
+}
+$('banner').addEventListener('animationend',()=>{$('banner').hidden=true});
+
+function enterSeg(i){
+  const prev=segIdx; segIdx=i;
+  const seg=sched.segs[i], R=RULES[seg.rule];
+  setRuleChip(seg.rule);
+  if(prev>=0){
+    sfx.rule();
+    const firstChaos=seg.chaos&&!sched.segs[prev].chaos;
+    if(firstChaos){ showBanner(seg,'カオス突入！ 2.5秒ごとに変わる',false) }
+    else showBanner(seg,seg.chaos?'チェンジ':'ルール変更',seg.chaos);
+    if(seg.t0>0&&!seg.chaos&&segIdx>=1) addSpikes(2);
+    if(firstChaos) addSpikes(1);
+  }
+  if(R.auto){ heading=facing; autoT=0 }
+  $('warn').hidden=true;
+}
+
+/* ===== loop ===== */
+const cv=$('c'), g=cv.getContext('2d');
+let CS=40, DPR=1, FW=0;
+function resize(){
+  const f=$('field'), r=f.getBoundingClientRect();
+  const avail=Math.max(140,Math.min(r.width-24,r.height-20));
+  CS=Math.floor(avail/N); FW=CS*N; DPR=Math.min(2,window.devicePixelRatio||1);
+  cv.width=FW*DPR; cv.height=FW*DPR; cv.style.width=FW+'px'; cv.style.height=FW+'px';
+}
+addEventListener('resize',resize);
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,Math.max(0,(now-last)/1000)); last=now;
+  update(dt); draw(dt);
+  requestAnimationFrame(frame);
+}
+function update(dt){
+  if(paused) return;
+  if(state==='count'){
+    countT-=dt;
+    const n=Math.ceil(countT), el=$('count');
+    if(countT<=0){ el.hidden=true; state='play'; enterSeg(0); sfx.go(); popup(px,py,'スタート！','#fff'); return }
+    if(n!==lastCountShown){ lastCountShown=n; el.hidden=false; el.textContent=n; el.className='count'; void el.offsetWidth; el.className='count go'; sfx.tick() }
+    return;
+  }
+  if(state!=='play') return;
+  t+=dt;
+  if(t>=TOTAL){ t=TOTAL; finish(); return }
+  let i=segIdx; while(i+1<sched.segs.length&&t>=sched.segs[i+1].t0) i++;
+  if(i!==segIdx) enterSeg(i);
+  const seg=curSeg(), R=RULES[seg.rule];
+  // warn the last 3 seconds before a long rule ends
+  const left=seg.t1-t;
+  if(!seg.chaos&&seg.t1<TOTAL&&left<=3){
+    const n=Math.ceil(left);
+    if(n!==lastWarn){ lastWarn=n; const w=$('warn'); w.hidden=false; w.textContent=(sched.segs[segIdx+1].chaos?'カオスまで ':'ルール変更まで ')+n; sfx.tick() }
+  }
+  $('segbar').style.width=(seg.chaos?100:clamp((t-seg.t0)/(seg.t1-seg.t0)*100,0,100))+'%';
+  const tl=Math.ceil(TOTAL-t); const te=$('time');
+  if(te.textContent!==String(tl)){ te.textContent=tl; te.classList.toggle('low',tl<=10) }
+  if(R.auto&&t>=stunUntil){ autoT+=dt; if(autoT>=.42){ autoT-=.42; step(heading,seg.rule,false) } }
+  if(egg&&t>egg.until) egg=null;
+}
+
+function finish(){
+  state='end'; $('warn').hidden=true; sfx.end();
+  popup(px,py,'しゅうりょう！','#fff');
+  setTimeout(showResult,900);
+}
+
+/* ===== drawing ===== */
+function toScreen(wx,wy){
+  // world coords (cells) -> canvas px, including the 180° flip of the "さかさま" rule
+  const c=FW/2, x=wx*CS-c, y=wy*CS-c, ca=Math.cos(flipA), sa=Math.sin(flipA);
+  return[c+x*ca-y*sa, c+x*sa+y*ca];
+}
+function draw(dt){
+  const target=(state==='play'||state==='end')&&RULES[curRule()].flip?Math.PI:0;
+  flipA+=(target-flipA)*Math.min(1,dt*(reduceMotion?30:9));
+  if(Math.abs(target-flipA)<.001) flipA=target;
+  moveA=Math.min(1,moveA+dt/.08);
+  shake=Math.max(0,shake-dt);
+  g.setTransform(DPR,0,0,DPR,0,0);
+  g.clearRect(0,0,FW,FW);
+  g.save();
+  if(shake>0&&!reduceMotion){ g.translate((Math.random()-.5)*shake*24,(Math.random()-.5)*shake*24) }
+  g.translate(FW/2,FW/2); g.rotate(flipA); g.translate(-FW/2,-FW/2);
+  // asphalt tiles
+  g.fillStyle='#2a2d36'; roundRect(0,0,FW,FW,CS*.35); g.fill();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    g.fillStyle=(x+y)%2?'#323642':'#2d313c';
+    roundRect(x*CS+2,y*CS+2,CS-4,CS-4,CS*.18); g.fill();
+  }
+  // a dashed center line, like a road
+  g.strokeStyle='rgba(255,210,63,.22)'; g.lineWidth=Math.max(2,CS*.06); g.setLineDash([CS*.3,CS*.25]);
+  g.beginPath(); g.moveTo(FW/2,CS*.2); g.lineTo(FW/2,FW-CS*.2); g.stroke(); g.setLineDash([]);
+  // a small arrow on the top edge so the flip reads as a flip
+  g.fillStyle='rgba(255,255,255,.25)'; g.font=`900 ${CS*.32}px "Zen Maru Gothic",sans-serif`; g.textAlign='center'; g.textBaseline='middle';
+  g.fillText('▲ うえ',FW/2,CS*.22);
+  spikes.forEach(k=>{const [x,y]=k.split(',').map(Number);drawSpike(x,y)});
+  if(coin) drawCoin(coin.x,coin.y);
+  if(egg) drawEgg(egg.x,egg.y,egg.until-t);
+  const e=1-Math.pow(1-moveA,3);
+  const cx=prevX+(px-prevX)*e, cy=prevY+(py-prevY)*e;
+  drawChick(cx,cy);
+  g.restore();
+  // particles + popups stay upright
+  parts=parts.filter(p=>p.a<1);
+  parts.forEach(p=>{p.a+=dt*1.6;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=dt*4;const [sx,sy]=toScreen(p.x,p.y);
+    g.globalAlpha=1-p.a; g.fillStyle=p.color; g.beginPath(); g.arc(sx,sy,CS*.07,0,Math.PI*2); g.fill()});
+  g.globalAlpha=1;
+  popups=popups.filter(p=>p.a<1);
+  popups.forEach(p=>{p.a+=dt*1.1;let [sx,sy]=toScreen(p.x+.5,p.y+.5);
+    const yy=sy-CS*.6-p.a*CS*.8;
+    g.globalAlpha=Math.min(1,(1-p.a)*2.5);
+    g.font=`400 ${Math.round(CS*.38)}px "Dela Gothic One",sans-serif`; g.textAlign='center'; g.textBaseline='middle';
+    const hw=g.measureText(p.text).width/2+4; sx=clamp(sx,hw,Math.max(hw,FW-hw));
+    g.lineWidth=5; g.strokeStyle='#15171c'; g.strokeText(p.text,sx,yy); g.fillStyle=p.color; g.fillText(p.text,sx,yy)});
+  g.globalAlpha=1;
+}
+function roundRect(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function drawSpike(x,y){
+  const X=x*CS,Y=y*CS;
+  g.fillStyle='#5b2226'; roundRect(X+4,Y+4,CS-8,CS-8,CS*.16); g.fill();
+  g.fillStyle='#d9dbe2';
+  for(let i=0;i<2;i++)for(let j=0;j<2;j++){
+    const bx=X+CS*(.22+i*.32), by=Y+CS*(.74-j*.0)-(j?CS*.3:0);
+    g.beginPath(); g.moveTo(bx,by); g.lineTo(bx+CS*.12,by-CS*.3); g.lineTo(bx+CS*.24,by); g.closePath(); g.fill();
+  }
+}
+function drawCoin(x,y){
+  const b=Math.sin((t+x)*5)*CS*.04, X=(x+.5)*CS, Y=(y+.5)*CS+b, r=CS*.27;
+  g.fillStyle='rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(X,(y+.5)*CS+CS*.3,r*.8,r*.25,0,0,Math.PI*2); g.fill();
+  g.fillStyle='#e0a91c'; g.beginPath(); g.arc(X,Y,r,0,Math.PI*2); g.fill();
+  g.fillStyle='#ffd23f'; g.beginPath(); g.arc(X,Y,r*.8,0,Math.PI*2); g.fill();
+  g.fillStyle='#fff3b0'; g.beginPath(); g.arc(X-r*.3,Y-r*.3,r*.2,0,Math.PI*2); g.fill();
+  g.fillStyle='#b8860b'; g.font=`900 ${Math.round(r*1.05)}px "Zen Maru Gothic",sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillText('P',X,Y+1);
+}
+function drawEgg(x,y,left){
+  if(left<1.2&&Math.floor(left*8)%2) return; // blink before it vanishes
+  const X=(x+.5)*CS, Y=(y+.5)*CS+Math.sin(t*6)*CS*.04;
+  g.fillStyle='rgba(255,242,168,.25)'; g.beginPath(); g.arc(X,Y,CS*.42,0,Math.PI*2); g.fill();
+  g.fillStyle='#ffe066'; g.beginPath(); g.ellipse(X,Y,CS*.22,CS*.29,0,0,Math.PI*2); g.fill();
+  g.fillStyle='#fffbe0'; g.beginPath(); g.ellipse(X-CS*.07,Y-CS*.1,CS*.06,CS*.09,-.4,0,Math.PI*2); g.fill();
+}
+function drawChick(x,y){
+  const X=(x+.5)*CS, Y=(y+.5)*CS, r=CS*.33, stunned=t<stunUntil&&state==='play';
+  const hop=moveA<1?Math.sin(moveA*Math.PI)*CS*.12:0;
+  g.fillStyle='rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(X,Y+r*.95,r*.8,r*.25,0,0,Math.PI*2); g.fill();
+  const yy=Y-hop;
+  // comb
+  g.fillStyle='#e8382f';
+  [-.28,0,.28].forEach((o,i)=>{g.beginPath();g.arc(X+o*r,yy-r*.95,r*(i===1?.26:.2),0,Math.PI*2);g.fill()});
+  g.fillStyle='#ffd84a'; g.beginPath(); g.arc(X,yy,r,0,Math.PI*2); g.fill();
+  g.fillStyle='#f3bf2a'; g.beginPath(); g.ellipse(X-r*.62,yy+r*.2,r*.28,r*.18,-.5,0,Math.PI*2); g.fill();
+  const fx=DX[facing], fy=DY[facing];
+  // beak points the way it is facing
+  const bx=X+fx*r*.85, by=yy+fy*r*.85+ (fy===0?r*.12:0);
+  g.fillStyle='#ff8a2a'; g.beginPath();
+  g.moveTo(bx+fx*r*.38,by+fy*r*.38);
+  g.lineTo(bx-fy*r*.22,by+fx*r*.22); g.lineTo(bx+fy*r*.22,by-fx*r*.22); g.closePath(); g.fill();
+  // eyes
+  const ex=fx*r*.28, ey=fy*r*.22-r*.12;
+  g.strokeStyle='#1d1f26'; g.fillStyle='#1d1f26'; g.lineWidth=Math.max(1.5,r*.1); g.lineCap='round';
+  [-1,1].forEach(s=>{
+    const cx=X+ex+(fx===0?s*r*.32:s*r*.12), cy=yy+ey+(fx!==0?-s*0:0)+(fx!==0&&s>0?-r*.05:0);
+    if(stunned){ const q=r*.1; g.beginPath(); g.moveTo(cx-q,cy-q); g.lineTo(cx+q,cy+q); g.moveTo(cx+q,cy-q); g.lineTo(cx-q,cy+q); g.stroke() }
+    else { g.beginPath(); g.arc(cx,cy,r*.1,0,Math.PI*2); g.fill() }
+  });
+  // confused mark after a brain-bug move
+  if(t-bugMark<.8&&state==='play'){
+    g.save(); g.translate(X+r*.9,yy-r*.9); g.rotate(-flipA);
+    g.fillStyle='#c9b6ff'; g.font=`400 ${Math.round(r*.9)}px "Dela Gothic One",sans-serif`; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText('?',0,0); g.restore();
+  }
+}
+
+/* ===== result ===== */
+const DIAG=[
+  {max:.12,title:'逆走の天才',  c:'脳がもう裏返ってます。逆の世界の住人かも。'},
+  {max:.25,title:'やわらか脳',  c:'ルールが変わっても、すぐなじむタイプ。'},
+  {max:.40,title:'ちょいバグ脳',c:'ときどき体が正直に動いちゃう。'},
+  {max:.55,title:'正直すぎる脳',c:'おした方向に行きたい気持ちが強すぎる。'},
+  {max:1.01,title:'完全バグり脳',c:'脳がルールを全力で拒否しています。'},
+];
+function diagnose(){
+  let m=0,b=0; Object.values(stats).forEach(s=>{m+=s.m;b+=s.b});
+  const rate=m?b/m:0;
+  if(m<10) return{rate,m,title:'様子見すぎ脳',c:'ほとんど動いてない…！もっと押してみて。'};
+  const d=DIAG.find(d=>rate<d.max);
+  return{rate,m,title:d.title,c:d.c};
+}
+function worstRule(){
+  let w=null;
+  Object.entries(stats).forEach(([r,s])=>{ if(s.m>=3){const rr=s.b/s.m; if(!w||rr>w.rate) w={rule:r,rate:rr}} });
+  return w&&w.rate>0?w:null;
+}
+async function showResult(){
+  if(state!=='end') return;
+  const D=diagnose(), W=worstRule(), pct=Math.round(D.rate*100);
+  const label=mode==='daily'?`今日のお題 No.${dailyNo()}`:'フリープレイ';
+  $('resHead').textContent=`結果 ・ ${label}`;
+  $('dTitle').textContent=D.title; $('dComment').textContent=D.c; $('rRate').textContent=pct;
+  $('sScore').textContent=score; $('sCoins').textContent=coins; $('sCombo').textContent=maxCombo; $('sBump').textContent=bumps;
+  $('worst').hidden=!W; if(W) $('worstName').textContent=`${RULES[W.rule].name}（${Math.round(W.rate*100)}%）`;
+  const bk=mode==='daily'?'gyakuso-best-'+dayKey():'gyakuso-best-free';
+  const prev=+store.get(bk,0)||0, isBest=score>0&&score>prev;
+  if(isBest) store.set(bk,score);
+  $('best').hidden=false; $('best').textContent=isBest?'じこベスト更新！':`じこベスト ${prev} 点`;
+  resultText=`「逆走ボタン」${label}で ${score}点${isBest?'（じこベスト）':''}\n脳バグ率 ${pct}%「${D.title}」${W?`\nいちばんバグったルール：${RULES[W.rule].name}`:''}\n#逆走ボタン`;
+  $('share').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(resultText)+'&url='+encodeURIComponent(GAME_URL);
+  $('over').hidden=false; $('shareNote').hidden=true;
+  $('retry').focus({preventScroll:true});
+  refreshTitle();
+  try{ await document.fonts.load('40px "Dela Gothic One"','逆走ボタン脳バグ率%0123456789点'+D.title); }catch(e){}
+  try{ lastCard=makeCard(D,W,pct,label,isBest); $('card').src=lastCard.toDataURL('image/png'); $('cardWrap').hidden=false; prepareShare() }
+  catch(e){ $('cardWrap').hidden=true }
+}
+let lastCard=null, shareData=null;
+function prepareShare(){
+  shareData=null;
+  if(!lastCard||!navigator.share||!navigator.canShare||!window.File) return;
+  lastCard.toBlob(blob=>{
+    if(!blob) return;
+    const data={files:[new File([blob],'gyakuso-button.png',{type:'image/png'})],text:resultText+'\n'+GAME_URL};
+    try{ if(navigator.canShare(data)) shareData=data }catch(e){}
+  },'image/png');
+}
+$('shareImg').addEventListener('click',async()=>{
+  if(shareData){ try{ await navigator.share(shareData); return }catch(e){ if(e&&e.name==='AbortError') return } }
+  if(lastCard){
+    // no file sharing here: save the picture instead so it can be attached by hand
+    const a=document.createElement('a'); a.href=$('card').src; a.download='gyakuso-button.png'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  $('shareNote').hidden=false;
+});
+function makeCard(D,W,pct,label,isBest){
+  const c=document.createElement('canvas'); c.width=1200; c.height=630; const x=c.getContext('2d');
+  const F='"Dela Gothic One","Zen Maru Gothic",sans-serif', B='"Zen Maru Gothic",sans-serif';
+  x.fillStyle='#1d1f26'; x.fillRect(0,0,1200,630);
+  // hazard stripes top and bottom
+  for(let i=-2;i<40;i++){ x.fillStyle='#ffd23f'; x.beginPath(); const sx=i*40; x.moveTo(sx,0);x.lineTo(sx+20,0);x.lineTo(sx+4,26);x.lineTo(sx-16,26);x.fill();
+    x.beginPath(); x.moveTo(sx,604);x.lineTo(sx+20,604);x.lineTo(sx+4,630);x.lineTo(sx-16,630);x.fill() }
+  // sign + title
+  x.fillStyle='#e8382f'; x.beginPath(); x.arc(110,110,52,0,Math.PI*2); x.fill(); x.lineWidth=7; x.strokeStyle='#fff'; x.stroke();
+  x.fillStyle='#fff'; x.fillRect(80,100,60,20);
+  x.textBaseline='alphabetic'; x.textAlign='left';
+  x.fillStyle='#f6f3ea'; x.font=`64px ${F}`; x.fillText('逆走ボタン',182,132);
+  x.fillStyle='#a9abb5'; x.font=`700 26px ${B}`; x.fillText(label,186,172);
+  // diagnosis plate
+  x.fillStyle='#e8382f'; rr(x,60,210,600,250,28); x.fill(); x.lineWidth=7; x.strokeStyle='#fff'; x.stroke();
+  x.fillStyle='#fff'; x.font=`700 28px ${B}`; x.fillText('あなたの脳は…',92,262);
+  x.font=`${D.title.length>5?62:74}px ${F}`; x.fillText(D.title,92,350);
+  x.font=`700 24px ${B}`; wrap(x,D.c,92,400,536,34);
+  // numbers
+  x.fillStyle='#f6f3ea'; x.font=`30px ${F}`; x.fillText('脳バグ率',62,548);
+  x.fillStyle='#ffd23f'; x.font=`96px ${F}`; x.fillText(pct+'%',214,566);
+  const sx=214+x.measureText(pct+'%').width+28;
+  x.fillStyle='#f6f3ea'; x.font=`36px ${F}`; x.fillText(`${score}点`,sx,isBest?540:562);
+  if(isBest){ x.fillStyle='#5fe0b7'; x.font=`700 22px ${B}`; x.fillText('じこベスト！',sx+2,574) }
+  // per-rule bars
+  const rows=Object.keys(RULES).filter(r=>stats[r]&&stats[r].m>0).sort((a,b)=>stats[b].b/stats[b].m-stats[a].b/stats[a].m).slice(0,7);
+  x.fillStyle='#a9abb5'; x.font=`700 24px ${B}`; x.fillText('ルール別 バグった率',712,232);
+  rows.forEach((r,i)=>{
+    const y=262+i*46, rate=stats[r].b/stats[r].m, isW=W&&W.rule===r;
+    x.fillStyle=isW?'#ffd23f':'#f6f3ea'; x.font=`${isW?'900':'700'} 24px ${B}`; x.fillText(RULES[r].name,712,y+24);
+    x.fillStyle='rgba(255,255,255,.12)'; rr(x,880,y+4,230,24,12); x.fill();
+    x.fillStyle=isW?'#ffd23f':'#5fe0b7'; if(rate>0){ rr(x,880,y+4,Math.max(24,230*rate),24,12); x.fill() }
+    x.fillStyle='#f6f3ea'; x.font=`700 22px ${B}`; x.textAlign='right'; x.fillText(Math.round(rate*100)+'%',1160,y+24); x.textAlign='left';
+  });
+  if(!rows.length){ x.fillStyle='#a9abb5'; x.font=`700 24px ${B}`; x.fillText('（まだデータがありません）',712,290) }
+  x.fillStyle='#a9abb5'; x.font=`700 22px ${B}`; x.textAlign='right'; x.fillText('#逆走ボタン  runococco.github.io/picoruno.',1160,588); x.textAlign='left';
+  return c;
+}
+function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+function wrap(x,text,X,Y,maxW,lh){let line='',y=Y;for(const ch of text){if(x.measureText(line+ch).width>maxW&&!'。、！？…」'.includes(ch)){x.fillText(line,X,y);line=ch;y+=lh}else line+=ch}if(line)x.fillText(line,X,y)}
+
+/* ===== title ===== */
+function refreshTitle(){
+  $('dailyLabel').textContent=`今日のお題 No.${dailyNo()}`;
+  const b=+store.get('gyakuso-best-'+dayKey(),0)||0;
+  $('dailySub').textContent=b?`今日のじこベスト ${b} 点 ・ ルールの順番はみんな同じ`:'ルールの順番はみんな同じ。くらべっこしよう';
+  const f=+store.get('gyakuso-best-free',0)||0;
+  $('freeSub').textContent=f?`毎回ちがうルールの順番 ・ ベスト ${f} 点`:'毎回ちがうルールの順番';
+}
+function toTitle(){
+  state='title'; paused=false;
+  ['over','pause'].forEach(id=>$(id).hidden=true);
+  $('title').hidden=false; $('count').hidden=true; $('warn').hidden=true; $('banner').hidden=true;
+  refreshTitle(); $('startDaily').focus({preventScroll:true});
+}
+
+/* ===== pause ===== */
+function setPause(p){
+  if(state!=='play'&&state!=='count') return;
+  paused=p; $('pause').hidden=!p;
+  if(p) $('resume').focus({preventScroll:true});
+  last=performance.now();
+}
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) setPause(true) });
+
+/* ===== input ===== */
+const KEYS={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
+addEventListener('keydown',e=>{
+  if(e.code in KEYS&&(state==='play'||state==='count')&&!paused){
+    e.preventDefault(); if(e.repeat) return;
+    const d=KEYS[e.code]; press(d);
+    const btn=document.querySelector(`.pad [data-d="${d}"]`); btn.classList.add('down'); setTimeout(()=>btn.classList.remove('down'),90);
+    return;
+  }
+  if((e.code==='Escape'||e.code==='KeyP')&&(state==='play'||state==='count')){ e.preventDefault(); setPause(!paused) }
+});
+document.querySelectorAll('.pad button').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{ e.preventDefault(); press(+b.dataset.d) });
+  // keyboard activation of a focused pad button (Enter/Space) arrives as a click with no pointer
+  b.addEventListener('click',e=>{ if(e.detail===0) press(+b.dataset.d) });
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+});
+$('pad').addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+$('startDaily').addEventListener('click',()=>start('daily'));
+$('startFree').addEventListener('click',()=>start('free'));
+$('retry').addEventListener('click',()=>start(mode));
+$('toTitle').addEventListener('click',toTitle);
+$('pauseTitle').addEventListener('click',toTitle);
+$('resume').addEventListener('click',()=>setPause(false));
+$('pauseBtn').addEventListener('click',()=>setPause(!paused));
+$('muteBtn').addEventListener('click',()=>setMute(!muted));
+
+setMute(muted);
+resetRun('daily'); state='title';
+refreshTitle(); resize();
+requestAnimationFrame(t0=>{last=t0;requestAnimationFrame(frame)});
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(resize);
+
+})();
+</script>
+</body>
+</html>
