@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f2e8">
+<title>おやつポン</title>
+<meta name="description" content="となりのおやつと入れかえて、3ついじょう並べて消すパズル。時間内にお客さんの注文をそろえて、ステージをどんどん進もう。ボムやルノたまで一気に消して、コンボをつなげるとフィーバー！">
+<meta property="og:type" content="website">
+<meta property="og:title" content="おやつポン">
+<meta property="og:description" content="おやつを3つそろえてポン！注文をこなして、あなたは何ステージまで行ける？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./oyatsupon.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f7f2e8'/%3E%3Cpath d='M16 4q3 0 10 15q2 7-10 7q-12 0-10-7q7-15 10-15z' fill='%23fbf8f2' stroke='%235b4d45' stroke-width='1.6'/%3E%3Crect x='11' y='19' width='10' height='7' rx='1' fill='%234d4a48'/%3E%3Ccircle cx='13' cy='14' r='1.3' fill='%235b4d45'/%3E%3Ccircle cx='19' cy='14' r='1.3' fill='%235b4d45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: one phone column. Title → play (status rows above an 8×8 board drawn on canvas) → result card made for screenshots. Muted picoruno palette, sweets with tiny faces. */
+:root{
+  --bg:#f7f2e8;
+  --card:#fffdf8;
+  --ink:#5b4d45;
+  --sub:#8e8077;
+  --line:#e6ddcf;
+  --accent:#e8877f;    /* メイン：くすみコーラル */
+  --egg:#fbe9b7;       /* サブ：たまご色 */
+  --sky:#cfe3ef;       /* 共有：みずいろ */
+  --leaf:#9cc58a;
+  --gold:#e3c26b;
+  --fever:#f3b65f;
+  --pop:"Mochiy Pop One","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  --box:clamp(256px,min(calc(100vw - 32px),calc(100svh - 290px)),440px);
+  color-scheme:light;
+}
+html,body{margin:0;min-height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:500;
+  -webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button{font-family:inherit;color:inherit}
+.wrap{max-width:472px;margin:0 auto;padding-block:max(12px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-bottom));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  box-sizing:border-box;min-height:100svh;display:flex;flex-direction:column}
+.screen{display:flex;flex-direction:column;align-items:center;flex:1;gap:12px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:3px solid var(--ink);border-radius:20px;cursor:pointer;
+  font-family:var(--pop);font-size:1.05rem;padding:12px 20px;min-height:56px;box-sizing:border-box;width:100%;
+  background:var(--accent);color:#fff;text-shadow:0 2px 0 rgba(91,77,69,.35);box-shadow:4px 4px 0 var(--ink);
+  transition:transform .08s,box-shadow .08s;text-decoration:none}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn.light{background:var(--egg);color:var(--ink);text-shadow:none}
+.btn.sky{background:var(--sky);color:var(--ink);text-shadow:none}
+.btn.plain{background:var(--card);color:var(--ink);text-shadow:none;font-size:.95rem;min-height:48px}
+.btn.dark{background:var(--ink);color:var(--card);text-shadow:none}
+.btn:focus-visible,.iconbtn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.iconbtn{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:.8rem;cursor:pointer;font-weight:700;color:var(--ink)}
+.row{display:flex;gap:10px;width:100%}
+.row .btn{flex:1;min-width:0;font-size:.95rem;padding:12px 10px}
+
+/* ---- タイトル ---- */
+.logo{font-family:var(--pop);font-size:clamp(2.5rem,12.5vw,3.5rem);letter-spacing:.04em;margin:14px 0 0;line-height:1.1;text-align:center}
+.logo span{display:inline-block;animation:hop 2.4s ease-in-out infinite;animation-delay:calc(var(--i)*.12s)}
+.logo .c0{color:#e39aa6}.logo .c1{color:#c9935f}.logo .c2{color:#e3a165}.logo .c3{color:#8fb07c}.logo .c4{color:#7f9fc0}
+@keyframes hop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+.catch{margin:0;color:var(--sub);font-weight:700;text-align:center}
+.parade{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:100%;max-width:400px;margin:4px 0}
+.parade i{display:block;aspect-ratio:1;max-width:100%;animation:hop 1.8s ease-in-out infinite;animation-delay:calc(var(--i)*.15s)}
+.parade svg{width:100%;height:100%;display:block}
+.howto{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px 16px;margin:0;font-size:.88rem;line-height:1.75;width:100%;box-sizing:border-box}
+.howto b{font-family:var(--pop);font-weight:400;color:var(--accent)}
+.specials{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%}
+.sp{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 6px;text-align:center;font-size:.72rem;line-height:1.4}
+.sp svg{width:44px;height:44px;display:block;margin:0 auto 2px}
+.sp b{display:block;font-family:var(--pop);font-weight:400;font-size:.8rem}
+.best{font-family:var(--pop);font-size:.95rem;margin:0;color:var(--sub)}
+.foot{font-size:.75rem;color:var(--sub);margin:4px 0 0;display:flex;gap:12px;align-items:center}
+.foot a{color:var(--sub)}
+
+/* ---- プレイ ---- */
+#play{gap:8px}
+.hud{display:flex;align-items:center;gap:8px;width:var(--box);max-width:100%}
+.stage{font-family:var(--pop);font-size:.85rem;background:var(--ink);color:var(--card);border-radius:999px;padding:4px 12px;white-space:nowrap}
+.score{font-family:var(--pop);font-size:1.35rem;margin-left:auto;font-variant-numeric:tabular-nums}
+.timebar{position:relative;width:var(--box);max-width:100%;height:16px;border:2.5px solid var(--ink);border-radius:999px;background:var(--card);overflow:hidden;box-sizing:border-box}
+.timebar i{position:absolute;inset:0;transform-origin:left;background:var(--leaf);border-radius:999px}
+.timebar.warn i{background:var(--accent);animation:blink .5s steps(2) infinite}
+.timebar.frozen i{background:var(--fever)}
+.timebar b{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7rem;font-family:var(--pop);font-weight:400;font-variant-numeric:tabular-nums}
+@keyframes blink{50%{opacity:.55}}
+.order{display:flex;align-items:center;gap:8px;width:var(--box);max-width:100%;background:var(--card);border:2px dashed #d6c9b6;border-radius:14px;padding:4px 8px;box-sizing:border-box}
+.order>span{font-family:var(--pop);font-size:.72rem;color:var(--sub);writing-mode:vertical-rl;letter-spacing:.1em}
+.quota{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1;min-width:0}
+.q{position:relative;display:flex;align-items:center;justify-content:center;gap:2px;border-radius:10px;padding:2px;transition:background .2s}
+.q svg{width:min(40px,9vw);aspect-ratio:1;display:block;flex:none}
+.q b{font-family:var(--pop);font-weight:400;font-size:.95rem;line-height:1;font-variant-numeric:tabular-nums}
+.q b small{font-size:.65em;color:var(--sub)}
+.q.done{background:#e6f1dc}
+.q.done b{color:#5f8c50}
+.q.bump{animation:bump .25s}
+@keyframes bump{50%{transform:scale(1.12)}}
+.meters{display:flex;align-items:center;gap:8px;width:var(--box);max-width:100%;min-height:26px}
+.combo{font-family:var(--pop);font-size:1rem;min-width:7.5em;white-space:nowrap;font-variant-numeric:tabular-nums;opacity:.25;transition:opacity .15s}
+.combo.on{opacity:1}
+.combo small{font-size:.65em;margin-left:2px}
+.fever{position:relative;flex:1;height:12px;border:2px solid var(--ink);border-radius:999px;background:var(--card);overflow:hidden}
+.fever i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#f6d48a,var(--fever),#ec9b86)}
+.fever.on i{animation:shine .6s linear infinite}
+@keyframes shine{50%{filter:brightness(1.15)}}
+.fevlabel{font-family:var(--pop);font-size:.7rem;color:var(--sub)}
+.board{position:relative;width:var(--box);height:var(--box);max-width:100%;border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);background:var(--card);overflow:hidden;box-sizing:content-box}
+.board.fev{box-shadow:4px 4px 0 var(--ink),0 0 0 4px var(--fever)}
+.board.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-1px)}}
+#cv{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
+.banner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;padding:0 12px}
+.banner p{margin:0;font-family:var(--pop);font-size:clamp(1.6rem,8.5vw,2.5rem);color:var(--card);
+  -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink);animation:pop .35s cubic-bezier(.3,1.6,.6,1)}
+.banner small{display:block;margin-top:6px;font-family:var(--pop);font-size:.95rem;color:var(--ink);background:var(--egg);border:2px solid var(--ink);border-radius:999px;padding:4px 14px;animation:pop .35s .1s both}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.ctrl{display:flex;gap:8px;width:var(--box);max-width:100%;justify-content:space-between}
+
+/* ---- 結果 ---- */
+.rcard{width:100%;background:var(--card);border:3px solid var(--ink);border-radius:24px;box-shadow:5px 5px 0 var(--ink);padding:18px 16px 14px;box-sizing:border-box;text-align:center}
+.rhead{font-family:var(--pop);color:var(--sub);font-size:.9rem;margin:0}
+.rlabel{margin:10px 0 0;color:var(--sub);font-weight:700;font-size:.9rem}
+.rank{font-family:var(--pop);font-size:clamp(1.5rem,7.5vw,2.1rem);margin:2px 0 6px;text-wrap:balance}
+.rbig{font-family:var(--pop);font-size:2.4rem;margin:0;font-variant-numeric:tabular-nums;line-height:1.1}
+.rbig small{font-size:.45em;color:var(--sub);margin-left:4px}
+.newbest{display:inline-block;background:var(--accent);color:#fff;font-family:var(--pop);font-size:.75rem;border-radius:999px;padding:2px 10px;margin-top:4px}
+.rstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0 8px}
+.rstats div{background:var(--bg);border-radius:12px;padding:6px 4px}
+.rstats span{display:block;font-size:.7rem;color:var(--sub);font-weight:700}
+.rstats b{font-family:var(--pop);font-weight:400;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.catches{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.catches div{font-family:var(--pop);font-size:.75rem;font-variant-numeric:tabular-nums}
+.catches svg{width:100%;aspect-ratio:1;display:block}
+.fav{margin:10px 0 0;font-size:.85rem;font-weight:700}
+.site{margin:8px 0 0;font-size:.72rem;color:var(--sub)}
+
+.modal{position:fixed;inset:0;background:rgba(62,51,45,.55);display:flex;align-items:center;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));z-index:10;overflow-y:auto}
+.sheet{background:var(--card);border:3px solid var(--ink);border-radius:22px;padding:18px;width:100%;max-width:400px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;text-align:center}
+.sheet h2{font-family:var(--pop);font-weight:400;font-size:1.2rem;margin:0}
+.sheet img{width:100%;border-radius:14px;border:2px solid var(--line);aspect-ratio:1;background:var(--bg)}
+.sheet p{margin:0;font-size:.8rem;color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--card);border-radius:999px;padding:10px 18px;font-size:.85rem;z-index:20;pointer-events:none;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.logo span,.parade i{animation:none}.board.shake{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ===== タイトル ===== -->
+<section class="screen" id="title">
+  <h1 class="logo" id="logo">おやつポン</h1>
+  <p class="catch">となりと入れかえて、3つそろえてポン！</p>
+  <div class="parade" id="parade" aria-hidden="true"></div>
+  <p class="howto">
+    <b>①</b> おやつをスワイプして、となりと入れかえ<br>
+    <b>②</b> たて・よこに3ついじょう並ぶとポン！<br>
+    <b>③</b> 時間内に<b>お客さんの注文</b>をそろえるとステージクリア<br>
+    <b>④</b> すばやく消し続けると<b>コンボ</b>、たまると<b>フィーバー</b>！
+  </p>
+  <div class="specials" id="specials"></div>
+  <button class="btn" id="startBtn" type="button">あそぶ</button>
+  <p class="best" id="bestLine"></p>
+  <p class="foot"><a href="https://runococco.github.io/picoruno./">別のゲーム</a><button class="iconbtn" id="muteBtn" type="button" aria-pressed="false">おと：オン</button></p>
+</section>
+
+<!-- ===== プレイ ===== -->
+<section class="screen" id="play" hidden>
+  <div class="hud">
+    <span class="stage" id="stageLbl">ステージ 1</span>
+    <span class="score" id="scoreLbl">0</span>
+  </div>
+  <div class="timebar" id="timebar" role="progressbar" aria-label="のこり時間"><i id="timeFill"></i><b id="timeTxt">60</b></div>
+  <div class="order"><span>ちゅうもん</span><div class="quota" id="quota"></div></div>
+  <div class="meters">
+    <span class="combo" id="comboLbl">0<small>コンボ</small></span>
+    <span class="fevlabel">フィーバー</span>
+    <div class="fever" id="feverBar"><i id="feverFill"></i></div>
+  </div>
+  <div class="board" id="board">
+    <canvas id="cv" aria-label="パズルの盤面"></canvas>
+    <div class="banner" id="banner" hidden></div>
+  </div>
+  <div class="ctrl">
+    <button class="iconbtn" id="pauseBtn" type="button">いちじ停止</button>
+    <button class="iconbtn" id="muteBtn2" type="button" aria-pressed="false">おと：オン</button>
+  </div>
+</section>
+
+<!-- ===== 結果 ===== -->
+<section class="screen" id="result" hidden>
+  <div class="rcard">
+    <p class="rhead">おやつポン ・ けっか</p>
+    <p class="rlabel">あなたの称号は…</p>
+    <p class="rank" id="rRank"></p>
+    <p class="rbig" id="rScore"></p>
+    <span class="newbest" id="rNew" hidden>じこベスト更新！</span>
+    <div class="rstats">
+      <div><span>とうたつ</span><b id="rStage"></b></div>
+      <div><span>さいだいコンボ</span><b id="rCombo"></b></div>
+      <div><span>ボム・ルノたま</span><b id="rSp"></b></div>
+    </div>
+    <div class="catches" id="rCatches"></div>
+    <p class="fav" id="rFav"></p>
+    <p class="site">#おやつポン ・ picoruno.</p>
+  </div>
+  <div class="row">
+    <a class="btn dark" id="xBtn" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    <button class="btn sky" id="imgBtn" type="button">画像でシェア</button>
+  </div>
+  <button class="btn" id="againBtn" type="button">もういちど</button>
+  <button class="btn plain" id="homeBtn" type="button">タイトルへ</button>
+</section>
+
+</div>
+
+<div class="modal" id="pauseModal" hidden>
+  <div class="sheet">
+    <h2>いちじ停止中</h2>
+    <button class="btn" id="resumeBtn" type="button">つづける</button>
+    <button class="btn plain" id="giveupBtn" type="button">ここでおわる</button>
+  </div>
+</div>
+
+<div class="modal" id="shareModal" hidden>
+  <div class="sheet">
+    <h2>結果の画像</h2>
+    <img id="shareImg" alt="結果の画像">
+    <p>スマホは画像を長押しでも保存できます</p>
+    <button class="btn sky" id="shareGo" type="button">保存・シェアする</button>
+    <button class="btn plain" id="copyTxt" type="button">シェア文をコピー</button>
+    <button class="btn plain" id="shareClose" type="button">とじる</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const GAME_URL='https://runococco.github.io/picoruno./oyatsupon.html';
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const KEY_BEST='oyatsupon-best', KEY_MUTE='oyatsupon-mute';
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===== おやつ（オリジナルのSVG。viewBox 0 0 100 100）。形と色の両方で見分けられるようにしています ===== */
+const INK='#5b4d45';
+const st=`stroke="${INK}" stroke-width="4" stroke-linejoin="round"`;
+const eyes=(y=58,dx=11,cx=50)=>`<circle cx="${cx-dx}" cy="${y}" r="4" fill="${INK}"/><circle cx="${cx+dx}" cy="${y}" r="4" fill="${INK}"/><circle cx="${cx-dx+1.3}" cy="${y-1.5}" r="1.2" fill="#fff"/><circle cx="${cx+dx+1.3}" cy="${y-1.5}" r="1.2" fill="#fff"/>`;
+const cheeks=(y=66,dx=19,col='#f2a7a7')=>`<ellipse cx="${50-dx}" cy="${y}" rx="5" ry="3.3" fill="${col}" opacity=".8"/><ellipse cx="${50+dx}" cy="${y}" rx="5" ry="3.3" fill="${col}" opacity=".8"/>`;
+const smile=(y=66)=>`<path d="M45 ${y} q5 5 10 0" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
+const face=(y,dx=11,cy=8,ck='#f2a7a7')=>eyes(y,dx)+cheeks(y+cy,dx+8,ck)+smile(y+6);
+const SWEETS=[
+  {id:'daifuku',name:'いちご大福',emoji:'🍓',col:'#f2bfc6',svg:
+    `<path d="M14 68 q0 -42 36 -44 q36 2 36 44 q0 16 -36 16 q-36 0 -36 -16z" fill="#f8dade" ${st}/>
+     <path d="M38 27 q12 -9 24 0 q-3 9 -12 9 q-9 0 -12 -9z" fill="#e3707a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+     <path d="M50 22 q-8 -10 -16 -8 q4 8 16 8 q8 -12 18 -9 q-6 10 -18 9z" fill="#9cc58a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+     ${face(58,12,9,'#ee95a2')}`},
+  {id:'dorayaki',name:'どらやき',emoji:'🥞',col:'#c9935f',svg:
+    `<ellipse cx="50" cy="66" rx="40" ry="18" fill="#c48a55" ${st}/><ellipse cx="50" cy="58" rx="37" ry="14" fill="#7a5049"/>
+     <ellipse cx="50" cy="48" rx="40" ry="22" fill="#dfa96f" ${st}/><ellipse cx="50" cy="42" rx="26" ry="11" fill="#e9bd87" opacity=".7"/>
+     ${face(48,12,7,'#e48f7c')}`},
+  {id:'purin',name:'プリン',emoji:'🍮',col:'#f3d27a',svg:
+    `<ellipse cx="50" cy="84" rx="42" ry="9" fill="#fbf8f2" ${st}/>
+     <path d="M22 82 L30 34 Q50 25 70 34 L78 82 Q50 90 22 82 Z" fill="#f6dc8e" ${st}/>
+     <path d="M30 34 Q50 25 70 34 L68 46 Q60 52 56 46 Q50 54 44 46 Q40 52 32 46 Z" fill="#b97a4f" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+     ${face(62,11,8,'#f0a58a')}`},
+  {id:'onigiri',name:'おにぎり',emoji:'🍙',col:'#efeae2',svg:
+    `<path d="M50 12 Q60 12 84 60 Q93 86 50 86 Q7 86 16 60 Q40 12 50 12 Z" fill="#fbf8f2" ${st}/>
+     <path d="M33 66 H67 V86 Q50 88 33 86 Z" fill="#4d4a48" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+     ${face(48,11,8,'#f2b3b3')}`},
+  {id:'melon',name:'メロンパン',emoji:'🍈',col:'#b7d48f',svg:
+    `<circle cx="50" cy="54" r="36" fill="#c9df9f" ${st}/>
+     <path d="M28 30 L72 76 M20 46 L56 84 M42 22 L80 62 M72 30 L28 76 M80 46 L44 84 M58 22 L20 62" stroke="#a5c47c" stroke-width="2.6" stroke-linecap="round"/>
+     <circle cx="50" cy="54" r="36" fill="none" ${st}/>
+     <ellipse cx="50" cy="60" rx="21" ry="15" fill="#c9df9f"/>${face(56,11,8,'#ee9f8f')}`},
+  {id:'soda',name:'ソーダアイス',emoji:'🍦',col:'#8fb8d8',svg:
+    `<rect x="44" y="70" width="12" height="24" rx="5" fill="#e6cb9f" ${st}/>
+     <rect x="22" y="8" width="56" height="68" rx="22" fill="#a9cbe6" ${st}/>
+     <path d="M30 22 q4 -6 10 -6" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
+     <circle cx="64" cy="22" r="2" fill="#fff" opacity=".8"/><circle cx="33" cy="64" r="2" fill="#fff" opacity=".7"/>
+     ${face(42,11,8,'#f2adb0')}`},
+  {id:'candy',name:'キャンディ',emoji:'🍬',col:'#f0a868',svg:
+    `<path d="M26 50 L6 32 Q2 50 6 68 Z" fill="#f8cfa6" ${st}/><path d="M74 50 L94 32 Q98 50 94 68 Z" fill="#f8cfa6" ${st}/>
+     <circle cx="50" cy="50" r="30" fill="#f2ad6c" ${st}/><path d="M28 36 q10 -12 24 -14" stroke="#f9d3a9" stroke-width="5" stroke-linecap="round" fill="none"/>
+     ${face(48,10,8,'#e8857a')}`},
+];
+const NT=SWEETS.length;
+// ルノたま（ルノコッコのたまご）：入れかえた相手と同じおやつを全部消す
+const EGG_SVG=`<path d="M50 10 Q78 12 82 56 Q82 88 50 90 Q18 88 18 56 Q22 12 50 10 Z" fill="#fff3c9" ${st}/>
+  <path d="M22 44 l9 7 9 -7 9 7 9 -7 9 7 9 -7 4 3" fill="none" stroke="#e8877f" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M19 62 l9 -6 9 6 9 -6 9 6 9 -6 9 6 9 -6" fill="none" stroke="#86a3c4" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="34" cy="28" r="3.5" fill="#9cc58a"/><circle cx="62" cy="24" r="3" fill="#f3b65f"/><circle cx="50" cy="78" r="3.5" fill="#e39aa6"/><circle cx="68" cy="74" r="3" fill="#9cc58a"/>
+  <circle cx="42" cy="36" r="3" fill="${INK}"/><circle cx="58" cy="36" r="3" fill="${INK}"/><path d="M46 41 l4 4 4 -4 z" fill="#ec9a5a" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`;
+const svgOf=(i,extra='')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ${extra}>${i<0?EGG_SVG:SWEETS[i].svg}</svg>`;
+const BOMB_RING=`<circle cx="50" cy="50" r="44" fill="none" stroke="#e3c26b" stroke-width="7" stroke-dasharray="12 8"/>`;
+const BOMB_STAR=`<path d="M80 6 l5 11 12 2 -9 8 2 12 -10 -6 -10 6 2 -12 -9 -8 12 -2 z" fill="#f3d27a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+const BOMB_BADGE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${BOMB_RING}</svg>`;
+
+/* ===== 音 ===== */
+let actx=null, muted=LS.get(KEY_MUTE,false);
+function ac(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(actx&&actx.state==='suspended')actx.resume()}
+function tone(f,d=.12,type='triangle',v=.16,when=0){
+  if(muted||!actx) return;
+  const t=actx.currentTime+when, o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t); g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t+d+.02);
+}
+function noise(d=.25,v=.18){
+  if(muted||!actx) return;
+  const n=actx.sampleRate*d|0, buf=actx.createBuffer(1,n,actx.sampleRate), ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+  const s=actx.createBufferSource(), g=actx.createGain(), f=actx.createBiquadFilter();
+  f.type='lowpass'; f.frequency.value=900; s.buffer=buf; g.gain.value=v; s.connect(f).connect(g).connect(actx.destination); s.start();
+}
+const sfx={
+  swap(){tone(520,.06,'sine',.08)},
+  bad(){tone(180,.12,'square',.06);tone(150,.14,'square',.05,.08)},
+  pop(n){const f=440*Math.pow(2,Math.min(n,24)/12);tone(f,.14,'triangle',.15);tone(f*1.5,.1,'sine',.06,.03)},
+  boom(){noise(.3,.22);tone(110,.25,'sine',.2)},
+  egg(){[784,988,1175,1568,1976].forEach((f,i)=>tone(f,.16,'sine',.1,i*.04))},
+  make(){tone(1047,.08,'sine',.1);tone(1568,.12,'sine',.08,.06)},
+  gold(){tone(1319,.1,'sine',.1);tone(1760,.16,'sine',.08,.07)},
+  clear(){[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.14,i*.08))},
+  fever(){[392,523,659,784,1047,1319].forEach((f,i)=>tone(f,.14,'square',.06,i*.05))},
+  tick(){tone(880,.04,'sine',.05)},
+  end(){[523,392,330,262].forEach((f,i)=>tone(f,.22,'triangle',.12,i*.14))},
+};
+function setMuteLabel(){['muteBtn','muteBtn2'].forEach(id=>{$(id).textContent='おと：'+(muted?'オフ':'オン');$(id).setAttribute('aria-pressed',String(muted))})}
+
+/* ===== ルール ===== */
+const N=8, TIME_MAX=60, CLEAR_BONUS=20, COMBO_WIN=2.2, FEVER_TIME=8, GOLD_RATE=.035;
+// 注文：ステージごとに 3〜5 種類のおやつを、それぞれ何個か
+const orderKinds=s=>Math.min(3+Math.floor((s-1)/2),5);
+const orderCount=s=>Math.min(8+s*2,26);
+const drainFor=s=>1+Math.max(0,s-1)*.06;             // 面が進むと時間が早く減る
+const RANKS=[ // 到達ステージで称号
+  [1,'つまみぐい見習い'],[2,'おやつ係'],[3,'おやつ好き'],[4,'見習いパティシエ'],[5,'パティシエ'],
+  [6,'人気パティシエ'],[7,'おやつ名人'],[8,'おやつ大臣'],[10,'おやつの神さま'],[12,'伝説のおやつ職人'],
+];
+const rankOf=s=>{let r=RANKS[0][1];for(const [n,name] of RANKS) if(s>=n) r=name;return r};
+
+/* ===== 状態 ===== */
+let G=null, uid=0;
+function newTile(t,r,c,y,gold=false){return {t,r,c,x:c,y:y==null?r:y,vy:0,s:1,pop:-1,id:++uid,sq:0,sp:t<0?2:0,gold,grow:0}}
+function makeOrder(s){
+  const k=orderKinds(s), n=orderCount(s), ids=[...Array(NT).keys()].sort(()=>Math.random()-.5).slice(0,k).sort((a,b)=>a-b);
+  const q=Array(NT).fill(0); ids.forEach(i=>q[i]=n); return q;
+}
+function freshState(){
+  return {stage:1,score:0,time:TIME_MAX,quota:makeOrder(1),caught:Array(NT).fill(0),
+    combo:0,comboT:0,maxCombo:0,fever:0,feverT:0,fevers:0,bombs:0,eggs:0,busy:false,over:false,paused:false,idle:0,hint:null,
+    sel:null,clock:0,grid:null,fx:[],texts:[],timers:[],tick:0,banner:0,stageClearPending:false};
+}
+
+/* ===== 盤面 ===== */
+function randType(){
+  // 注文に入っているおやつは少しだけ出やすい
+  const w=G.quota.map(q=>q>0?1.15:.85), sum=w.reduce((a,b)=>a+b,0);
+  let x=Math.random()*sum; for(let i=0;i<NT;i++){x-=w[i];if(x<0)return i} return NT-1;
+}
+function at(r,c){return r>=0&&r<N&&c>=0&&c<N?G.grid[r][c]:null}
+function typeAt(r,c){const t=at(r,c);return t?t.t:-1}
+function fillBoard(){
+  G.grid=[];
+  for(let r=0;r<N;r++){G.grid.push([]);for(let c=0;c<N;c++){
+    let t; do{t=Math.floor(Math.random()*NT)}while((c>=2&&typeAt(r,c-1)===t&&typeAt(r,c-2)===t)||(r>=2&&typeAt(r-1,c)===t&&typeAt(r-2,c)===t));
+    G.grid[r].push(newTile(t,r,c,r-N-1-(N-r)*.15));
+  }}
+  if(!findMove()) fillBoard();
+}
+function findMatches(){
+  const groups=[];
+  for(let r=0;r<N;r++){let c=0;while(c<N){const t=typeAt(r,c);let e=c+1;while(e<N&&typeAt(r,e)===t)e++;
+    if(t>=0&&e-c>=3){const g=[];for(let k=c;k<e;k++)g.push([r,k]);groups.push({t,cells:g})} c=e}}
+  for(let c=0;c<N;c++){let r=0;while(r<N){const t=typeAt(r,c);let e=r+1;while(e<N&&typeAt(e,c)===t)e++;
+    if(t>=0&&e-r>=3){const g=[];for(let k=r;k<e;k++)g.push([k,c]);groups.push({t,cells:g})} r=e}}
+  return groups;
+}
+function lineAt(r,c){ // (r,c) を含む3連以上があるか
+  const t=typeAt(r,c); if(t<0) return false;
+  let h=1;for(let k=c-1;typeAt(r,k)===t;k--)h++;for(let k=c+1;typeAt(r,k)===t;k++)h++;
+  let v=1;for(let k=r-1;typeAt(k,c)===t;k--)v++;for(let k=r+1;typeAt(k,c)===t;k++)v++;
+  return h>=3||v>=3;
+}
+function rawSwap(a,b){const A=G.grid[a[0]][a[1]],B=G.grid[b[0]][b[1]];G.grid[a[0]][a[1]]=B;G.grid[b[0]][b[1]]=A;
+  if(A){A.r=b[0];A.c=b[1]} if(B){B.r=a[0];B.c=a[1]}}
+function findMove(){
+  const opts=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(const [dr,dc] of [[0,1],[1,0]]){
+    const r2=r+dr,c2=c+dc; if(r2>=N||c2>=N) continue;
+    const A=at(r,c),B=at(r2,c2); if(!A||!B) continue;
+    if(A.sp===2||B.sp===2){opts.push([[r,c],[r2,c2]]);continue}
+    if(A.t===B.t) continue;
+    rawSwap([r,c],[r2,c2]); const ok=lineAt(r,c)||lineAt(r2,c2); rawSwap([r,c],[r2,c2]);
+    if(ok) opts.push([[r,c],[r2,c2]]);
+  }
+  return opts.length?opts[Math.floor(Math.random()*opts.length)]:null;
+}
+
+/* ===== 時間（ゲーム内時計。いちじ停止で止まる） ===== */
+function wait(sec){return new Promise(res=>G.timers.push({t:G.clock+sec,res}))}
+function settled(){for(const row of G.grid)for(const t of row){if(t&&(t.y!==t.r||t.x!==t.c||t.tw))return false}return true}
+function waitSettle(){const g=G;return new Promise(res=>{const chk=()=>{if(G!==g||settled())res();else g.timers.push({t:g.clock+.016,res:chk})};chk()})}
+function tween(t,dur){t.tw={fx:t.x,fy:t.y,t:0,d:dur}}
+
+/* ===== 1手 ===== */
+async function trySwap(a,b){
+  if(G.busy||G.over||G.paused) return;
+  const A=at(...a),B=at(...b); if(!A||!B) return;
+  const g=G;
+  G.busy=true; G.sel=null; G.hint=null; G.idle=0; sfx.swap();
+  rawSwap(a,b); tween(A,.13); tween(B,.13); await waitSettle();
+  if(G!==g) return;
+  if(A.sp===2||B.sp===2){
+    // ルノたま：相手と同じおやつを全部。ルノたま同士なら盤面ぜんぶ
+    const other=A.sp===2?B:A, cells=[];
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=G.grid[r][c];
+      if(t===A||t===B||(other.sp===2?true:(t.t===other.t&&t.sp!==2))) cells.push([r,c])}
+    sfx.egg(); shake();
+    await resolve([a,b],cells);
+  }else if(!(lineAt(...a)||lineAt(...b))){
+    sfx.bad(); rawSwap(a,b); tween(A,.13); tween(B,.13); await waitSettle();
+    if(G!==g) return;
+    G.busy=false; return;
+  }else await resolve([a,b],null);
+  if(G!==g) return;
+  G.busy=false; G.idle=0;
+  if(G.stageClearPending) await stageClear();
+  if(G===g&&G.time<=0) endGame();
+}
+async function resolve(moved,preset){
+  const g=G, movedKeys=new Set(moved.map(([r,c])=>r*N+c));
+  let first=true;
+  while(G===g){
+    const groups=preset?[]:findMatches();
+    if(!preset&&!groups.length) break;
+    const gone=new Map(), make=new Map();
+    if(preset){
+      preset.forEach(([r,c])=>gone.set(r*N+c,[r,c]));
+      G.combo++; G.comboT=COMBO_WIN; G.maxCombo=Math.max(G.maxCombo,G.combo);
+      const [er,ec]=moved[1]; addScore(150*preset.length,ec,er);
+      preset=null;
+    }
+    // 2本のラインが重なったマス（L字・T字）
+    const cnt=new Map();
+    groups.forEach(gr=>gr.cells.forEach(([r,c])=>cnt.set(r*N+c,(cnt.get(r*N+c)||0)+1)));
+    for(const gr of groups){
+      G.combo++; G.comboT=COMBO_WIN; G.maxCombo=Math.max(G.maxCombo,G.combo);
+      const len=gr.cells.length;
+      let cr=0,cc=0; gr.cells.forEach(([r,c])=>{cr+=r;cc+=c}); cr/=len; cc/=len;
+      addScore(100+(len-3)*120,cc,cr);
+      if(len>=4){
+        // 4つでボム、5つでルノたま。動かしたマスがあればそこに、なければ真ん中に
+        const pick=(first&&gr.cells.find(([r,c])=>movedKeys.has(r*N+c)))||gr.cells.find(([r,c])=>cnt.get(r*N+c)>1)||gr.cells[len>>1];
+        const k=pick[0]*N+pick[1], sp=len>=5?2:1;
+        make.set(k,Math.max(make.get(k)||0,sp));
+      }
+      if(G.feverT<=0){G.fever=Math.min(100,G.fever+3+Math.min(G.combo,20)*.2+(len-3)*4); if(G.fever>=100) startFever()}
+      for(const [r,c] of gr.cells) gone.set(r*N+c,[r,c]);
+    }
+    for(const [k,n] of cnt) if(n>1&&!make.has(k)) make.set(k,1);
+    // ボムの爆発（3×3）。巻きこんだボムも連鎖
+    const queue=[...gone.values()], blasted=new Set();
+    let booms=0;
+    while(queue.length){
+      const [r,c]=queue.pop(), t=G.grid[r][c];
+      if(!t||t.sp!==1||blasted.has(t.id)) continue;
+      blasted.add(t.id); booms++;
+      for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+        const rr=r+dr,cc=c+dc,n=at(rr,cc),k=rr*N+cc;
+        if(!n||n.sp===2||gone.has(k)) continue;
+        gone.set(k,[rr,cc]); queue.push([rr,cc]); addScore(40,cc,rr,true);
+      }
+      ring(c,r);
+    }
+    if(booms){sfx.boom(); shake()}
+    // できたボム・ルノたまの場所はコマを残す
+    for(const k of make.keys()){const r=Math.floor(k/N),c=k%N,t=G.grid[r][c]; if(t&&blasted.has(t.id)&&t.sp===1) make.delete(k)}
+    sfx.pop(G.combo);
+    for(const [k,[r,c]] of gone){
+      const t=G.grid[r][c]; if(!t) continue;
+      if(t.t>=0){G.caught[t.t]++; if(G.quota[t.t]>0){G.quota[t.t]--; bumpQuota(t.t)}}
+      if(t.gold){t.gold=false; goldBonus(c,r)}
+      if(!make.has(k)){t.pop=0; burst(c,r,t.t>=0?SWEETS[t.t].col:'#f3d27a')}
+    }
+    if(G.quota.every(q=>q<=0)) G.stageClearPending=true;
+    renderHud();
+    await wait(.2);
+    if(G!==g) return;
+    for(const [k,[r,c]] of gone){
+      if(make.has(k)){const t=G.grid[r][c], sp=make.get(k); t.sp=sp; if(sp===2){t.t=-1; G.eggs++} else G.bombs++; t.grow=1; continue}
+      G.grid[r][c]=null;
+    }
+    if(make.size) sfx.make();
+    gravity();
+    await waitSettle();
+    first=false;
+  }
+  if(G===g&&!findMove()) await shuffle();
+}
+function addScore(base,c,r,quiet){
+  const pts=Math.round(base*(1+Math.min(G.combo,60)*.1)*(G.feverT>0?2:1)/10)*10;
+  G.score+=pts; if(!quiet) addText(`+${pts}`,c,r,INK);
+}
+function goldBonus(c,r){
+  G.score+=500; sfx.gold();
+  if(G.feverT<=0){G.time=Math.min(TIME_MAX,G.time+2); addText('+2秒',c,r+.5,'#b98a2f')}
+  else addText('+500',c,r+.5,'#b98a2f');
+}
+function gravity(){
+  for(let c=0;c<N;c++){
+    let w=N-1;
+    for(let r=N-1;r>=0;r--){const t=G.grid[r][c]; if(t){if(w!==r){G.grid[w][c]=t;G.grid[r][c]=null;t.r=w} w--}}
+    const k=w+1;
+    for(let r=w;r>=0;r--) G.grid[r][c]=newTile(randType(),r,c,r-k-.3,Math.random()<GOLD_RATE);
+  }
+}
+async function shuffle(){
+  const g=G;
+  showBanner('シャッフル！','',.9);
+  await wait(.5);
+  if(G!==g) return;
+  const tiles=G.grid.flat();
+  let tries=0;
+  do{
+    for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]]}
+    tiles.forEach((t,i)=>{const r=Math.floor(i/N),c=i%N;G.grid[r][c]=t;t.r=r;t.c=c});
+    tries++;
+  }while((findMatches().length||!findMove())&&tries<200);
+  if(tries>=200){const old=G.grid; fillBoard(); G.grid.flat().forEach(t=>{t.y=old[t.r][t.c].y;t.x=old[t.r][t.c].x})}
+  G.grid.flat().forEach(t=>tween(t,.35));
+  await waitSettle();
+}
+function startFever(){
+  G.feverT=FEVER_TIME; G.fevers++; G.fever=100; sfx.fever();
+  showBanner('フィーバー！','スコア2倍・時間ストップ',1.1);
+  $('board').classList.add('fev'); $('feverBar').classList.add('on');
+}
+async function stageClear(){
+  const g=G;
+  G.stageClearPending=false; G.busy=true;
+  const bonus=1000*G.stage;
+  G.score+=bonus; sfx.clear();
+  const add=Math.min(CLEAR_BONUS,TIME_MAX-G.time);
+  G.time=Math.min(TIME_MAX,G.time+CLEAR_BONUS);
+  showBanner(`ステージ${G.stage} クリア！`,`+${bonus.toLocaleString()}点${add>=1?` ・ +${Math.round(add)}秒`:''}`,1.5);
+  G.banner=1.5;
+  await wait(1.5);
+  if(G!==g) return;
+  G.stage++; G.quota=makeOrder(G.stage);
+  buildQuota(); renderHud();
+  showBanner(`ステージ${G.stage}`,'新しい注文がきたよ',1); G.banner=1;
+  await wait(1);
+  if(G!==g) return;
+  G.busy=false; G.idle=0;
+}
+
+/* ===== 演出 ===== */
+function addText(s,c,r,col){G.texts.push({s,x:c+.5,y:r+.5,t:0,col})}
+function burst(c,r,col){
+  if(reduceMotion) return;
+  for(let i=0;i<6;i++){const a=Math.random()*Math.PI*2,v=1.5+Math.random()*2.5;
+    G.fx.push({x:c+.5,y:r+.5,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.5,t:0,life:.5+Math.random()*.3,col,sz:.07+Math.random()*.06})}
+}
+function ring(c,r){G.fx.push({ring:true,x:c+.5,y:r+.5,t:0,life:.35})}
+function shake(){if(reduceMotion)return;const b=$('board');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
+let bannerTimer=0;
+function showBanner(big,small,sec){
+  const b=$('banner'); b.innerHTML=`<p>${big}</p>${small?`<small>${small}</small>`:''}`; b.hidden=false;
+  clearTimeout(bannerTimer); bannerTimer=setTimeout(()=>b.hidden=true,sec*1000);
+}
+
+/* ===== 描画 ===== */
+const cv=$('cv'), ctx=cv.getContext('2d');
+let size=320, cell=40, dpr=1, sprites=[], eggSprite=null, badgeSprite=null;
+const toImg=svg=>{const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);return im};
+const svgImgs=SWEETS.map((a,i)=>toImg(svgOf(i,'width="200" height="200"')));
+const eggImg=toImg(svgOf(-1,'width="200" height="200"')), badgeImg=toImg(BOMB_BADGE.replace('<svg ','<svg width="200" height="200" '));
+function bake(im,px){const c=document.createElement('canvas');c.width=c.height=px;
+  try{if(im.complete&&im.naturalWidth)c.getContext('2d').drawImage(im,0,0,px,px)}catch(e){} return c}
+function bakeSprites(){
+  const px=Math.max(8,Math.round(cell*.9*dpr));
+  sprites=svgImgs.map(im=>bake(im,px)); eggSprite=bake(eggImg,px); badgeSprite=bake(badgeImg,Math.round(cell*dpr));
+}
+[...svgImgs,eggImg,badgeImg].forEach(im=>im.addEventListener('load',bakeSprites));
+function resize(){
+  const r=cv.getBoundingClientRect(); if(!r.width) return;
+  size=r.width; cell=size/N; dpr=Math.min(window.devicePixelRatio||1,3);
+  cv.width=Math.round(size*dpr); cv.height=Math.round(size*dpr); bakeSprites();
+}
+window.addEventListener('resize',resize);
+function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const fev=G&&G.feverT>0;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    ctx.fillStyle=(r+c)%2?(fev?'#f8e4bd':'#f1e9dc'):(fev?'#fcecd0':'#fbf6ee');
+    ctx.fillRect(c*cell,r*cell,cell,cell);
+  }
+  if(!G||!G.grid) return;
+  if(G.sel){ctx.fillStyle='rgba(227,194,107,.55)';rrect(ctx,G.sel[1]*cell+2,G.sel[0]*cell+2,cell-4,cell-4,cell*.22);ctx.fill()}
+  const hintOn=G.hint&&!G.busy, wob=Math.sin(G.clock*10);
+  for(const row of G.grid)for(const t of row){
+    if(!t||t.y<-1.2) continue;
+    let s=t.s, a=1;
+    if(t.pop>=0){const p=Math.min(1,t.pop/.2);s=1+.35*p;a=1-p}
+    if(t.grow>0) s+=t.grow*.3;
+    let oy=0;
+    if(hintOn&&G.hint.some(([r,c])=>r===t.r&&c===t.c)){s+=wob*.06;oy=wob*cell*.04}
+    const sq=t.sq>0?t.sq:0;
+    const w=cell*.9*s*(1+sq*.12), h=cell*.9*s*(1-sq*.12);
+    const cx=(t.x+.5)*cell, cy=(t.y+.5)*cell+oy+(cell*.9*s-h)/2;
+    ctx.globalAlpha=a;
+    if(t.gold&&t.pop<0){ // キラキラおやつ
+      const gr=ctx.createRadialGradient(cx,cy,cell*.1,cx,cy,cell*.55);
+      gr.addColorStop(0,'rgba(255,236,160,.95)');gr.addColorStop(1,'rgba(255,236,160,0)');
+      ctx.fillStyle=gr;ctx.fillRect(cx-cell*.55,cy-cell*.55,cell*1.1,cell*1.1);
+    }
+    if(t.sp===1&&t.pop<0&&badgeSprite){
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(G.clock*1.5);ctx.drawImage(badgeSprite,-cell/2,-cell/2,cell,cell);ctx.restore();
+    }
+    const sp=t.t<0?eggSprite:sprites[t.t];
+    if(sp&&sp.width) ctx.drawImage(sp,cx-w/2,cy-h/2,w,h);
+    else{ctx.fillStyle=t.t<0?'#fff3c9':SWEETS[t.t].col;ctx.beginPath();ctx.arc(cx,cy,w*.42,0,7);ctx.fill()}
+    if(t.sp===1&&t.pop<0){ // ボムの星
+      const bx=cx+cell*.3, by=cy-cell*.3, R=cell*.13;
+      ctx.beginPath();for(let i=0;i<10;i++){const an=-Math.PI/2+i*Math.PI/5,rr=i%2?R*.45:R;ctx.lineTo(bx+Math.cos(an)*rr,by+Math.sin(an)*rr)}
+      ctx.closePath();ctx.fillStyle='#f3d27a';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=INK;ctx.stroke();
+    }
+    if(t.gold&&t.pop<0){ // きらり
+      const k=(Math.sin(G.clock*6+t.id)+1)/2, sx=cx-cell*.28, sy=cy-cell*.28, L=cell*(.06+.08*k);
+      ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(sx-L,sy);ctx.lineTo(sx+L,sy);ctx.moveTo(sx,sy-L);ctx.lineTo(sx,sy+L);ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  for(const p of G.fx){
+    ctx.globalAlpha=Math.max(0,1-p.t/p.life);
+    if(p.ring){ctx.strokeStyle='#f3b65f';ctx.lineWidth=cell*.12;ctx.beginPath();ctx.arc(p.x*cell,p.y*cell,cell*(.4+p.t/p.life*1.2),0,7);ctx.stroke();continue}
+    ctx.fillStyle=p.col;ctx.strokeStyle=INK;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(p.x*cell,p.y*cell,p.sz*cell,0,7);ctx.fill();ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+  ctx.font=`${Math.round(cell*.36)}px "Mochiy Pop One","Zen Maru Gothic",sans-serif`;
+  for(const tx of G.texts){
+    ctx.globalAlpha=Math.max(0,1-Math.max(0,tx.t-.5)/.4);
+    const y=(tx.y-tx.t*.9)*cell;
+    ctx.lineWidth=4; ctx.strokeStyle='#fffdf8'; ctx.strokeText(tx.s,tx.x*cell,y); ctx.fillStyle=tx.col; ctx.fillText(tx.s,tx.x*cell,y);
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ===== ループ ===== */
+let last=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000||0); last=now;
+  if(G&&!G.paused&&!$('play').hidden) step(dt);
+  if(!$('play').hidden) draw();
+}
+function step(dt){
+  G.clock+=dt;
+  const due=G.timers.filter(x=>x.t<=G.clock); G.timers=G.timers.filter(x=>x.t>G.clock); due.forEach(x=>x.res());
+  for(const row of G.grid)for(const t of row){
+    if(!t) continue;
+    if(t.tw){t.tw.t+=dt;const p=Math.min(1,t.tw.t/t.tw.d),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      t.x=t.tw.fx+(t.c-t.tw.fx)*e;t.y=t.tw.fy+(t.r-t.tw.fy)*e;if(p>=1){t.x=t.c;t.y=t.r;delete t.tw}}
+    else if(t.y<t.r){t.vy=Math.min(24,t.vy+70*dt);t.y+=t.vy*dt;if(t.y>=t.r){t.y=t.r;t.vy=0;t.sq=1}}
+    else if(t.y>t.r){t.y=t.r}
+    if(t.x!==t.c&&!t.tw) t.x=t.c;
+    if(t.sq>0) t.sq=Math.max(0,t.sq-dt*6);
+    if(t.grow>0) t.grow=Math.max(0,t.grow-dt*4);
+    if(t.pop>=0) t.pop+=dt;
+  }
+  G.fx.forEach(p=>{p.t+=dt;if(!p.ring){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=9*dt}}); G.fx=G.fx.filter(p=>p.t<p.life);
+  G.texts.forEach(x=>x.t+=dt); G.texts=G.texts.filter(x=>x.t<.9);
+  if(G.over) return;
+  if(G.feverT>0){G.feverT-=dt;G.fever=Math.max(0,100*G.feverT/FEVER_TIME);
+    if(G.feverT<=0){G.feverT=0;G.fever=0;$('board').classList.remove('fev');$('feverBar').classList.remove('on')}}
+  // 時間：ステージの切りかわりとフィーバー中は止まる
+  if(G.feverT<=0&&G.banner<=0&&!G.stageClearPending){
+    G.time=Math.max(0,G.time-dt*drainFor(G.stage));
+    if(G.time<10&&Math.ceil(G.time)!==G.tick){G.tick=Math.ceil(G.time);sfx.tick()}
+  }
+  if(G.banner>0) G.banner-=dt;
+  // コンボは消しつづけている間はつながる
+  if(!G.busy&&G.comboT>0){G.comboT-=dt;if(G.comboT<=0){G.comboT=0;G.combo=0}}
+  if(!G.busy){G.idle+=dt;if(G.idle>5&&!G.hint)G.hint=findMove()}
+  if(G.time<=0&&!G.busy) endGame();
+  renderHud();
+}
+requestAnimationFrame(frame);
+
+/* ===== HUD ===== */
+function buildQuota(){
+  $('quota').innerHTML=G.quota.map((q,i)=>q>0?`<div class="q" id="q${i}" role="img" aria-label="${SWEETS[i].name}">${svgOf(i,'aria-hidden="true"')}<b></b></div>`:'').join('');
+}
+function bumpQuota(i){const el=$('q'+i);if(!el)return;el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump')}
+let hudCache='';
+function renderHud(){
+  if(!G) return;
+  const key=[G.stage,G.score,Math.ceil(G.time*4),G.quota.join(),G.combo,Math.round(G.fever),G.feverT>0].join('|');
+  if(key===hudCache) return; hudCache=key;
+  $('stageLbl').textContent=`ステージ ${G.stage}`;
+  $('scoreLbl').textContent=G.score.toLocaleString();
+  $('timeFill').style.transform=`scaleX(${G.time/TIME_MAX})`;
+  $('timeTxt').textContent=Math.ceil(G.time);
+  $('timebar').classList.toggle('warn',G.time<10&&G.feverT<=0);
+  $('timebar').classList.toggle('frozen',G.feverT>0);
+  G.quota.forEach((q,i)=>{const el=$('q'+i);if(!el)return;el.classList.toggle('done',q<=0);el.querySelector('b').innerHTML=q>0?`<small>×</small>${q}`:'✓'});
+  $('comboLbl').innerHTML=`${G.combo}<small>コンボ</small>`;
+  $('comboLbl').classList.toggle('on',G.combo>1);
+  $('feverFill').style.transform=`scaleX(${G.fever/100})`;
+}
+
+/* ===== 入力 ===== */
+let drag=null;
+function cellAt(e){const r=cv.getBoundingClientRect();const c=Math.floor((e.clientX-r.left)/r.width*N),w=Math.floor((e.clientY-r.top)/r.height*N);
+  return c>=0&&c<N&&w>=0&&w<N?[w,c]:null}
+cv.addEventListener('pointerdown',e=>{
+  ac(); if(!G||G.over||G.paused) return;
+  const p=cellAt(e); if(!p) return;
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  drag={p,x:e.clientX,y:e.clientY,moved:false};
+});
+cv.addEventListener('pointermove',e=>{
+  if(!drag||drag.moved) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y, th=cv.getBoundingClientRect().width/N*.35;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<th) return;
+  drag.moved=true;
+  const [r,c]=drag.p, d=Math.abs(dx)>Math.abs(dy)?[0,Math.sign(dx)]:[Math.sign(dy),0];
+  const q=[r+d[0],c+d[1]];
+  if(q[0]>=0&&q[0]<N&&q[1]>=0&&q[1]<N) trySwap(drag.p,q);
+});
+cv.addEventListener('pointerup',()=>{
+  if(!drag) return; const d=drag; drag=null;
+  if(d.moved||!G||G.busy) return;
+  // タップで選んで、となりをタップでも入れかえ
+  const s=G.sel, p=d.p;
+  if(s&&Math.abs(s[0]-p[0])+Math.abs(s[1]-p[1])===1){trySwap(s,p);return}
+  G.sel=s&&s[0]===p[0]&&s[1]===p[1]?null:p;
+});
+cv.addEventListener('pointercancel',()=>drag=null);
+
+/* ===== 画面 ===== */
+function show(id){['title','play','result'].forEach(s=>$(s).hidden=s!==id);window.scrollTo(0,0)}
+function startGame(){
+  ac(); clearTimeout(bannerTimer); $('banner').hidden=true;
+  G=freshState(); show('play'); resize(); buildQuota(); fillBoard(); hudCache=''; renderHud();
+  $('board').classList.remove('fev'); $('feverBar').classList.remove('on');
+  const g=G; G.busy=true; showBanner('スタート！','注文のおやつを集めよう',1.2); G.banner=1.2;
+  wait(1.2).then(()=>{if(G===g)G.busy=false});
+  pingPlay();
+}
+function pause(on){
+  if(!G||G.over) return;
+  G.paused=on; $('pauseModal').hidden=!on; drag=null;
+}
+function endGame(){
+  if(!G||G.over) return;
+  G.over=true; G.busy=true; sfx.end();
+  showBanner('タイムアップ！','',1.6);
+  const g=G; setTimeout(()=>{if(G===g)showResult()},1600);
+}
+let lastShare=null;
+function showResult(){
+  const S=G; if(!S) return;
+  const reached=S.stage, rank=rankOf(reached);
+  const best=LS.get(KEY_BEST,0), isNew=S.score>best;
+  if(isNew) LS.set(KEY_BEST,S.score);
+  let fav=0; S.caught.forEach((n,i)=>{if(n>S.caught[fav])fav=i});
+  const total=S.caught.reduce((a,b)=>a+b,0);
+  $('rRank').textContent=`「${rank}」`;
+  $('rScore').innerHTML=`${S.score.toLocaleString()}<small>点</small>`;
+  $('rNew').hidden=!isNew||S.score===0;
+  $('rStage').textContent=`ステージ${reached}`;
+  $('rCombo').textContent=S.maxCombo;
+  $('rSp').textContent=`${S.bombs}・${S.eggs}`;
+  $('rCatches').innerHTML=SWEETS.map((a,i)=>`<div>${svgOf(i,`role="img" aria-label="${a.name}"`)}${S.caught[i]}</div>`).join('');
+  $('rFav').textContent=total?`いちばんポンしたのは ${SWEETS[fav].name}（${S.caught[fav]}こ）`:'';
+  const text=`おやつポン ステージ${reached}まで到達！\n${S.score.toLocaleString()}点・最大${S.maxCombo}コンボ\n称号は「${rank}」でした${SWEETS[fav].emoji}\n#おやつポン`;
+  lastShare={text,rank,reached,score:S.score,combo:S.maxCombo,bombs:S.bombs,eggs:S.eggs,caught:S.caught.slice(),fav,total};
+  $('xBtn').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(GAME_URL);
+  show('result');
+}
+function refreshTitle(){
+  const b=LS.get(KEY_BEST,0);
+  $('bestLine').textContent=b?`じこベスト ${b.toLocaleString()} 点`:'';
+}
+
+/* ===== シェア画像 ===== */
+function svgImg(svg){return new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);
+  im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)})}
+async function makeShareImage(){
+  const S=lastShare, W=1080, H=1080, cv2=document.createElement('canvas'); cv2.width=W; cv2.height=H;
+  const c=cv2.getContext('2d');
+  try{await Promise.race([Promise.all([document.fonts.load('64px "Mochiy Pop One"'),document.fonts.load('700 40px "Zen Maru Gothic"')]),new Promise(r=>setTimeout(r,1500))])}catch(e){}
+  const POP='"Mochiy Pop One","Zen Maru Gothic",sans-serif', BODY='700 34px "Zen Maru Gothic",sans-serif';
+  c.fillStyle='#F7F2E8'; c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=60)for(let x=0;x<W;x+=60) if(((x+y)/60)%2){c.fillStyle='#F1E9DC';c.fillRect(x,y,60,60)}
+  c.fillStyle='#FFFDF8'; rrect(c,60,60,W-120,H-120,56); c.fill(); c.lineWidth=8; c.strokeStyle='#5B4D45'; c.stroke();
+  c.textAlign='center'; c.textBaseline='middle';
+  c.fillStyle='#8E8077'; c.font='44px '+POP; c.fillText('おやつポン',W/2,140);
+  const ims=await Promise.all(SWEETS.map((a,i)=>svgImg(svgOf(i,'width="200" height="200"'))));
+  if(ims[S.fav]&&S.total) c.drawImage(ims[S.fav],W/2-110,180,220,220);
+  c.fillStyle='#8E8077'; c.font=BODY; c.fillText('わたしの称号は…',W/2,440);
+  c.fillStyle='#5B4D45'; c.font='80px '+POP; c.fillText(`「${S.rank}」`,W/2,525,W-180);
+  c.font='34px '+POP; const lv=`ステージ ${S.reached} までいけた！`, lw=c.measureText(lv).width+56;
+  rrect(c,W/2-lw/2,580,lw,62,31); c.fillStyle='#E8877F'; c.fill(); c.fillStyle='#FFFDF8'; c.fillText(lv,W/2,612);
+  c.fillStyle='#5B4D45'; c.font='76px '+POP; c.fillText(`${S.score.toLocaleString()} 点`,W/2,712);
+  c.fillStyle='#8E8077'; c.font=BODY; c.fillText(`さいだい ${S.combo} コンボ ・ ボム ${S.bombs} ・ ルノたま ${S.eggs}`,W/2,782,W-200);
+  const sz=96, gp=18, x0=W/2-(7*sz+6*gp)/2;
+  ims.forEach((im,i)=>{if(im)c.drawImage(im,x0+i*(sz+gp),818,sz,sz);
+    c.fillStyle='#5B4D45';c.font='30px '+POP;c.fillText(String(S.caught[i]),x0+i*(sz+gp)+sz/2,942)});
+  c.fillStyle='#8E8077'; c.font='600 26px "Zen Maru Gothic",sans-serif'; c.fillText('#おやつポン ・ runococco.github.io/picoruno.',W/2,994);
+  return cv2;
+}
+let shareBlob=null;
+async function openShare(){
+  $('shareModal').hidden=false; $('shareImg').removeAttribute('src'); shareBlob=null;
+  const cv2=await makeShareImage();
+  $('shareImg').src=cv2.toDataURL('image/png');
+  shareBlob=await new Promise(r=>cv2.toBlob(r,'image/png'));
+}
+async function doShare(){
+  if(!shareBlob) return;
+  const file=new File([shareBlob],'oyatsupon-stage'+lastShare.reached+'.png',{type:'image/png'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:lastShare.text+'\n'+GAME_URL});return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  const url=URL.createObjectURL(shareBlob), a=document.createElement('a');
+  a.href=url; a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000); toast('保存されないときは画像を長押ししてね');
+}
+async function copyText(){
+  const t=lastShare.text+'\n'+GAME_URL;
+  try{await navigator.clipboard.writeText(t);toast('コピーしました')}
+  catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('コピーしました')}catch(_){toast('コピーできませんでした')}ta.remove()}
+}
+let toastT=0;
+function toast(s){const t=$('toast');t.textContent=s;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200)}
+
+/* ===== タイトルの飾り ===== */
+$('logo').innerHTML=[...'おやつポン'].map((ch,i)=>`<span class="c${i}" style="--i:${i}">${ch}</span>`).join('');
+$('parade').innerHTML=SWEETS.map((a,i)=>`<i style="--i:${i}">${svgOf(i)}</i>`).join('');
+$('specials').innerHTML=
+  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${BOMB_RING}<g transform="translate(10 10) scale(.8)">${SWEETS[2].svg}</g>${BOMB_STAR}</svg><b>ボム</b>4つそろえると<br>まわり9マスをポン</div>`+
+  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${EGG_SVG}</svg><b>ルノたま</b>5つそろえると<br>相手と同じ種類を全部</div>`+
+  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#ffeca0" opacity=".7"/><g transform="translate(10 10) scale(.8)">${SWEETS[0].svg}</g><path d="M22 14 v16 M14 22 h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg><b>キラキラ</b>たまに出る<br>消すと＋2秒</div>`;
+
+/* ===== 操作 ===== */
+$('startBtn').onclick=startGame;
+$('againBtn').onclick=startGame;
+$('homeBtn').onclick=()=>{refreshTitle();show('title')};
+$('pauseBtn').onclick=()=>pause(true);
+$('resumeBtn').onclick=()=>pause(false);
+$('giveupBtn').onclick=()=>{$('pauseModal').hidden=true;if(G){G.paused=false;endGame()}};
+$('imgBtn').onclick=openShare;
+$('shareGo').onclick=doShare;
+$('copyTxt').onclick=copyText;
+$('shareClose').onclick=()=>$('shareModal').hidden=true;
+$('shareModal').addEventListener('click',e=>{if(e.target.id==='shareModal')$('shareModal').hidden=true});
+['muteBtn','muteBtn2'].forEach(id=>$(id).onclick=()=>{muted=!muted;LS.set(KEY_MUTE,muted);setMuteLabel()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&!$('play').hidden)pause(true)});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  if(!$('shareModal').hidden){$('shareModal').hidden=true;return}
+  if(G&&!G.over&&!$('play').hidden) pause(!G.paused);
+});
+setMuteLabel(); refreshTitle();
+window.__oyatsu={get G(){return G},findMove,trySwap};
+</script>
+<script>
+/* 遊んだ回数を数える（トップページの ▶ 回数）。同じタブでの再読みこみは1回だけ数えます。 */
+function pingPlay(){
+  var G="おやつポン", K="picoruno-played:"+G;
+  try{ if(sessionStorage.getItem(K)) return; sessionStorage.setItem(K,"1"); }catch(e){}
+  var KEY="sb_publishable_5hbtIPW-1y5MqsoiLC6X_A_oZMG0Z5Z";
+  fetch("https://fymwlpbspigpeaoenhhp.supabase.co/rest/v1/rpc/add_play",{method:"POST",keepalive:true,
+    headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"},body:JSON.stringify({g:G})})
+  .then(function(r){ if(!r.ok) throw 0; })
+  .catch(function(){ try{ var d=JSON.parse(localStorage.getItem("picoruno-stats")||"{}"); d[G]=d[G]||{plays:0,likes:0}; d[G].plays++; localStorage.setItem("picoruno-stats",JSON.stringify(d)); }catch(e){} });
+}
+</script>
+</body>
+</html>
