@@ -116,7 +116,11 @@ button{font-family:inherit;color:inherit}
   font-family:var(--pop);font-size:1.2rem;color:#fff;text-shadow:0 2px 0 rgba(91,77,69,.35);cursor:pointer;
   background:var(--btn1);border:4px solid var(--card);box-shadow:0 0 0 6px var(--btn1),0 0 0 9px var(--card),0 6px 0 9px rgba(0,0,0,.25);
   transition:transform .08s}
-.seeBtn svg{width:46px;height:46px}
+.seeBtn svg{width:58px;height:58px;margin-top:-6px}
+/* のぞき見ねこ：ときどきまばたき */
+.seeBtn .peekEyes{transform-origin:16px 18.4px;animation:peekblink 3.4s infinite}
+@keyframes peekblink{0%,90%,100%{transform:none}94%{transform:scaleY(.15)}}
+@media (prefers-reduced-motion:reduce){.seeBtn .peekEyes{animation:none}}
 .seeBtn:hover{transform:scale(1.04)}
 .seeBtn:active{transform:scale(.94)}
 .seeBtn:focus-visible{outline:3px solid var(--gold);outline-offset:12px}
@@ -633,7 +637,7 @@ function ready(notice){
   $('box').classList.remove('shut'); $('sceneHost').innerHTML=''; $('flashbar').hidden=true;
   $('notice').hidden=!notice; $('notice').textContent=notice||'';
   $('cover').hidden=false;
-  $('cover').innerHTML=`<button class="seeBtn" id="seeBtn" type="button"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16c3.5-6 8-9 13-9s9.5 3 13 9c-3.5 6-8 9-13 9S6.5 22 3 16z" fill="#fffdf8"/><circle cx="16" cy="16" r="5.2" fill="#5b4d45"/><circle cx="17.8" cy="14.2" r="1.6" fill="#fffdf8"/></svg>見る</button><span class="hint">見えるのは1秒だけ。<br>なにを聞かれるかは、見たあとに出ます</span>`;
+  $('cover').innerHTML=`<button class="seeBtn" id="seeBtn" type="button"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#F4F1EA" stroke="#CFC6B8" stroke-width="1" d="M5 5.5Q6 5 13.5 10.5L6.5 16.5Q4 9 5 5.5Z"/><path fill="#F4F1EA" stroke="#CFC6B8" stroke-width="1" d="M27 5.5Q26 5 18.5 10.5L25.5 16.5Q28 9 27 5.5Z"/><path fill="#E8B4B0" d="M6.6 8L11 11 7.4 14Z"/><path fill="#E8B4B0" d="M25.4 8L21 11 24.6 14Z"/><ellipse fill="#F4F1EA" stroke="#CFC6B8" stroke-width="1" cx="16" cy="19" rx="12" ry="9.6"/><g class="peekEyes"><circle cx="11.5" cy="18.4" r="1.25" fill="#5B4D45"/><circle cx="20.5" cy="18.4" r="1.25" fill="#5B4D45"/></g><path d="M15 21h2l-1 1.1z" fill="#5B4D45"/><circle cx="8.8" cy="21.4" r="1.6" fill="#E89A98" opacity=".55"/><circle cx="23.2" cy="21.4" r="1.6" fill="#E89A98" opacity=".55"/><ellipse fill="#F4F1EA" stroke="#CFC6B8" stroke-width="1" cx="10.5" cy="28.4" rx="3.4" ry="2.4"/><ellipse fill="#F4F1EA" stroke="#CFC6B8" stroke-width="1" cx="21.5" cy="28.4" rx="3.4" ry="2.4"/><path d="M9.3 27.6v1.6M11.7 27.6v1.6M20.3 27.6v1.6M22.7 27.6v1.6" stroke="#CFC6B8" stroke-width=".8" stroke-linecap="round"/></svg>見る</button><span class="hint">見えるのは1秒だけ。<br>なにを聞かれるかは、見たあとに出ます</span>`;
   $('seeBtn').onclick=flash;
   $('prompt').textContent='じゅんびができたら「見る」';
   try{$('seeBtn').focus({preventScroll:true})}catch(e){}
