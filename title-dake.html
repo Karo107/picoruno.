@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff9e8">
+<title>タイトルだけゲーム｜picoruno.</title>
+<meta name="description" content="架空のゲームのタイトルだけを見て、どんなゲームかを3択で当てるクイズ。毎日5問の「今日のお題」で、あなたのゲーム勘を診断します。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="タイトルだけゲーム">
+<meta property="og:description" content="「うどんを殴る」ってどんなゲームだと思う？ タイトルだけで中身を当てる3択クイズ。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./title-dake.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffe27a'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%234a3428'%3E%3F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#fff9e8;
+  --ink:#4a3428;
+  --sub:#8a6f60;
+  --yellow:#ffe27a;
+  --mint:#aeeedc;
+  --sky:#a9dcff;
+  --coral:#ff8f7e;
+  --pink:#ffb6cf;
+  --ok:#2fb79a;
+  --ng:#e8544a;
+  --line:3px solid var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+  color:var(--ink);background:var(--cream);line-height:1.7;
+  background-image:radial-gradient(rgba(74,52,40,.08) 1.5px,transparent 1.5px);
+  background-size:22px 22px;
+  -webkit-tap-highlight-color:transparent;
+}
+.pixel{font-family:"DotGothic16",monospace}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+
+/* ヘッダー */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(560px,100%);margin:0 auto;padding:12px 16px 0}
+.home{font-weight:800;text-decoration:none;font-size:.9rem;background:#fff;border:2.5px solid var(--ink);border-radius:999px;padding:3px 12px;box-shadow:2px 2px 0 var(--ink)}
+.mute{background:#fff;border:2.5px solid var(--ink);border-radius:999px;padding:3px 10px;font-size:.85rem;font-weight:800;box-shadow:2px 2px 0 var(--ink)}
+
+main{width:min(560px,100%);margin:0 auto;padding:14px 16px 40px}
+.screen{animation:fadeUp .35s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}}
+
+/* ボタン */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--coral);color:#fff;font-weight:800;text-decoration:none;
+  padding:12px 22px;border:var(--line);border-radius:999px;box-shadow:4px 4px 0 var(--ink);
+  transition:transform .12s,box-shadow .12s;font-size:1rem;
+}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn.sub{background:#fff;color:var(--ink)}
+.btn.mint{background:var(--mint);color:var(--ink)}
+.btn.x{background:#222;color:#fff}
+.btn:focus-visible,.choice:focus-visible,.home:focus-visible,.mute:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+
+/* タイトル画面 */
+.logo{text-align:center;margin:18px 0 6px}
+.logo h1{font-size:clamp(2.1rem,10vw,3.2rem);font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.logo h1 .q{display:inline-block;color:var(--coral);animation:hop 1.6s ease-in-out infinite}
+@keyframes hop{0%,60%,100%{transform:none}70%{transform:translateY(-10px) rotate(-10deg)}80%{transform:translateY(0) rotate(6deg)}}
+.logo p{color:var(--sub);font-size:.92rem;margin-top:6px}
+.slot{
+  margin:18px auto 6px;width:min(360px,100%);background:#fff;border:var(--line);border-radius:18px;
+  box-shadow:5px 5px 0 var(--ink);padding:14px 10px;text-align:center;overflow:hidden;
+}
+.slot small{display:block;font-size:.72rem;color:var(--sub);font-weight:800;letter-spacing:.1em}
+.slot .name{display:block;font-size:1.35rem;font-weight:800;min-height:2.2em;line-height:1.3;display:grid;place-items:center}
+.slot .name.spin{animation:flip .35s both}
+@keyframes flip{from{opacity:0;transform:translateY(-60%)}to{opacity:1;transform:none}}
+.menu{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:22px}
+.menu .btn{width:min(320px,100%)}
+.daily-note{font-size:.82rem;color:var(--sub);text-align:center;min-height:1.4em}
+.howto{margin-top:26px;background:#fff;border:var(--line);border-radius:18px;padding:14px 18px;box-shadow:4px 4px 0 var(--ink);font-size:.88rem}
+.howto h2{font-size:1rem;margin-bottom:4px}
+.howto ol{padding-left:1.3em;color:var(--sub)}
+.howto .credit{margin-top:8px;font-size:.75rem;color:var(--sub)}
+
+/* プレイ画面 */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;font-size:.9rem}
+.dots{display:flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;border:2.5px solid var(--ink);background:#fff}
+.dots i.now{background:var(--yellow);animation:beat .8s ease-in-out infinite}
+.dots i.ok{background:var(--ok)}
+.dots i.ng{background:var(--ng)}
+@keyframes beat{50%{transform:scale(1.25)}}
+.timer{height:10px;border:2.5px solid var(--ink);border-radius:99px;background:#fff;margin:10px 0 14px;overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--ok);transform-origin:left;transition:background .3s}
+.timer.hurry i{background:var(--ng)}
+
+/* パッケージ */
+.box{
+  position:relative;margin:0 auto;width:min(340px,86%);aspect-ratio:3/3.4;border:var(--line);border-radius:14px;
+  box-shadow:7px 7px 0 var(--ink);overflow:hidden;background:var(--bg,#ffd);
+  display:flex;flex-direction:column;transform:rotate(-1.5deg);
+}
+.box.drop{animation:drop .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes drop{from{opacity:0;transform:translateY(-40px) rotate(-8deg) scale(.9)}to{opacity:1;transform:rotate(-1.5deg)}}
+.box::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0 14px,transparent 14px 28px);pointer-events:none}
+.box .brand{position:relative;display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:var(--yellow);font-size:.7rem;padding:3px 10px;letter-spacing:.08em}
+.box .art{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:.08em;font-size:clamp(3.6rem,17vw,5.2rem);line-height:1;filter:drop-shadow(4px 4px 0 rgba(74,52,40,.3))}
+.box .art span{display:inline-block;animation:float 3s ease-in-out infinite}
+.box .art span:nth-child(2){animation-delay:-1.5s}
+@keyframes float{50%{transform:translateY(-8px) rotate(4deg)}}
+.box .ttl{
+  position:relative;margin:0 10px 10px;background:#fff;border:var(--line);border-radius:12px;padding:8px 10px;text-align:center;
+  font-weight:800;font-size:clamp(1.25rem,6vw,1.65rem);line-height:1.25;box-shadow:3px 3px 0 var(--ink);word-break:keep-all;overflow-wrap:anywhere;
+}
+.box .rate{position:absolute;right:10px;top:30px;background:#fff;border:2.5px solid var(--ink);border-radius:8px;font-size:.62rem;font-weight:800;padding:2px 6px;line-height:1.25;text-align:center}
+.box .genre{position:absolute;left:10px;top:30px;background:var(--yellow);border:2.5px solid var(--ink);border-radius:999px;font-size:.7rem;font-weight:800;padding:1px 10px;transform:rotate(-6deg)}
+
+.ask{text-align:center;font-weight:800;margin:20px 0 10px;font-size:1.02rem}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{
+  position:relative;text-align:left;background:#fff;border:var(--line);border-radius:14px;padding:11px 14px 11px 48px;
+  box-shadow:3px 3px 0 var(--ink);font-weight:800;font-size:.95rem;line-height:1.5;transition:transform .1s,box-shadow .1s,background .2s;
+}
+.choice b{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:var(--yellow);border:2.5px solid var(--ink);display:grid;place-items:center;font-size:.8rem}
+.choice:not(:disabled):hover{background:#fffbe9;transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.choice:not(:disabled):active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.choice:disabled{cursor:default}
+.choice.right{background:#d8f6ec}
+.choice.right b{background:var(--ok);color:#fff}
+.choice.wrong{background:#ffe0dc}
+.choice.wrong b{background:var(--ng);color:#fff}
+.choice.dim{opacity:.55}
+
+/* 答え合わせ */
+.reveal{margin-top:16px;background:#fff;border:var(--line);border-radius:18px;padding:14px 16px 16px;box-shadow:5px 5px 0 var(--ink);position:relative;animation:fadeUp .3s both}
+.stamp{
+  position:absolute;right:12px;top:-20px;font-weight:800;font-size:1.05rem;color:#fff;border:var(--line);border-radius:12px;padding:2px 12px;
+  transform:rotate(8deg);animation:stamp .4s cubic-bezier(.3,1.8,.5,1) both;box-shadow:2px 2px 0 var(--ink);
+}
+.stamp.ok{background:var(--ok)}
+.stamp.ng{background:var(--ng)}
+@keyframes stamp{from{transform:scale(2.4) rotate(-20deg);opacity:0}}
+.reveal h3{font-size:.78rem;color:var(--sub);letter-spacing:.1em}
+.reveal .real{font-weight:800;font-size:1.02rem;margin-top:2px}
+.reveal .more{margin-top:8px;font-size:.9rem;background:var(--cream);border-radius:10px;padding:8px 10px;border:2px dashed rgba(74,52,40,.3)}
+.reveal .tsukkomi{margin-top:8px;font-size:.85rem;color:var(--ng);font-weight:800}
+.reveal .acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:space-between;align-items:center}
+.reveal .acts .btn{padding:10px 18px;font-size:.92rem}
+.askx{font-size:.8rem;font-weight:800;color:var(--sub)}
+
+/* 結果画面 */
+.result{text-align:center}
+.result .head{font-size:.85rem;color:var(--sub);font-weight:800;margin-top:6px}
+.card{
+  margin:12px auto 0;background:#fff;border:var(--line);border-radius:22px;box-shadow:7px 7px 0 var(--ink);
+  padding:18px 16px 18px;position:relative;overflow:hidden;
+}
+.card::before{content:"";position:absolute;inset:0 0 auto;height:10px;background:repeating-linear-gradient(90deg,var(--coral) 0 20px,var(--yellow) 20px 40px,var(--mint) 40px 60px,var(--sky) 60px 80px)}
+.card .score{font-size:3.2rem;font-weight:800;line-height:1;margin-top:10px}
+.card .score small{font-size:1.3rem;color:var(--sub)}
+.card .emo{font-size:1.6rem;letter-spacing:.12em;margin-top:6px}
+.card .you{margin-top:12px;font-size:.85rem;color:var(--sub);font-weight:800}
+.card .rank{display:inline-block;font-size:clamp(1.5rem,7vw,2rem);font-weight:800;line-height:1.3;background:var(--yellow);border:var(--line);border-radius:14px;padding:4px 16px;margin-top:4px;box-shadow:3px 3px 0 var(--ink);transform:rotate(-2deg);animation:stamp .5s .2s cubic-bezier(.3,1.8,.5,1) both}
+.card .comment{margin-top:12px;font-size:.92rem}
+.card .best{margin-top:14px;background:var(--cream);border-radius:12px;padding:10px;font-size:.85rem;border:2px dashed rgba(74,52,40,.3)}
+.card .best b{display:block;font-size:1.1rem}
+.result .acts{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:22px}
+.result .acts .btn{width:min(320px,100%)}
+.result .acts .row{display:flex;gap:10px;width:min(320px,100%)}
+.result .acts .row .btn{flex:1;padding:10px 8px;font-size:.9rem}
+.review{margin-top:24px;text-align:left}
+.review h2{font-size:1rem;margin-bottom:8px}
+.review li{list-style:none;background:#fff;border:2.5px solid var(--ink);border-radius:12px;padding:8px 12px;margin-bottom:8px;font-size:.85rem}
+.review li b{font-size:.95rem}
+.review li .mk{float:right;font-weight:800}
+.review li p{color:var(--sub)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:800;font-size:.85rem;padding:8px 18px;border-radius:999px;z-index:10;animation:fadeUp .25s both}
+
+footer{text-align:center;color:var(--sub);font-size:.78rem;padding:0 16px 30px}
+
+/* 縦が短い画面では、選択肢が見えるようにパッケージを小さく */
+@media (max-height:700px){.box{width:min(260px,66%)}.box .art{font-size:3.2rem}.ask{margin:14px 0 8px}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="home" href="./">← picoruno.</a>
+  <button class="mute" id="mute" type="button" aria-pressed="false">🔊 おと</button>
+</div>
+
+<main id="app">
+  <!-- タイトル -->
+  <section class="screen" id="s-title">
+    <div class="logo">
+      <h1>タイトルだけ<br>ゲーム<span class="q">？</span></h1>
+      <p>タイトルしかわからないゲームの、中身を当てよう。</p>
+    </div>
+    <div class="slot" aria-live="off">
+      <small class="pixel">NOW LOADING TITLE…</small>
+      <span class="name" id="slot">「うどんを殴る」</span>
+    </div>
+    <div class="menu">
+      <button class="btn" id="b-daily" type="button">今日のお題（5問）▶</button>
+      <div class="daily-note" id="daily-note"></div>
+      <button class="btn sub" id="b-free" type="button">フリープレイ（5問）</button>
+    </div>
+    <div class="howto">
+      <h2>あそびかた</h2>
+      <ol>
+        <li>架空のゲームのパッケージが出てきます。わかるのはタイトルだけ。</li>
+        <li>どんなゲームか、3つの中から選んでください（15秒）。</li>
+        <li>5問終わると、あなたの「ゲーム勘」を診断します。</li>
+      </ol>
+      <p class="credit">※ 出てくるゲームはすべて架空です。中身はAIといっしょに考えました。「今日のお題」は毎日0時（日本時間）に変わります。</p>
+    </div>
+  </section>
+
+  <!-- プレイ -->
+  <section class="screen" id="s-play" hidden>
+    <div class="bar">
+      <span id="q-label">第1問</span>
+      <span class="dots" id="dots"></span>
+    </div>
+    <div class="timer" id="timer"><i id="timer-i"></i></div>
+    <div class="box" id="box">
+      <div class="brand pixel"><span>picoruno. GAMES</span><span id="box-no">No.001</span></div>
+      <span class="genre">ジャンル：？？？</span>
+      <span class="rate" id="box-rate">対象<br>たぶん全年齢</span>
+      <div class="art" id="box-art"></div>
+      <div class="ttl" id="box-ttl"></div>
+    </div>
+    <p class="ask">これ、どんなゲーム？</p>
+    <div class="choices" id="choices"></div>
+    <div id="reveal-slot"></div>
+  </section>
+
+  <!-- 結果 -->
+  <section class="screen result" id="s-result" hidden>
+    <p class="head" id="r-head">今日のお題 #1</p>
+    <div class="card" id="r-card">
+      <div class="score"><span id="r-score">0</span><small> / 5</small></div>
+      <div class="emo" id="r-emo"></div>
+      <p class="you">あなたのゲーム勘は…</p>
+      <div class="rank" id="r-rank"></div>
+      <p class="comment" id="r-comment"></p>
+      <div class="best" id="r-best"></div>
+    </div>
+    <div class="acts">
+      <a class="btn x" id="r-post" href="#" target="_blank" rel="noopener">𝕏 で結果をポスト</a>
+      <div class="row">
+        <button class="btn mint" id="r-img" type="button">画像で保存</button>
+        <button class="btn sub" id="r-copy" type="button">結果をコピー</button>
+      </div>
+      <button class="btn" id="r-again" type="button">フリープレイでもう5問</button>
+      <button class="btn sub" id="r-back" type="button">タイトルへもどる</button>
+    </div>
+    <div class="review">
+      <h2>今回のタイトルと中身</h2>
+      <ul id="r-list"></ul>
+    </div>
+  </section>
+</main>
+
+<footer>picoruno. ／ <a href="./terms.html">利用規約</a></footer>
+
+<script>
+/* ===== 問題データ =====
+   t: タイトル / art: パッケージの絵 / c: 選択肢（先頭が正解。出題時にシャッフル） / more: 答え合わせの補足 */
+const QUESTIONS = [
+  {t:"うどんを殴る", art:"🍜👊", c:["コシを出すために、うどん生地を120秒殴り続ける製麺リズムゲーム","うどん屋の店主と拳で語り合う格闘RPG","殴られたうどんがのびていくのを見守る放置ゲーム"], more:"殴る強さで麺のコシが決まる。強すぎると生地が泣く。最高評価は「讃岐の神」。"},
+  {t:"午前3時の冷蔵庫", art:"🧊🌙", c:["冷蔵庫の中の食材たちが、見つからないよう息をひそめるかくれんぼ","夜中に冷蔵庫を開けたくなるのを我慢する自制心シミュレーター","冷蔵庫の残り物だけで夜食を作る料理ゲーム"], more:"プレイヤーはプリン。賞味期限が近いほど見つかりやすい。"},
+  {t:"傘を返したい", art:"☂️🙇", c:["10年前に借りた傘を、持ち主に返すまでの壮大なRPG","雨の日に傘を盗まれないよう見張る防衛ゲーム","傘を開いたり閉じたりして空を飛ぶアクション"], more:"持ち主は引っ越し、転職し、最終章では宇宙にいる。全48章。"},
+  {t:"正座", art:"🧎🏁", c:["正座したまま移動して、ゴールを目指すレースゲーム","足のしびれと戦いながら法事を乗り切るサバイバル","正座の美しさを競う採点ゲーム"], more:"最高速度は時速4km。足がしびれると操作が左右逆になる。"},
+  {t:"鳩の確定申告", art:"🕊️🧾", c:["鳩が1年間に集めたパンくずの収支を、期限内に申告する経理シミュレーション","伝書鳩に書類を届けさせる郵便ゲーム","税務署に住みついた鳩を追い払うアクション"], more:"経費として認められる豆と、認められない豆がある。"},
+  {t:"母、来る", art:"👩📱", c:["「今から行くね」の連絡から30分以内に部屋を片付けるタイムアタック","母の手料理の味を再現する料理ゲーム","母になって子どもの部屋を抜き打ち検査するゲーム"], more:"押し入れの容量には限界がある。ベッドの下は100%バレる。"},
+  {t:"自動ドアに認識されない", art:"🚪😶", c:["存在感が薄すぎる主人公が、自動ドアに気づいてもらうために踊るリズムゲーム","こわれた自動ドアを直す修理シミュレーション","透明人間になってお店に忍びこむステルスゲーム"], more:"手を振る、跳ねる、二度見する。ラスボスはセンサーが厳しい銀行。"},
+  {t:"消しゴムのカス", art:"✏️🧽", c:["消しゴムのカスを集めて丸め、伝説の練り消しを育てる育成ゲーム","テスト中に消しゴムを落とさないよう耐えるゲーム","消しゴムで世界の歴史を消していく戦略ゲーム"], more:"色を混ぜると性格が変わる。最終進化は「黒い宝石」。"},
+  {t:"3センチの冒険", art:"🐜📏", c:["机の端から端まで3センチ進むだけの、プレイ時間80時間の超大作RPG","アリになって巣を広げるシミュレーション","3センチのびた前髪を切るか悩むゲーム"], more:"途中で、消しゴム王国と定規帝国の戦争に巻きこまれる。"},
+  {t:"エレベーターの「閉」", art:"🛗👆", c:["乗りこんでくる人を見て「開」か「閉」かを0.5秒で判断するゲーム","エレベーターの中の気まずい沈黙を耐えるゲーム","止まったエレベーターから脱出する謎解き"], more:"走ってくる人、ゆっくり来る人、来ると見せかけて来ない人。"},
+  {t:"カレーは飲み物", art:"🍛🥤", c:["具がストローに詰まらないよう、具の大きさを調整するパズル","カレーをストローで吸い上げる早飲み対決","スパイスを調合して最強のカレーを作る錬金術ゲーム"], more:"じゃがいもが最大の敵。ルーのとろみはステージごとに変わる。"},
+  {t:"隣の人が寝ている", art:"💺😴", c:["電車で肩にもたれてきた人を起こさずに、降りる駅で抜け出すステルスゲーム","授業中に寝ている友だちの代わりにノートをとるゲーム","寝ている人の夢の中に入るアドベンチャー"], more:"体を少しずつずらし、重心を移す。乗り過ごすとゲームオーバー。"},
+  {t:"布団から出る", art:"🛏️⚔️", c:["冬の朝、布団から出るまでを描いたプレイ時間3時間のアクションRPG","布団を干すタイミングを天気予報から読むゲーム","二度寝の気持ちよさを競うスコアアタック"], more:"最初の敵は「寒さ」。ラスボスは「あと5分」。"},
+  {t:"猫がキーボードに乗る", art:"🐈⌨️", c:["猫がキーボードの上を歩いてできた文字が、名文になるかを見守るゲーム","キーボードから猫をどかすアクション","猫になって、キーボードの上でいちばん暖かい場所を探すゲーム"], more:"「ｊｊｊｊｊｋ」から俳句が生まれた日、世界は変わった。"},
+  {t:"領収書ください", art:"🧾✋", c:["宛名を「上様」にされないよう、長い会社名を正しく伝える聞き取りゲーム","いろいろなお店の領収書を集めるコレクション","レシートの長さを競う買い物ゲーム"], more:"社名は「株式会社ヴィヴィッド・ヴォヤージュ」。言うたびに噛む。"},
+  {t:"たこ焼きの中身", art:"🐙❓", c:["たこになって、自分が入るたこ焼きを選ぶ恋愛シミュレーション","8個のたこ焼きから、たこが入っていないハズレを当てる心理戦","たこ焼きをくるっとひっくり返すリズムゲーム"], more:"どのたこ焼きに入るかで人生が決まる。マヨ派とソース派の三角関係もある。"},
+  {t:"コンビニのおでん", art:"🍢🏪", c:["おでんの具になって、売れ残らないようにアピールするゲーム","おでんの具を全種類集めるコレクション","おでんの汁の味を守り続ける店長シミュレーション"], more:"大根は人気者。ちくわぶは今日も苦戦中。"},
+  {t:"校長先生の話", art:"🎤🏫", c:["校長先生になって、「えー」を一度も言わずに朝礼の話を終わらせる縛りプレイ","朝礼で話が終わるまで倒れずに立ち続ける耐久ゲーム","校長先生の話の要点を3行でまとめるクイズ"], more:"「えー」で1点減点。「最後に」と言ってから話を続けると大減点。"},
+  {t:"寿司が逆に回る", art:"🍣🔄", c:["寿司の側からお客さんを選んで、食べてもらいに行くゲーム","寿司職人になって握る速さを競うゲーム","回転寿司のお皿を高く積み上げるタワーゲーム"], more:"サーモンはモテる。たまごは子ども狙い。ガリは誰にも選ばれない。"},
+  {t:"ハンコを押す", art:"🖊️📄", c:["上司のハンコよりちょっとだけお辞儀させて押す、マナー職人ゲーム","ハンコを彫って自分だけのデザインを作るゲーム","山積みの書類にひたすらハンコを押すスピード勝負"], more:"傾けすぎると土下座になり、逆に失礼。正解は15度。"},
+  {t:"既読", art:"💬👀", c:["メッセージを開かずに、通知のプレビューだけで全文を読み切るテクニックゲーム","既読スルーされた理由を推理するミステリー","既読がつくまでひたすら待つ放置ゲーム"], more:"長押し、機内モード、通知センター。あらゆるテクを駆使せよ。"},
+  {t:"カーテンの裏", art:"🪟🫣", c:["かくれんぼでカーテンの裏に隠れたまま、20年が過ぎる物語","部屋に合うカーテンを選ぶインテリアゲーム","カーテンの裏にいるおばけを探すホラー"], more:"鬼はもう帰った。でも、まだ出るわけにはいかない。"},
+  {t:"自販機の下", art:"🥤🪙", c:["自販機の下に落ちた100円玉を、いろんな道具で取り出すパズル","自販機になって飲み物の売れ行きを競う経営ゲーム","自販機の下に住む小人の村を守る戦略ゲーム"], more:"定規、針金、傘。そして最後に必要なのは友情。"},
+  {t:"ペットボトルのラベル", art:"🧴✨", c:["ラベルを一度もちぎらずに、きれいにはがす集中ゲーム","ラベルのデザインを考えるお絵かきゲーム","ラベルを集めて図鑑を完成させるゲーム"], more:"ミシン目の角度を読め。途中で切れたら最初からやり直し。"},
+  {t:"ねぎが飛び出ている", art:"🛍️🥬", c:["エコバッグから飛び出たねぎで、すれ違う人とチャンバラする対戦ゲーム","買い物袋に食材をうまく詰めるパズル","ねぎを育てる農業シミュレーション"], more:"ねぎの長さがそのまま攻撃範囲。ごぼう使いが最強という噂。"},
+  {t:"合唱コンクール", art:"🎶🙊", c:["「男子ちゃんと歌って！」と言われないよう、口パクをごまかすゲーム","指揮者になってクラスのテンポを合わせるリズムゲーム","クラス全員の声をそろえる音感ゲーム"], more:"口の開け方と表情だけで、歌っているふりを貫け。"},
+  {t:"美容院での会話", art:"💇💬", c:["「今日はお休みですか？」から始まる会話を、寝たふりでやり過ごすゲーム","理想の髪型を言葉だけで伝える注文ゲーム","美容師になってお客さんを満足させる経営ゲーム"], more:"目を閉じるのが早すぎると怪しまれる。"},
+  {t:"山田さん、3人いる", art:"👨‍💼👨‍💼", c:["山田さんが3人いる職場で、正しい山田さんに伝言を届けるゲーム","3人の山田さんの中から本物を探すミステリー","山田さんを3人集めてバンドを組む音楽ゲーム"], more:"大きい山田さん、小さい山田さん、山田（経理）。呼び方を間違えると気まずい。"},
+  {t:"月曜日を倒せ", art:"📅⚔️", c:["カレンダーから飛び出してきた「月曜日」を、日曜の夜までに倒すアクション","1週間の予定をうまく組むスケジュールパズル","月曜の朝の支度を間に合わせるタイムアタック"], more:"日曜21時をすぎると月曜日は急に強くなる。祝日は伝説の武器。"},
+  {t:"ぬるい", art:"🍵😐", c:["お客さんに、絶妙にぬるいお茶を出し続ける喫茶店経営ゲーム","家族のあとのお風呂を、追い焚きせずに耐える我慢ゲーム","ぬるくなった飲み物を温め直す電子レンジのゲーム"], more:"熱すぎても冷たすぎても怒られない。でも、誰にもほめられない。"},
+  {t:"改札にひっかかる", art:"🚃🚫", c:["改札にひっかかった瞬間、後ろの人に気まずさを悟られないよう振る舞う演技ゲーム","改札をすばやく通り抜けるタイムアタック","駅員さんになって改札を見守るお仕事ゲーム"], more:"Sランクは「最初から戻るつもりだった」顔。"},
+  {t:"鍋奉行", art:"🍲👑", c:["鍋に入れる順番を仕切る奉行から、鍋の主導権をうばう下剋上ゲーム","最高の鍋をつくる料理ゲーム","鍋の具を早い者勝ちで取り合うアクション"], more:"白菜の芯より先に葉を入れると、奉行が激怒する。"},
+  {t:"ポイントカードはお持ちですか", art:"💳😰", c:["財布の中の87枚のポイントカードから、正しい1枚を5秒以内に出すゲーム","ポイントをためて豪華景品をねらうゲーム","店員になってポイントカードをすすめる接客ゲーム"], more:"似た色、似た名前、期限切れ。焦るほど指がすべる。"},
+  {t:"床に落ちたトースト", art:"🍞🌀", c:["落ちていくトーストを空中で回して、ジャムの面を上にして着地させるゲーム","「3秒ルール」の判定をする審判ゲーム","床に落ちたトーストを鳥から守るゲーム"], more:"マーフィーの法則に挑む、本格物理演算ゲーム。"},
+  {t:"今日の占い最下位", art:"🔮📉", c:["朝の占いで最下位だった1日を、ラッキーアイテムだけで乗り切るサバイバル","占い師になって人々の運勢を占うゲーム","星座を並べ替えて順位を変えるパズル"], more:"ラッキーアイテムは「ちくわ」。持ち歩くほど周りの目がきびしくなる。"},
+  {t:"静かすぎる図書館", art:"📚🤫", c:["図書館で、お腹が鳴りそうになるのを止めるリズムゲーム","本の並びを元に戻す整理パズル","図書館で迷子になった本を探す探索ゲーム"], more:"鳴りそうな瞬間に、咳ばらいとページをめくる音で上書きせよ。"},
+  {t:"ちょうどいい石", art:"🪨🔍", c:["河原で「ちょうどいい石」をひたすら探す散歩ゲーム","石を積み上げるバランスゲーム","石になって千年待つ放置ゲーム"], more:"何に「ちょうどいい」のかは、誰も知らない。"},
+  {t:"前の人のリュック", art:"🎒😣", c:["満員電車で前の人のリュックに押されながら、つり革を守る陣取りゲーム","リュックの中身を推理するミステリー","リュックを背負って山に登る登山ゲーム"], more:"リュックを前に抱えてくれる人は神。"},
+  {t:"ゆで卵の殻", art:"🥚🔨", c:["白身を一切えぐらずに殻をむく、スローモーション職人ゲーム","卵を割らずにゴールまで運ぶアクション","ひよこを育てる育成ゲーム"], more:"冷水につけるかどうかで、運命が変わる。"},
+  {t:"お箸が片方ない", art:"🥢😱", c:["1本だけになったお箸で、フルコースを食べきるアクション","なくしたお箸を家中探す探索ゲーム","箸職人になって、ぴったりの1本を作るゲーム"], more:"スープは無理だと思った？ 最終ステージは杏仁豆腐。"},
+];
+
+const BOX_BG = ["#ffd6a5","#bde0fe","#caffbf","#ffc6ff","#fdffb6","#a0c4ff","#ffadad","#9bf6ff","#e4c1f9","#ffe5b4"];
+const RATES = ["対象<br>たぶん全年齢","対象<br>おとな向け","CERO<br>う","対象<br>3さい〜99さい","対象<br>ひまな人","対象<br>夜ふかし中の人"];
+const TSUKKOMI = ["その発想はなかった。","それはそれで遊んでみたい。","惜しい…くもない。","あなたが作ってください。","その説、ちょっと見たかった。","タイトルにだまされましたね。"];
+const RIGHT_MSG = ["さすがの読み！","ゲーム勘、冴えてる。","よくわかりましたね…！","タイトル読解力が高い。"];
+const RANKS = [
+  {name:"逆張りの天才", c:"全部ハズすのも、ひとつの才能。あなたの考えたゲームのほうが面白いかもしれない。"},
+  {name:"タイトル詐欺の被害者", c:"タイトルを素直に信じるやさしい人。パッケージ買いには気をつけて。"},
+  {name:"ワゴンセールの常連", c:"ハズレも当たりも楽しめるタイプ。掘り出し物を見つける嗅覚はある。"},
+  {name:"ゲーム屋の店員", c:"そこそこ読める。お客さんに「これ面白いですよ」と言える程度には。"},
+  {name:"ゲーム雑誌の編集長", c:"タイトルだけでほぼ中身がわかる人。レビューを書いてほしい。"},
+  {name:"このゲームを作った人", c:"全問正解。もしかして、作った側の人ですか？"},
+];
+
+const N = 5, TIME = 15;
+const LAUNCH = "2026-10-23";
+const URL_GAME = "https://runococco.github.io/picoruno./title-dake.html";
+
+/* ===== 小道具 ===== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hash(s){ let h=2166136261; for(const ch of s){ h^=ch.codePointAt(0); h=Math.imul(h,16777619); } return h>>>0; }
+function shuffle(arr, rnd){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* 絵文字を1文字ずつに分ける（👨‍💼 のような合成絵文字も1つとして扱う） */
+function graphemes(str){
+  if(window.Intl && Intl.Segmenter) return [...new Intl.Segmenter("ja",{granularity:"grapheme"}).segment(str)].map(s=>s.segment);
+  return [str];
+}
+function todayJST(){ return new Date(Date.now()+9*3600e3).toISOString().slice(0,10); }
+function dayNo(d){ return Math.floor((Date.parse(d)-Date.parse(LAUNCH))/864e5)+1; }
+const store = {
+  get(k,def){ try{ const v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+function toast(msg){
+  const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),1800);
+}
+
+/* 今日のお題：全員が同じ5問。問題を一周するまで同じ問題は出ない */
+function dailySet(date){
+  const n=Math.max(1,dayNo(date)), L=QUESTIONS.length, picked=[];
+  for(let k=0; picked.length<N && k<N*3; k++){
+    const idx=(n-1)*N+k, cycle=Math.floor(idx/L);
+    const perm=shuffle([...Array(L).keys()], mulberry32(hash("cycle"+cycle)));
+    const q=perm[idx%L];
+    if(!picked.includes(q)) picked.push(q);
+  }
+  return picked;
+}
+/* フリープレイ：最近出た問題をなるべく避ける */
+function freeSet(){
+  const seen=new Set(store.get("titledake-seen",[]));
+  let pool=[...QUESTIONS.keys()].filter(i=>!seen.has(i));
+  if(pool.length<N){ pool=[...QUESTIONS.keys()]; store.set("titledake-seen",[]); }
+  return shuffle(pool, Math.random).slice(0,N);
+}
+function markSeen(ids){
+  const s=new Set(store.get("titledake-seen",[])); ids.forEach(i=>s.add(i));
+  store.set("titledake-seen",[...s]);
+}
+
+/* ===== 音 ===== */
+let muted = store.get("titledake-mute", false), actx=null;
+function beep(freqs, dur=.12, type="square", vol=.06){
+  if(muted) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==="suspended") actx.resume();
+    let t=actx.currentTime;
+    freqs.forEach(f=>{
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+dur); t+=dur*.8;
+    });
+  }catch(e){}
+}
+const SE = {
+  tap:()=>beep([660],.06),
+  ok:()=>beep([523,659,784,1047],.1),
+  ng:()=>beep([311,233],.18,"sawtooth",.05),
+  tick:()=>beep([880],.04,"square",.03),
+  result:()=>beep([392,523,659,784,659,784,1047],.11),
+};
+function renderMute(){ $("mute").textContent = muted?"🔇 おと":"🔊 おと"; $("mute").setAttribute("aria-pressed", muted); }
+$("mute").addEventListener("click",()=>{ muted=!muted; store.set("titledake-mute",muted); renderMute(); SE.tap(); });
+renderMute();
+
+/* ===== 画面切り替え ===== */
+function show(id){
+  ["s-title","s-play","s-result"].forEach(s=>$(s).hidden = s!==id);
+  window.scrollTo({top:0});
+}
+
+/* ===== タイトル画面 ===== */
+let slotTimer=null;
+function startSlot(){
+  stopSlot();
+  let i=Math.floor(Math.random()*QUESTIONS.length);
+  slotTimer=setInterval(()=>{
+    i=(i+1+Math.floor(Math.random()*3))%QUESTIONS.length;
+    const el=$("slot"); el.classList.remove("spin"); void el.offsetWidth; el.classList.add("spin");
+    el.textContent="「"+QUESTIONS[i].t+"」";
+  },1600);
+}
+function stopSlot(){ if(slotTimer){ clearInterval(slotTimer); slotTimer=null; } }
+function renderTitle(){
+  const d=todayJST(), rec=store.get("titledake-daily",null);
+  $("b-daily").textContent = `今日のお題 #${dayNo(d)}（5問）▶`;
+  $("daily-note").textContent = rec && rec.date===d ? `今日の記録：${rec.score} / ${N}（もう一度あそべますが、記録は最初の1回です）` : "毎日5問。みんな同じ問題です。";
+  show("s-title"); startSlot();
+}
+
+/* ===== プレイ ===== */
+let G=null, tick=null;
+function startGame(mode){
+  stopSlot();
+  const d=todayJST();
+  const ids = mode==="daily" ? dailySet(d) : freeSet();
+  const rnd = mode==="daily" ? mulberry32(hash("order"+d)) : Math.random;
+  G = {
+    mode, date:d, no:dayNo(d), i:0, score:0, results:[],
+    qs: ids.map(id=>{
+      const q=QUESTIONS[id], order=shuffle([0,1,2], rnd);
+      return {id, q, order, answer:order.indexOf(0)};
+    }),
+  };
+  if(mode==="free") markSeen(ids);
+  show("s-play");
+  renderQ();
+}
+function renderDots(){
+  $("dots").innerHTML = G.qs.map((_,k)=>{
+    const r=G.results[k];
+    return `<i class="${r==null?(k===G.i?"now":""):(r.ok?"ok":"ng")}"></i>`;
+  }).join("");
+}
+function renderQ(){
+  const {q,id,order} = G.qs[G.i];
+  $("q-label").textContent = `第${G.i+1}問`;
+  renderDots();
+  const box=$("box");
+  box.style.setProperty("--bg", BOX_BG[id%BOX_BG.length]);
+  box.classList.remove("drop"); void box.offsetWidth; box.classList.add("drop");
+  $("box-no").textContent = "No."+String(id+1).padStart(3,"0");
+  $("box-rate").innerHTML = RATES[id%RATES.length];
+  $("box-art").innerHTML = graphemes(q.art).map(g=>`<span>${esc(g)}</span>`).join("");
+  $("box-ttl").textContent = q.t;
+  $("choices").innerHTML = order.map((ci,k)=>`<button type="button" class="choice" data-k="${k}"><b>${"ABC"[k]}</b>${esc(q.c[ci])}</button>`).join("");
+  $("reveal-slot").innerHTML = "";
+  [...$("choices").children].forEach(b=>b.addEventListener("click",()=>answer(+b.dataset.k)));
+  startTimer();
+}
+function startTimer(){
+  stopTimer();
+  const t0=performance.now(), bar=$("timer-i"), wrap=$("timer");
+  let lastSec=TIME;
+  wrap.classList.remove("hurry"); bar.style.transform="scaleX(1)";
+  const step=now=>{
+    const left=Math.max(0, TIME-(now-t0)/1000);
+    bar.style.transform=`scaleX(${left/TIME})`;
+    wrap.classList.toggle("hurry", left<=5);
+    const sec=Math.ceil(left);
+    if(sec<lastSec){ lastSec=sec; if(sec<=3 && sec>0) SE.tick(); }
+    if(left<=0){ tick=null; answer(-1); return; }
+    tick=requestAnimationFrame(step);
+  };
+  tick=requestAnimationFrame(step);
+}
+function stopTimer(){ if(tick){ cancelAnimationFrame(tick); tick=null; } }
+
+function answer(k){
+  if(!G || G.results[G.i]!=null) return; // 二重回答を防ぐ
+  stopTimer();
+  const cur=G.qs[G.i], ok = k===cur.answer;
+  G.results[G.i] = {ok, pick:k};
+  if(ok) G.score++;
+  ok ? SE.ok() : SE.ng();
+  [...$("choices").children].forEach((b,j)=>{
+    b.disabled=true;
+    if(j===cur.answer) b.classList.add("right");
+    else if(j===k) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  renderDots();
+  const last = G.i===G.qs.length-1;
+  const msg = ok ? RIGHT_MSG[Math.floor(Math.random()*RIGHT_MSG.length)]
+            : k<0 ? "時間切れ！ 迷うのもわかる。" : TSUKKOMI[Math.floor(Math.random()*TSUKKOMI.length)];
+  $("reveal-slot").innerHTML = `
+    <div class="reveal" role="status">
+      <span class="stamp ${ok?"ok":"ng"}">${ok?"せいかい！":(k<0?"じかんぎれ":"ざんねん")}</span>
+      <h3>ほんとうの中身</h3>
+      <p class="real">${esc(cur.q.c[0])}</p>
+      <p class="more">${esc(cur.q.more)}</p>
+      <p class="tsukkomi" style="color:${ok?"var(--ok)":"var(--ng)"}">${esc(msg)}</p>
+      <div class="acts">
+        <a class="askx" href="${quizIntent(cur)}" target="_blank" rel="noopener">𝕏 でこのお題を出題する</a>
+        <button type="button" class="btn" id="b-next">${last?"結果を見る ▶":"つぎへ ▶"}</button>
+      </div>
+    </div>`;
+  const nb=$("b-next");
+  nb.addEventListener("click",next);
+  setTimeout(()=>{ nb.scrollIntoView({behavior:"smooth",block:"nearest"}); nb.focus({preventScroll:true}); },250);
+}
+function next(){
+  if(!G || G.results[G.i]==null) return;
+  SE.tap();
+  if(G.i < G.qs.length-1){ G.i++; renderQ(); window.scrollTo({top:0,behavior:"smooth"}); }
+  else finish();
+}
+
+/* ===== 結果 ===== */
+function emojiRow(){ return G.results.map(r=>r.ok?"🟩":"🟥").join(""); }
+function headLabel(){ return G.mode==="daily" ? `今日のお題 #${G.no}` : "フリープレイ"; }
+/* ハズした中でいちばん「意味不明」だったタイトル（全問正解なら最初の問題） */
+function bestQ(){
+  const miss=G.qs.find((_,k)=>!G.results[k].ok);
+  return miss || G.qs[0];
+}
+function shareText(){
+  const r=RANKS[G.score], b=bestQ();
+  return `タイトルだけゲーム ${headLabel()}\n${emojiRow()} ${G.score}/${N}\nゲーム勘：${r.name}\n\n「${b.q.t}」ってどんなゲームだと思う？\n#タイトルだけゲーム #picoruno`;
+}
+function quizIntent(cur){
+  const opts = cur.order.map((ci,k)=>`${"ABC"[k]}. ${cur.q.c[ci]}`).join("\n");
+  const text = `「${cur.q.t}」\nこのタイトル、どんなゲームだと思う？\n\n${opts}\n\n#タイトルだけゲーム`;
+  return "https://x.com/intent/post?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(URL_GAME);
+}
+function finish(){
+  stopTimer();
+  const r=RANKS[G.score], b=bestQ();
+  if(G.mode==="daily"){
+    const rec=store.get("titledake-daily",null);
+    if(!rec || rec.date!==G.date) store.set("titledake-daily",{date:G.date,score:G.score,row:emojiRow()});
+  }
+  $("r-head").textContent = headLabel();
+  $("r-score").textContent = G.score;
+  $("r-emo").textContent = emojiRow();
+  $("r-rank").textContent = r.name;
+  $("r-comment").textContent = r.c;
+  const missed = !G.results[G.qs.indexOf(b)].ok;
+  $("r-best").innerHTML = `${missed?"いちばんだまされたタイトル":"いちばん好きなタイトル"}<b>「${esc(b.q.t)}」</b>${esc(b.q.c[0])}`;
+  $("r-post").href = "https://x.com/intent/post?text="+encodeURIComponent(shareText())+"&url="+encodeURIComponent(URL_GAME);
+  $("r-list").innerHTML = G.qs.map((c,k)=>`<li><span class="mk" style="color:${G.results[k].ok?"var(--ok)":"var(--ng)"}">${G.results[k].ok?"○":"×"}</span><b>「${esc(c.q.t)}」</b><p>${esc(c.q.c[0])}</p></li>`).join("");
+  show("s-result");
+  SE.result();
+}
+
+/* 結果画像（1200×630）をつくる */
+async function makeImage(){
+  try{ await document.fonts.ready; }catch(e){}
+  const W=1200,H=630, cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const x=cv.getContext("2d"), F='"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif';
+  const r=RANKS[G.score], b=bestQ();
+  x.fillStyle="#fff9e8"; x.fillRect(0,0,W,H);
+  x.fillStyle="rgba(74,52,40,.08)";
+  for(let yy=11;yy<H;yy+=22) for(let xx=11;xx<W;xx+=22){ x.beginPath(); x.arc(xx,yy,1.6,0,7); x.fill(); }
+  const rr=(X,Y,w,h,R)=>{ x.beginPath(); x.roundRect?x.roundRect(X,Y,w,h,R):x.rect(X,Y,w,h); };
+  // カード
+  x.fillStyle="#4a3428"; rr(58,58,1100,530,36); x.fill();
+  x.fillStyle="#fff"; rr(46,46,1100,530,36); x.fill();
+  x.lineWidth=5; x.strokeStyle="#4a3428"; rr(46,46,1100,530,36); x.stroke();
+  x.textBaseline="alphabetic"; x.fillStyle="#4a3428";
+  x.font=`800 44px ${F}`; x.textAlign="left"; x.fillText("タイトルだけゲーム？",96,126);
+  x.font=`800 26px ${F}`; x.fillStyle="#8a6f60"; x.fillText(headLabel(),96,170);
+  // スコア
+  x.fillStyle="#4a3428"; x.font=`800 120px ${F}`; x.fillText(String(G.score),96,320);
+  const sw=x.measureText(String(G.score)).width;
+  x.font=`800 48px ${F}`; x.fillStyle="#8a6f60"; x.fillText(`/ ${N}`,96+sw+14,320);
+  // ○×
+  G.results.forEach((res,k)=>{
+    x.fillStyle=res.ok?"#2fb79a":"#e8544a"; rr(96+k*66,350,54,54,12); x.fill();
+    x.lineWidth=4; x.strokeStyle="#4a3428"; rr(96+k*66,350,54,54,12); x.stroke();
+    x.fillStyle="#fff"; x.font=`800 32px ${F}`; x.textAlign="center"; x.fillText(res.ok?"○":"×",96+k*66+27,389);
+  });
+  x.textAlign="left";
+  // 診断
+  x.fillStyle="#8a6f60"; x.font=`800 26px ${F}`; x.fillText("あなたのゲーム勘は…",470,236);
+  x.save(); x.translate(470,250); x.rotate(-.03);
+  x.font=`800 54px ${F}`; const rw=Math.min(620, x.measureText(r.name).width+48);
+  x.fillStyle="#4a3428"; rr(6,6,rw,86,18); x.fill();
+  x.fillStyle="#ffe27a"; rr(0,0,rw,86,18); x.fill(); x.lineWidth=5; x.strokeStyle="#4a3428"; rr(0,0,rw,86,18); x.stroke();
+  x.fillStyle="#4a3428"; x.fillText(r.name,24,62,rw-48);
+  x.restore();
+  // いちばんのタイトル
+  x.fillStyle="#fff9e8"; rr(470,380,620,140,18); x.fill();
+  x.setLineDash([8,6]); x.lineWidth=3; x.strokeStyle="rgba(74,52,40,.35)"; rr(470,380,620,140,18); x.stroke(); x.setLineDash([]);
+  x.fillStyle="#8a6f60"; x.font=`800 22px ${F}`; x.fillText("このタイトル、どんなゲームだと思う？",494,418);
+  x.fillStyle="#4a3428"; x.font=`800 44px ${F}`; x.fillText(`「${b.q.t}」`,486,482,590);
+  // フッター
+  x.fillStyle="#8a6f60"; x.font=`800 22px ${F}`; x.fillText("#タイトルだけゲーム　picoruno.",96,548);
+  return new Promise(res=>cv.toBlob(res,"image/png"));
+}
+$("r-img").addEventListener("click", async ()=>{
+  SE.tap();
+  const blob=await makeImage();
+  if(!blob){ toast("画像をつくれませんでした"); return; }
+  const file=new File([blob],"title-dake-result.png",{type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], text:shareText()+"\n"+URL_GAME}); return; }
+    catch(e){ if(e && e.name==="AbortError") return; }
+  }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="title-dake-result.png";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast("画像を保存しました");
+});
+$("r-copy").addEventListener("click", async ()=>{
+  SE.tap();
+  const text=shareText()+"\n"+URL_GAME;
+  try{ await navigator.clipboard.writeText(text); toast("コピーしました"); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("コピーしました"); }catch(_){ toast("コピーできませんでした"); }
+    ta.remove();
+  }
+});
+$("r-again").addEventListener("click",()=>{ SE.tap(); startGame("free"); });
+$("r-back").addEventListener("click",()=>{ SE.tap(); G=null; renderTitle(); });
+$("b-daily").addEventListener("click",()=>{ SE.tap(); startGame("daily"); });
+$("b-free").addEventListener("click",()=>{ SE.tap(); startGame("free"); });
+
+/* キーボード：1/2/3 または A/B/C で回答、Enter でつぎへ */
+document.addEventListener("keydown",e=>{
+  if($("s-play").hidden || !G || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const key=e.key.toLowerCase(), m={"1":0,"2":1,"3":2,"a":0,"b":1,"c":2}[key];
+  if(G.results[G.i]==null && m!=null){ e.preventDefault(); answer(m); }
+  else if(G.results[G.i]!=null && key==="enter" && document.activeElement?.id!=="b-next"){ e.preventDefault(); next(); }
+});
+/* 別のタブに移ったら時間を止めないとかわいそうなので、戻ってきたら残り時間を最初から */
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden || $("s-play").hidden || !G || G.results[G.i]!=null) return;
+  startTimer();
+});
+
+renderTitle();
+</script>
+</body>
+</html>
