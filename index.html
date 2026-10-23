@@ -288,6 +288,34 @@ footer .walk{display:inline-block;font-size:1.4rem;animation:walk 6s linear infi
   .card .play{right:12px;bottom:12px;width:28px;height:28px;font-size:.7rem}
   .card::before{width:54px;height:18px;top:-10px}
 }
+/* カテゴリで探す */
+.finder{position:relative;z-index:3;margin:-8px 0 26px;padding:14px 16px 12px;background:#fff;border:var(--line);border-radius:22px;box-shadow:5px 5px 0 var(--ink)}
+.search{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:2.5px solid var(--ink);border-radius:999px;background:var(--cream)}
+.search:focus-within{background:#fff;box-shadow:0 0 0 4px var(--yellow)}
+.search input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:16px;font-weight:700;color:var(--ink);outline:none}
+.search input::placeholder{color:var(--sub);opacity:.75;font-weight:500}
+.search input::-webkit-search-cancel-button{display:none}
+.search .clear{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-weight:800;line-height:1;cursor:pointer}
+.cats{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:12px 0 2px;padding:0}
+.cat{display:inline-flex;align-items:center;gap:4px;padding:3px 12px 3px 9px;border:2px solid var(--ink);border-radius:999px;background:var(--g,#fff);color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;line-height:1.5;white-space:nowrap;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.cat i{font-style:normal}
+.cat b{font-size:.7rem;color:var(--sub);font-weight:800}
+.cat:hover{transform:translateY(-2px)}
+.cat[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:2px 2px 0 var(--coral)}
+.cat[aria-pressed="true"] b{color:var(--yellow)}
+.found{margin-top:8px;font-size:.8rem;font-weight:800;color:var(--sub)}
+.found button{margin-left:8px;font:inherit;color:var(--ink);background:none;border:0;text-decoration:underline;cursor:pointer}
+.card[hidden]{display:none}
+.empty{text-align:center;padding:30px 16px;background:#fff;border:2.5px dashed var(--ink);border-radius:22px;font-weight:800}
+.empty span{display:block;font-size:2.4rem}
+.empty p{color:var(--sub);font-size:.85rem;font-weight:500}
+@media (max-width:640px){
+  .finder{margin:-10px 0 22px;padding:12px 12px 10px;border-radius:18px}
+  /* スマホはカテゴリを横スクロールの1列に */
+  .cats{flex-wrap:nowrap;overflow-x:auto;margin:10px -12px 0;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{font-size:.78rem;padding:4px 11px 4px 8px}
+}
 </style>
 </head>
 <body>
@@ -318,7 +346,13 @@ footer .walk{display:inline-block;font-size:1.4rem;animation:walk 6s linear infi
   </section>
 
   <h2 id="games"><span class="badge">🎮</span>ゲームいちらん</h2>
+  <div class="finder" role="search">
+    <label class="search"><span aria-hidden="true">🔍</span><input id="q" type="search" placeholder="ゲームをさがす（例：パン）" aria-label="ゲームをキーワードでさがす" autocomplete="off" enterkeyhint="search"><button class="clear" id="qClear" type="button" aria-label="キーワードを消す" hidden>×</button></label>
+    <div class="cats" id="cats" aria-label="カテゴリでしぼりこむ"></div>
+    <p class="found" id="found" aria-live="polite"></p>
+  </div>
   <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden><span aria-hidden="true">🐓💭</span>見つからなかったよ…<p>ことばを変えるか、カテゴリを「ぜんぶ」にしてみてね。</p></div>
 
   <section class="stream" id="stream" hidden>
     <div class="mic">🎙️</div>
@@ -389,6 +423,63 @@ GAMES.forEach((g,i)=>{
     <h3><a class="cardlink" href="${g.url}" target="_blank" rel="noopener">${g.title}</a></h3><p>${g.desc}</p>${genreList(g.genres)}<div class="stats"><span class="stat" title="遊んでもらえた回数">▶ <span class="n-play">0</span>回</span><button type="button" class="like" aria-label="いいね"><span class="hrt">♥</span> <span class="n-like">0</span></button></div><span class="play">▶</span>`;
   grid.appendChild(a);
 });
+
+/* ===== カテゴリ・キーワードでしぼりこむ ===== */
+const kana = x => String(x||"").toLowerCase().normalize("NFKC").replace(/[\u30a1-\u30f6]/g, c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+const cards = [...grid.children];
+GAMES.forEach((g,i)=>{
+  cards[i].dataset.text = kana([g.title,g.tag,g.desc,...(g.genres||[]).map(k=>GENRES[k]?.label)].join(" "));
+});
+const FILTER = { genre:"", q:"" };
+const catsEl=document.getElementById("cats"), qEl=document.getElementById("q"), qClear=document.getElementById("qClear");
+const foundEl=document.getElementById("found"), emptyEl=document.getElementById("empty");
+/* 実際にゲームがあるカテゴリだけ、GENRES の順に並べる */
+const counts={}; GAMES.forEach(g=>(g.genres||[]).forEach(k=>counts[k]=(counts[k]||0)+1));
+const catKeys=Object.keys(GENRES).filter(k=>counts[k]);
+catsEl.innerHTML=[`<button class="cat" type="button" data-genre="" style="--g:var(--yellow)"><i aria-hidden="true">✨</i>ぜんぶ<b>${GAMES.length}</b></button>`]
+  .concat(catKeys.map(k=>`<button class="cat" type="button" data-genre="${k}" style="--g:${GENRES[k].bg}"><i aria-hidden="true">${GENRES[k].icon}</i>${GENRES[k].label}<b>${counts[k]}</b></button>`)).join("");
+
+function applyFilter(){
+  const words=kana(FILTER.q).split(/\s+/).filter(Boolean);
+  const on=FILTER.genre||FILTER.q;
+  let n=0;
+  GAMES.forEach((g,i)=>{
+    const show=(!FILTER.genre || (g.genres||[]).includes(FILTER.genre)) && words.every(w=>cards[i].dataset.text.includes(w));
+    cards[i].hidden=!show;
+    if(show){ n++; if(on) cards[i].classList.add("in"); }
+  });
+  catsEl.querySelectorAll(".cat").forEach(b=>{
+    const sel=b.dataset.genre===FILTER.genre; b.setAttribute("aria-pressed", sel);
+    /* スマホの横スクロールで、選んだカテゴリが見えるように */
+    if(sel && catsEl.scrollWidth>catsEl.clientWidth) catsEl.scrollLeft=b.offsetLeft-(catsEl.clientWidth-b.offsetWidth)/2;
+  });
+  qClear.hidden=!FILTER.q;
+  foundEl.innerHTML = on ? `${n}こ 見つかったよ<button type="button" id="reset">しぼりこみを解除</button>` : "";
+  emptyEl.hidden = n>0;
+  /* 共有できるように URL に残す（?genre=relax&q=パン） */
+  const u=new URL(location.href);
+  FILTER.genre ? u.searchParams.set("genre",FILTER.genre) : u.searchParams.delete("genre");
+  FILTER.q ? u.searchParams.set("q",FILTER.q) : u.searchParams.delete("q");
+  try{ history.replaceState(null,"",u); }catch(e){}
+}
+catsEl.addEventListener("click",e=>{
+  const b=e.target.closest(".cat"); if(!b) return;
+  FILTER.genre = (b.dataset.genre===FILTER.genre) ? "" : b.dataset.genre;
+  applyFilter();
+});
+qEl.addEventListener("input",()=>{ FILTER.q=qEl.value.trim(); applyFilter(); });
+qEl.addEventListener("keydown",e=>{ if(e.key==="Enter") qEl.blur(); });
+qClear.addEventListener("click",()=>{ qEl.value=""; FILTER.q=""; applyFilter(); qEl.focus(); });
+foundEl.addEventListener("click",e=>{
+  if(e.target.id!=="reset") return;
+  qEl.value=""; FILTER.q=""; FILTER.genre=""; applyFilter();
+});
+{
+  const p=new URLSearchParams(location.search);
+  if(GENRES[p.get("genre")] && counts[p.get("genre")]) FILTER.genre=p.get("genre");
+  if(p.get("q")){ FILTER.q=p.get("q").trim(); qEl.value=FILTER.q; }
+  applyFilter();
+}
 
 /* テープ */
 
