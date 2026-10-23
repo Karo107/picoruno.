@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f7f2e8">
 <title>ころころおやつ</title>
-<meta name="description" content="となりのおやつと入れかえて、3ついじょう並べて消すパズル。時間内にお客さんの注文をそろえて、ステージをどんどん進もう。ボムやルノたまで一気に消して、コンボをつなげるとフィーバー！">
+<meta name="description" content="となりのおやつと入れかえて、3ついじょう並べて消すパズル。時間内にお客さんの注文をそろえて、ステージをどんどん進もう。ボムやほしクッキーで一気に消して、コンボをつなげるとフィーバー！">
 <meta property="og:type" content="website">
 <meta property="og:title" content="ころころおやつ">
 <meta property="og:description" content="おやつを3つそろえて消すパズル。注文をこなして、あなたは何ステージまで行ける？">
@@ -207,7 +207,7 @@ button{font-family:inherit;color:inherit}
     <div class="rstats">
       <div><span>とうたつ</span><b id="rStage"></b></div>
       <div><span>さいだいコンボ</span><b id="rCombo"></b></div>
-      <div><span>ボム・ルノたま</span><b id="rSp"></b></div>
+      <div><span>ボム・ほし</span><b id="rSp"></b></div>
     </div>
     <div class="catches" id="rCatches"></div>
     <p class="fav" id="rFav"></p>
@@ -296,16 +296,13 @@ const SWEETS=[
      ${face(54,11,'#ee9f8f')}`},
 ];
 const NT=SWEETS.length;
-// ルノたま（ルノコッコのたまご）：入れかえた相手と同じおやつを全部消す
-const EGG_SVG=`<path d="M50 9 Q79 11 83 56 Q83 90 50 91 Q17 90 17 56 Q21 11 50 9 Z" fill="#fde7a3"/>
-  <path d="M50 14 Q74 16 78 56 Q78 85 50 86 Q22 85 22 56 Q26 16 50 14 Z" fill="#fff4cf"/>
-  <path d="M23 46 l9 6 9 -6 9 6 9 -6 9 6 9 -6" fill="none" stroke="#ec8a83" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M23 66 l9 -6 9 6 9 -6 9 6 9 -6 9 6" fill="none" stroke="#8fb8de" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
-  <circle cx="36" cy="27" r="3.5" fill="#a9cc85"/><circle cx="64" cy="26" r="3" fill="#f2a65a"/><circle cx="44" cy="78" r="3.5" fill="#f2a9b8"/><circle cx="62" cy="77" r="3" fill="#a88bc9"/>
-  <circle cx="42" cy="34" r="3.2" fill="${INK}"/><circle cx="58" cy="34" r="3.2" fill="${INK}"/><path d="M46 39 l4 4 4 -4 z" fill="#f2a65a"/>`;
+// ほしクッキー：入れかえた相手と同じおやつを全部消す
+const EGG_SVG=`<path d="M50.0 15.0 L61.2 39.6 L88.0 42.6 L68.1 60.9 L73.5 87.4 L50.0 74.0 L26.5 87.4 L31.9 60.9 L12.0 42.6 L38.8 39.6 Z" fill="#f3c24f" stroke="#f3c24f" stroke-width="9" stroke-linejoin="round"/>
+  <circle cx="50" cy="55" r="15" fill="#f7d77e"/>
+  ${face(52,8,'#ef9f7f')}`;
 const svgOf=(i,extra='')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ${extra}>${i<0?EGG_SVG:SWEETS[i].svg}</svg>`;
 const BOMB_RING=`<circle cx="50" cy="50" r="44" fill="none" stroke="#e3c26b" stroke-width="7" stroke-dasharray="12 8"/>`;
-const BOMB_STAR=`<path d="M80 6 l5 11 12 2 -9 8 2 12 -10 -6 -10 6 2 -12 -9 -8 12 -2 z" fill="#f3c24f"/>`;
+const BOMB_STAR=`<path d="M82 14 q4 -9 11 -8" stroke="#9a7a5f" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="78" cy="22" r="10" fill="${INK}"/><circle cx="94" cy="6" r="5" fill="#f2a65a"/>`;
 const BOMB_BADGE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${BOMB_RING}</svg>`;
 
 /* ===== 音 ===== */
@@ -337,6 +334,55 @@ const sfx={
   tick(){tone(880,.04,'sine',.05)},
   end(){[523,392,330,262].forEach((f,i)=>tone(f,.22,'triangle',.12,i*.14))},
 };
+/* ===== BGM（Web Audio で鳴らす小さなループ曲。ふだんの曲とフィーバーの曲） ===== */
+const SONGS={
+  normal:{bpm:112,lead:'triangle',lv:.055,
+    mel:[76,79,84,79,76,79,81,79, 76,0,72,76,81,79,76,0, 77,81,84,81,79,77,76,77, 74,79,83,79,81,79,77,74],
+    bass:[48,48,55,55,48,48,55,55, 45,45,52,52,45,45,52,52, 41,41,48,48,41,41,48,48, 43,43,50,50,43,43,50,50],
+    hat:[0,1,0,1,0,1,0,1],kick:[1,0,0,0,1,0,0,0]},
+  fever:{bpm:152,lead:'square',lv:.04,
+    mel:[84,79,84,86,88,86,84,79, 81,76,81,84,88,84,81,76, 77,81,84,89,88,84,81,77, 79,83,86,91,89,86,83,79],
+    bass:[48,60,48,60,48,60,48,60, 45,57,45,57,45,57,45,57, 41,53,41,53,41,53,41,53, 43,55,43,55,43,55,43,55],
+    hat:[1,1,1,1,1,1,1,1],kick:[1,0,1,0,1,0,1,0]},
+};
+const BGM={on:false,mode:'normal',step:0,next:0,iv:0,bus:null};
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function bgmNote(f,t,d,type,v){
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(BGM.bus);o.start(t);o.stop(t+d+.02);
+}
+function bgmHat(t,v){
+  const n=actx.sampleRate*.04|0,b=actx.createBuffer(1,n,actx.sampleRate),ch=b.getChannelData(0);
+  for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);
+  const s=actx.createBufferSource(),f=actx.createBiquadFilter(),g=actx.createGain();
+  f.type='highpass';f.frequency.value=6000;g.gain.value=v;s.buffer=b;s.connect(f).connect(g).connect(BGM.bus);s.start(t);
+}
+function bgmKick(t,v){
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+.15);o.connect(g).connect(BGM.bus);o.start(t);o.stop(t+.17);
+}
+function bgmTick(){
+  if(!BGM.on||!actx) return;
+  const S=SONGS[BGM.mode], dur=60/S.bpm/2;
+  if(BGM.next<actx.currentTime) BGM.next=actx.currentTime+.05;
+  while(BGM.next<actx.currentTime+.15){
+    const i=BGM.step%32, t=BGM.next;
+    if(S.mel[i]) bgmNote(mtof(S.mel[i]),t,dur*.9,S.lead,S.lv);
+    if(i%2===0||BGM.mode==='fever') bgmNote(mtof(S.bass[i]),t,dur*(BGM.mode==='fever'?.8:1.8),'sine',.09);
+    if(S.hat[i%8]) bgmHat(t,BGM.mode==='fever'?.05:.03);
+    if(S.kick[i%8]) bgmKick(t,BGM.mode==='fever'?.16:.11);
+    BGM.step++; BGM.next+=dur;
+  }
+}
+function bgmPlay(mode){
+  if(mode) {if(mode!==BGM.mode){BGM.mode=mode;BGM.step=0}}
+  if(muted||!actx){BGM.on=false;return}
+  if(!BGM.bus){BGM.bus=actx.createGain();BGM.bus.gain.value=.8;BGM.bus.connect(actx.destination)}
+  if(!BGM.on){BGM.on=true;BGM.next=actx.currentTime+.05;clearInterval(BGM.iv);BGM.iv=setInterval(bgmTick,25)}
+}
+function bgmStop(){BGM.on=false;clearInterval(BGM.iv)}
 function setMuteLabel(){['muteBtn','muteBtn2'].forEach(id=>{$(id).textContent='おと：'+(muted?'オフ':'オン');$(id).setAttribute('aria-pressed',String(muted))})}
 
 /* ===== ルール ===== */
@@ -424,7 +470,7 @@ async function trySwap(a,b){
   rawSwap(a,b); tween(A,.13); tween(B,.13); await waitSettle();
   if(G!==g) return;
   if(A.sp===2||B.sp===2){
-    // ルノたま：相手と同じおやつを全部。ルノたま同士なら盤面ぜんぶ
+    // ほしクッキー：相手と同じおやつを全部。ほしクッキー同士なら盤面ぜんぶ
     const other=A.sp===2?B:A, cells=[];
     for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=G.grid[r][c];
       if(t===A||t===B||(other.sp===2?true:(t.t===other.t&&t.sp!==2))) cells.push([r,c])}
@@ -462,7 +508,7 @@ async function resolve(moved,preset){
       let cr=0,cc=0; gr.cells.forEach(([r,c])=>{cr+=r;cc+=c}); cr/=len; cc/=len;
       addScore(100+(len-3)*120,cc,cr);
       if(len>=4){
-        // 4つでボム、5つでルノたま。動かしたマスがあればそこに、なければ真ん中に
+        // 4つでボム、5つでほしクッキー。動かしたマスがあればそこに、なければ真ん中に
         const pick=(first&&gr.cells.find(([r,c])=>movedKeys.has(r*N+c)))||gr.cells.find(([r,c])=>cnt.get(r*N+c)>1)||gr.cells[len>>1];
         const k=pick[0]*N+pick[1], sp=len>=5?2:1;
         make.set(k,Math.max(make.get(k)||0,sp));
@@ -472,28 +518,30 @@ async function resolve(moved,preset){
     }
     for(const [k,n] of cnt) if(n>1&&!make.has(k)) make.set(k,1);
     // ボムの爆発（3×3）。巻きこんだボムも連鎖
-    const queue=[...gone.values()], blasted=new Set();
+    const queue=[...gone.values()], blasted=new Set(), flying=new Map();
     let booms=0;
     while(queue.length){
       const [r,c]=queue.pop(), t=G.grid[r][c];
       if(!t||t.sp!==1||blasted.has(t.id)) continue;
-      blasted.add(t.id); booms++;
+      blasted.add(t.id); booms++; flying.set(r*N+c,[r,c]);
       for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
         const rr=r+dr,cc=c+dc,n=at(rr,cc),k=rr*N+cc;
         if(!n||n.sp===2||gone.has(k)) continue;
-        gone.set(k,[rr,cc]); queue.push([rr,cc]); addScore(40,cc,rr,true);
+        gone.set(k,[rr,cc]); queue.push([rr,cc]); addScore(40,cc,rr,true); if(!flying.has(k)) flying.set(k,[rr,cc,r,c]);
       }
       ring(c,r);
     }
-    if(booms){sfx.boom(); shake()}
-    // できたボム・ルノたまの場所はコマを残す
+    if(booms){sfx.boom(); shake(); if(navigator.vibrate)try{navigator.vibrate(30)}catch(_){}}
+    // できたボム・ほしクッキーの場所はコマを残す
     for(const k of make.keys()){const r=Math.floor(k/N),c=k%N,t=G.grid[r][c]; if(t&&blasted.has(t.id)&&t.sp===1) make.delete(k)}
     sfx.pop(G.combo);
     for(const [k,[r,c]] of gone){
       const t=G.grid[r][c]; if(!t) continue;
       if(t.t>=0){G.caught[t.t]++; if(G.quota[t.t]>0){G.quota[t.t]--; bumpQuota(t.t)}}
       if(t.gold){t.gold=false; goldBonus(c,r)}
-      if(!make.has(k)){t.pop=0; burst(c,r,t.t>=0?SWEETS[t.t].col:'#f3d27a')}
+      if(make.has(k)) continue;
+      if(flying.has(k)){const f=flying.get(k); fling(t,f[2]==null?r:f[2],f[3]==null?c:f[3]); t.pop=1}
+      else{t.pop=0; burst(c,r,t.t>=0?SWEETS[t.t].col:'#f3d27a')}
     }
     if(G.quota.every(q=>q<=0)) G.stageClearPending=true;
     renderHud();
@@ -544,7 +592,7 @@ async function shuffle(){
   await waitSettle();
 }
 function startFever(){
-  G.feverT=FEVER_TIME; G.fevers++; G.fever=100; sfx.fever();
+  G.feverT=FEVER_TIME; G.fevers++; G.fever=100; sfx.fever(); bgmPlay('fever');
   showBanner('フィーバー！','スコア2倍・時間ストップ',1.1);
   $('board').classList.add('fev'); $('feverBar').classList.add('on');
 }
@@ -573,6 +621,41 @@ function burst(c,r,col){
   if(reduceMotion) return;
   for(let i=0;i<6;i++){const a=Math.random()*Math.PI*2,v=1.5+Math.random()*2.5;
     G.fx.push({x:c+.5,y:r+.5,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.5,t:0,life:.5+Math.random()*.3,col,sz:.07+Math.random()*.06})}
+}
+// ボムで弾け飛ぶおやつ：盤面の外まで飛んでいけるよう、画面いっぱいの別キャンバスに描く
+const fxcv=document.createElement('canvas'), fxc=fxcv.getContext('2d');
+fxcv.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:5';
+fxcv.setAttribute('aria-hidden','true'); document.body.appendChild(fxcv);
+let flies=[];
+function fling(t,br,bc){
+  const rect=cv.getBoundingClientRect();
+  const x=rect.left+(t.x+.5)*cell, y=rect.top+(t.y+.5)*cell;
+  let dx=t.c-bc, dy=t.r-br; if(!dx&&!dy){dx=(Math.random()-.5)*.6;dy=-1}
+  const len=Math.hypot(dx,dy)||1, sp=(6+Math.random()*5)*cell;
+  flies.push({typ:t.t,x,y,vx:dx/len*sp+(Math.random()-.5)*cell*2,vy:dy/len*sp-(4+Math.random()*4)*cell,rot:0,vr:(Math.random()<.5?-1:1)*(6+Math.random()*10),t:0,life:1.1,s:1});
+  if(!reduceMotion){
+    const col=t.t>=0?SWEETS[t.t].col:'#f3d27a';
+    for(let i=0;i<5;i++){const a=Math.random()*Math.PI*2,v=(2+Math.random()*4)*cell;
+      flies.push({drop:true,col,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2*cell,t:0,life:.6+Math.random()*.3,r:cell*(.06+Math.random()*.07)})}
+  }
+}
+function drawFlies(dt){
+  const W=innerWidth,H=innerHeight,d=Math.min(devicePixelRatio||1,3);
+  if(fxcv.width!==Math.round(W*d)||fxcv.height!==Math.round(H*d)){fxcv.width=Math.round(W*d);fxcv.height=Math.round(H*d)}
+  if(!flies.length&&!fxcv._dirty) return;
+  fxc.setTransform(d,0,0,d,0,0); fxc.clearRect(0,0,W,H); fxcv._dirty=flies.length>0;
+  for(const f of flies){
+    f.t+=dt; f.x+=f.vx*dt; f.y+=f.vy*dt; f.vy+=22*cell*dt;
+    fxc.globalAlpha=Math.max(0,Math.min(1,(f.life-f.t)/(f.life*.35)));
+    if(f.drop){fxc.fillStyle=f.col;fxc.beginPath();fxc.arc(f.x,f.y,f.r,0,7);fxc.fill();continue}
+    f.rot+=f.vr*dt; f.s=1+.25*Math.min(1,f.t*4);
+    const sp=f.typ<0?eggSprite:sprites[f.typ], w=cell*.9*f.s;
+    fxc.save();fxc.translate(f.x,f.y);fxc.rotate(f.rot);
+    if(sp&&sp.width) fxc.drawImage(sp,-w/2,-w/2,w,w);
+    fxc.restore();
+  }
+  fxc.globalAlpha=1;
+  flies=flies.filter(f=>f.t<f.life&&f.y<H+cell*2);
 }
 function ring(c,r){G.fx.push({ring:true,x:c+.5,y:r+.5,t:0,life:.35})}
 function shake(){if(reduceMotion)return;const b=$('board');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
@@ -634,10 +717,11 @@ function draw(){
     const sp=t.t<0?eggSprite:sprites[t.t];
     if(sp&&sp.width) ctx.drawImage(sp,cx-w/2,cy-h/2,w,h);
     else{ctx.fillStyle=t.t<0?'#fff3c9':SWEETS[t.t].col;ctx.beginPath();ctx.arc(cx,cy,w*.42,0,7);ctx.fill()}
-    if(t.sp===1&&t.pop<0){ // ボムの星
-      const bx=cx+cell*.3, by=cy-cell*.3, R=cell*.13;
-      ctx.beginPath();for(let i=0;i<10;i++){const an=-Math.PI/2+i*Math.PI/5,rr=i%2?R*.45:R;ctx.lineTo(bx+Math.cos(an)*rr,by+Math.sin(an)*rr)}
-      ctx.closePath();ctx.fillStyle='#f3c24f';ctx.fill();
+    if(t.sp===1&&t.pop<0){ // ボムのしるし（小さな爆弾）
+      const bx=cx+cell*.28, by=cy-cell*.26, R=cell*.11, k=(Math.sin(G.clock*12)+1)/2;
+      ctx.strokeStyle='#9a7a5f';ctx.lineWidth=cell*.04;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(bx+R*.5,by-R*.7);ctx.quadraticCurveTo(bx+R*.9,by-R*1.6,bx+R*1.5,by-R*1.5);ctx.stroke();
+      ctx.fillStyle=INK;ctx.beginPath();ctx.arc(bx,by,R,0,7);ctx.fill();
+      ctx.fillStyle=k>.5?'#f2a65a':'#f3c24f';ctx.beginPath();ctx.arc(bx+R*1.5,by-R*1.5,R*(.35+.25*k),0,7);ctx.fill();
     }
     if(t.gold&&t.pop<0){ // きらり
       const k=(Math.sin(G.clock*6+t.id)+1)/2, sx=cx-cell*.28, sy=cy-cell*.28, L=cell*(.06+.08*k);
@@ -669,6 +753,7 @@ function frame(now){
   const dt=Math.min(.05,(now-last)/1000||0); last=now;
   if(G&&!G.paused&&!$('play').hidden) step(dt);
   if(!$('play').hidden) draw();
+  drawFlies(G&&G.paused?0:dt);
 }
 function step(dt){
   G.clock+=dt;
@@ -688,7 +773,7 @@ function step(dt){
   G.texts.forEach(x=>x.t+=dt); G.texts=G.texts.filter(x=>x.t<.9);
   if(G.over) return;
   if(G.feverT>0){G.feverT-=dt;G.fever=Math.max(0,100*G.feverT/FEVER_TIME);
-    if(G.feverT<=0){G.feverT=0;G.fever=0;$('board').classList.remove('fev');$('feverBar').classList.remove('on')}}
+    if(G.feverT<=0){G.feverT=0;G.fever=0;$('board').classList.remove('fev');$('feverBar').classList.remove('on');bgmPlay('normal')}}
   // 時間：ステージの切りかわりとフィーバー中は止まる
   if(G.feverT<=0&&G.banner<=0&&!G.stageClearPending){
     G.time=Math.max(0,G.time-dt*drainFor(G.stage));
@@ -762,15 +847,17 @@ function startGame(){
   $('board').classList.remove('fev'); $('feverBar').classList.remove('on');
   const g=G; G.busy=true; showBanner('スタート！','注文のおやつを集めよう',1.2); G.banner=1.2;
   wait(1.2).then(()=>{if(G===g)G.busy=false});
+  BGM.mode='normal'; BGM.step=0; bgmPlay('normal');
   pingPlay();
 }
 function pause(on){
   if(!G||G.over) return;
   G.paused=on; $('pauseModal').hidden=!on; drag=null;
+  if(on) bgmStop(); else bgmPlay();
 }
 function endGame(){
   if(!G||G.over) return;
-  G.over=true; G.busy=true; sfx.end();
+  G.over=true; G.busy=true; bgmStop(); sfx.end();
   showBanner('タイムアップ！','',1.6);
   const g=G; setTimeout(()=>{if(G===g)showResult()},1600);
 }
@@ -820,7 +907,7 @@ async function makeShareImage(){
   c.font='34px '+POP; const lv=`ステージ ${S.reached} までいけた！`, lw=c.measureText(lv).width+56;
   rrect(c,W/2-lw/2,580,lw,62,31); c.fillStyle='#E8877F'; c.fill(); c.fillStyle='#FFFDF8'; c.fillText(lv,W/2,612);
   c.fillStyle='#5B4D45'; c.font='76px '+POP; c.fillText(`${S.score.toLocaleString()} 点`,W/2,712);
-  c.fillStyle='#8E8077'; c.font=BODY; c.fillText(`さいだい ${S.combo} コンボ ・ ボム ${S.bombs} ・ ルノたま ${S.eggs}`,W/2,782,W-200);
+  c.fillStyle='#8E8077'; c.font=BODY; c.fillText(`さいだい ${S.combo} コンボ ・ ボム ${S.bombs} ・ ほしクッキー ${S.eggs}`,W/2,782,W-200);
   const sz=96, gp=18, x0=W/2-(7*sz+6*gp)/2;
   ims.forEach((im,i)=>{if(im)c.drawImage(im,x0+i*(sz+gp),818,sz,sz);
     c.fillStyle='#5B4D45';c.font='30px '+POP;c.fillText(String(S.caught[i]),x0+i*(sz+gp)+sz/2,942)});
@@ -858,13 +945,13 @@ $('logo').innerHTML=[...'ころころおやつ'].map((ch,i)=>`<span class="c${i}
 $('parade').innerHTML=SWEETS.map((a,i)=>`<i style="--i:${i}">${svgOf(i)}</i>`).join('');
 $('specials').innerHTML=
   `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${BOMB_RING}<g transform="translate(10 10) scale(.8)">${SWEETS[1].svg}</g>${BOMB_STAR}</svg><b>ボム</b>4つそろえると<br>まわり9マスを消す</div>`+
-  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${EGG_SVG}</svg><b>ルノたま</b>5つそろえると<br>相手と同じ種類を全部</div>`+
+  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${EGG_SVG}</svg><b>ほしクッキー</b>5つそろえると<br>相手と同じ種類を全部</div>`+
   `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#ffeca0" opacity=".7"/><g transform="translate(10 10) scale(.8)">${SWEETS[0].svg}</g><path d="M22 14 v16 M14 22 h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg><b>キラキラ</b>たまに出る<br>消すと＋2秒</div>`;
 
 /* ===== 操作 ===== */
 $('startBtn').onclick=startGame;
 $('againBtn').onclick=startGame;
-$('homeBtn').onclick=()=>{refreshTitle();show('title')};
+$('homeBtn').onclick=()=>{bgmStop();refreshTitle();show('title')};
 $('pauseBtn').onclick=()=>pause(true);
 $('resumeBtn').onclick=()=>pause(false);
 $('giveupBtn').onclick=()=>{$('pauseModal').hidden=true;if(G){G.paused=false;endGame()}};
@@ -873,7 +960,8 @@ $('shareGo').onclick=doShare;
 $('copyTxt').onclick=copyText;
 $('shareClose').onclick=()=>$('shareModal').hidden=true;
 $('shareModal').addEventListener('click',e=>{if(e.target.id==='shareModal')$('shareModal').hidden=true});
-['muteBtn','muteBtn2'].forEach(id=>$(id).onclick=()=>{muted=!muted;LS.set(KEY_MUTE,muted);setMuteLabel()});
+['muteBtn','muteBtn2'].forEach(id=>$(id).onclick=()=>{ac();muted=!muted;LS.set(KEY_MUTE,muted);setMuteLabel();
+  if(muted)bgmStop();else if(G&&!G.over&&!G.paused&&!$('play').hidden)bgmPlay()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&!G.over&&!$('play').hidden)pause(true)});
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
