@@ -110,6 +110,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card{background:var(--surface);color:var(--ink);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;max-width:520px;width:100%}
 .card img{width:100%;max-height:62vh;object-fit:contain;border-radius:4px}
 .card p{margin:0;font-size:12px;color:var(--muted);text-align:center}
+.card h2{margin:0;font:600 17px/1.2 var(--f-disp);letter-spacing:.08em}
+.outacts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%}
+.outacts .chip{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.outacts .chip.main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.donebtn{position:absolute;left:50%;bottom:-21px;z-index:2;transform:translateX(-50%);white-space:nowrap;display:flex;align-items:center;gap:8px;
+  font:700 15px/1 var(--f-body);letter-spacing:.04em;color:var(--accent-ink);background:var(--accent);border:0;border-radius:999px;padding:13px 20px;
+  box-shadow:0 4px 14px rgba(120,40,20,.28);cursor:pointer;animation:donePop .45s ease-out}
+@media (orientation: landscape) and (min-width:600px){.donebtn{bottom:14px}}
+@keyframes donePop{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .seg2{display:flex;gap:6px;justify-content:center}
 .sealcard{max-width:300px;padding:20px 18px 16px;gap:14px}
 .sealcard canvas{width:132px;height:132px;transform:rotate(-4deg)}
@@ -193,7 +202,7 @@ button{touch-action:pan-x pan-y}
   </header>
   <div class="work">
     <div id="wrap">
-      <div class="stagebox" id="box"><canvas id="stage"></canvas></div>
+      <div class="stagebox" id="box"><canvas id="stage"></canvas><button class="donebtn" id="doneBtn" type="button" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>完成！ 保存・シェア</button></div>
       <div id="pick" class="pick" hidden>
         <div class="pick-head"><h2 class="pick-title">どの紙をちぎりますか</h2><span class="pick-acts"><button class="chip" id="pickBack" type="button">とじる</button></span></div>
         <div id="pickBody"></div>
@@ -229,9 +238,15 @@ button{touch-action:pan-x pan-y}
 
 <div class="modal" id="modal" hidden>
   <div class="card">
+    <h2>できあがり！</h2>
     <img id="outImg" alt="できあがったちぎり絵">
     <div class="seg2" id="saveOpt" role="group" aria-label="保存のしかた" hidden><button class="chip" type="button" data-t="0" aria-pressed="true">そのまま</button><button class="chip" type="button" data-t="1" aria-pressed="false">お題つき</button></div>
-    <p>画像を長押し（パソコンは右クリック）で保存できます</p>
+    <div class="outacts">
+      <button class="chip main" id="saveImg" type="button">画像を保存</button>
+      <button class="chip main" id="shareImg" type="button">シェア</button>
+      <a class="chip" id="xShare" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    </div>
+    <p>うまく保存できないときは、画像を長押し（パソコンは右クリック）してください</p>
     <button class="chip" id="closeModal" type="button">とじる</button>
   </div>
 </div>
@@ -732,10 +747,24 @@ function drawThemeTag(g,S){const ff=getComputedStyle(document.body).getPropertyV
  g.beginPath();g.roundRect(x,y,bw,bh,bh*.18);g.fill();g.shadowColor='transparent';
  g.fillStyle='#b5302b';g.font=`700 ${zs}px ${fb}`;g.textBaseline='middle';g.fillText('お題',x+pad,y+bh/2);
  g.fillStyle='#2b2723';g.font=`600 ${z}px ${ff}`;g.fillText(C.theme,x+pad+zs*2.6,y+bh/2+z*.04);g.restore()}
-function makeSaveImg(){const S=1200,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');drawBoard(g,S,false,saveTheme);$('#outImg').src=c.toDataURL('image/png')}
+/* 保存・シェア：台紙ごとのちぎり絵に、すみに小さく名前を入れる */
+const GAME_URL='https://runococco.github.io/picoruno./chigiriebiyori.html';
+const SHARE_TXT='ちぎりえ日和でちぎり絵をつくったよ 🌸 #ちぎりえ日和 #picoruno';
+let outBlob=null;
+function makeSaveImg(){const S=1200,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');drawBoard(g,S,false,saveTheme);
+ g.font='600 30px "Zen Old Mincho","Hiragino Mincho ProN",serif';g.textAlign='right';g.textBaseline='bottom';g.fillStyle='rgba(43,38,34,.55)';g.fillText('ちぎりえ日和 ・ picoruno.',S-28,S-24);
+ $('#outImg').src=c.toDataURL('image/png');outBlob=null;c.toBlob(b=>{outBlob=b},'image/png')}
+const getBlob=()=>outBlob?Promise.resolve(outBlob):fetch($('#outImg').src).then(r=>r.blob());
+const fname=()=>'chigiriebiyori-'+new Date().toISOString().slice(0,10)+'.png';
+$('#saveImg').addEventListener('click',async()=>{try{const b=await getBlob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fname();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('画像を保存しました')}catch(e){toast('画像を長押しして保存してください')}});
+$('#shareImg').addEventListener('click',async()=>{try{const b=await getBlob();const file=new File([b],fname(),{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:SHARE_TXT+'\n'+GAME_URL});return}
+  if(navigator.share){await navigator.share({text:SHARE_TXT,url:GAME_URL});return}
+  await navigator.clipboard.writeText(SHARE_TXT+'\n'+GAME_URL);toast('シェア用の文をコピーしました')}catch(e){if(!e||e.name!=='AbortError')window.open($('#xShare').href,'_blank','noopener')}});
 const saveOpt=$('#saveOpt');
 saveOpt.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{saveTheme=b.dataset.t==='1';saveOpt.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));makeSaveImg()}));
-$('#imgBtn').addEventListener('click',()=>{saveOpt.hidden=!C.theme;makeSaveImg();$('#modal').hidden=false});
+function openOut(){saveOpt.hidden=!C.theme;makeSaveImg();$('#xShare').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(SHARE_TXT)+'&url='+encodeURIComponent(GAME_URL);$('#modal').hidden=false}
+$('#imgBtn').addEventListener('click',openOut);$('#doneBtn').addEventListener('click',openOut);
 $('#closeModal').addEventListener('click',()=>{$('#modal').hidden=true});
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')$('#modal').hidden=true});
 $('#undoBtn').addEventListener('click',undo);
@@ -744,7 +773,7 @@ $('#resetBtn').addEventListener('click',startOver);$('#redoBtn').addEventListene
 
 function updateUI(){const pk=C.phase==='pick';pick.hidden=!pk;box.hidden=pk;$('#side').hidden=pk;$('#paperChip').hidden=pk;boardBtn.hidden=pk;$('#imgBtn').hidden=pk;if(pk)setPop(false);
  modeSeg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===C.mode));$('.trayw').hidden=C.mode==='brush'&&!C.tray.length;
- const pc=$('#pcount');pc.hidden=!C.pieces.length;pc.textContent=C.pieces.length;
+ const pc=$('#pcount');pc.hidden=!C.pieces.length;pc.textContent=C.pieces.length;$('#doneBtn').hidden=pk||!C.pieces.length;
  $('#boardRow').querySelectorAll('.bcard').forEach(b=>b.setAttribute('aria-pressed',b.bd===C.board));$('#boardName').textContent=C.board.n;
  if(lastBoard!==C.board){lastBoard=C.board;$('#boardThumb').src=boardImg(C.board,52).toDataURL()}
  $('#undoBtn').disabled=!C.hist.length;$('#resetBtn').disabled=!C.pieces.length&&!C.tray.length&&!C.torn;$('#redoBtn').disabled=!C.fut.length;buildPanel();if(!tdrag)buildTray()}
