@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f7f2e8">
-<title>おやつポン</title>
+<title>ころころおやつ</title>
 <meta name="description" content="となりのおやつと入れかえて、3ついじょう並べて消すパズル。時間内にお客さんの注文をそろえて、ステージをどんどん進もう。ボムやルノたまで一気に消して、コンボをつなげるとフィーバー！">
 <meta property="og:type" content="website">
-<meta property="og:title" content="おやつポン">
-<meta property="og:description" content="おやつを3つそろえてポン！注文をこなして、あなたは何ステージまで行ける？">
-<meta property="og:url" content="https://runococco.github.io/picoruno./oyatsupon.html">
+<meta property="og:title" content="ころころおやつ">
+<meta property="og:description" content="おやつを3つそろえて消すパズル。注文をこなして、あなたは何ステージまで行ける？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./korokoro.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
 <meta property="og:image:width" content="1200">
@@ -64,9 +64,9 @@ button{font-family:inherit;color:inherit}
 .row .btn{flex:1;min-width:0;font-size:.95rem;padding:12px 10px}
 
 /* ---- タイトル ---- */
-.logo{font-family:var(--pop);font-size:clamp(2.5rem,12.5vw,3.5rem);letter-spacing:.04em;margin:14px 0 0;line-height:1.1;text-align:center}
+.logo{font-family:var(--pop);font-size:clamp(2.1rem,11.5vw,3.2rem);letter-spacing:.04em;margin:14px 0 0;line-height:1.1;text-align:center}
 .logo span{display:inline-block;animation:hop 2.4s ease-in-out infinite;animation-delay:calc(var(--i)*.12s)}
-.logo .c0{color:#e39aa6}.logo .c1{color:#c9935f}.logo .c2{color:#e3a165}.logo .c3{color:#8fb07c}.logo .c4{color:#7f9fc0}
+.logo .c0{color:#e39aa6}.logo .c1{color:#c9935f}.logo .c2{color:#e3a165}.logo .c3{color:#8fb07c}.logo .c4{color:#7f9fc0}.logo .c5{color:#a88bc9}.logo .c6{color:#ec7a74}
 @keyframes hop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
 .catch{margin:0;color:var(--sub);font-weight:700;text-align:center}
 .parade{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:100%;max-width:400px;margin:4px 0}
@@ -158,12 +158,12 @@ button{font-family:inherit;color:inherit}
 
 <!-- ===== タイトル ===== -->
 <section class="screen" id="title">
-  <h1 class="logo" id="logo">おやつポン</h1>
-  <p class="catch">となりと入れかえて、3つそろえてポン！</p>
+  <h1 class="logo" id="logo">ころころおやつ</h1>
+  <p class="catch">となりと入れかえて、3つそろえて消そう！</p>
   <div class="parade" id="parade" aria-hidden="true"></div>
   <p class="howto">
     <b>①</b> おやつをスワイプして、となりと入れかえ<br>
-    <b>②</b> たて・よこに3ついじょう並ぶとポン！<br>
+    <b>②</b> たて・よこに3ついじょう並ぶと消える<br>
     <b>③</b> 時間内に<b>お客さんの注文</b>をそろえるとステージクリア<br>
     <b>④</b> すばやく消し続けると<b>コンボ</b>、たまると<b>フィーバー</b>！
   </p>
@@ -199,7 +199,7 @@ button{font-family:inherit;color:inherit}
 <!-- ===== 結果 ===== -->
 <section class="screen" id="result" hidden>
   <div class="rcard">
-    <p class="rhead">おやつポン ・ けっか</p>
+    <p class="rhead">ころころおやつ ・ けっか</p>
     <p class="rlabel">あなたの称号は…</p>
     <p class="rank" id="rRank"></p>
     <p class="rbig" id="rScore"></p>
@@ -211,7 +211,7 @@ button{font-family:inherit;color:inherit}
     </div>
     <div class="catches" id="rCatches"></div>
     <p class="fav" id="rFav"></p>
-    <p class="site">#おやつポン ・ picoruno.</p>
+    <p class="site">#ころころおやつ ・ picoruno.</p>
   </div>
   <div class="row">
     <a class="btn dark" id="xBtn" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
@@ -246,64 +246,66 @@ button{font-family:inherit;color:inherit}
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const GAME_URL='https://runococco.github.io/picoruno./oyatsupon.html';
+const GAME_URL='https://runococco.github.io/picoruno./korokoro.html';
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const KEY_BEST='oyatsupon-best', KEY_MUTE='oyatsupon-mute';
+const KEY_BEST='korokoro-best', KEY_MUTE='korokoro-mute';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===== おやつ（オリジナルのSVG。viewBox 0 0 100 100）。形と色の両方で見分けられるようにしています ===== */
 const INK='#5b4d45';
-const st=`stroke="${INK}" stroke-width="4" stroke-linejoin="round"`;
-const eyes=(y=58,dx=11,cx=50)=>`<circle cx="${cx-dx}" cy="${y}" r="4" fill="${INK}"/><circle cx="${cx+dx}" cy="${y}" r="4" fill="${INK}"/><circle cx="${cx-dx+1.3}" cy="${y-1.5}" r="1.2" fill="#fff"/><circle cx="${cx+dx+1.3}" cy="${y-1.5}" r="1.2" fill="#fff"/>`;
-const cheeks=(y=66,dx=19,col='#f2a7a7')=>`<ellipse cx="${50-dx}" cy="${y}" rx="5" ry="3.3" fill="${col}" opacity=".8"/><ellipse cx="${50+dx}" cy="${y}" rx="5" ry="3.3" fill="${col}" opacity=".8"/>`;
-const smile=(y=66)=>`<path d="M45 ${y} q5 5 10 0" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
-const face=(y,dx=11,cy=8,ck='#f2a7a7')=>eyes(y,dx)+cheeks(y+cy,dx+8,ck)+smile(y+6);
+// 絵柄：線なし・ハイライトなしのフラットな形に、点の目と小さな口
+const eyes=(y,dx=11)=>`<circle cx="${50-dx}" cy="${y}" r="3.8" fill="${INK}"/><circle cx="${50+dx}" cy="${y}" r="3.8" fill="${INK}"/>`;
+const cheeks=(y,dx,col)=>`<ellipse cx="${50-dx}" cy="${y}" rx="5" ry="3.2" fill="${col}" opacity=".75"/><ellipse cx="${50+dx}" cy="${y}" rx="5" ry="3.2" fill="${col}" opacity=".75"/>`;
+const mouth=y=>`<path d="M47 ${y} q3 3 6 0" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`;
+const face=(y,dx=11,ck='#f19c9c')=>eyes(y,dx)+cheeks(y+6,dx+7,ck)+mouth(y+4);
 const SWEETS=[
-  {id:'daifuku',name:'いちご大福',emoji:'🍓',col:'#f2bfc6',svg:
-    `<path d="M14 68 q0 -42 36 -44 q36 2 36 44 q0 16 -36 16 q-36 0 -36 -16z" fill="#f8dade" ${st}/>
-     <path d="M38 27 q12 -9 24 0 q-3 9 -12 9 q-9 0 -12 -9z" fill="#e3707a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
-     <path d="M50 22 q-8 -10 -16 -8 q4 8 16 8 q8 -12 18 -9 q-6 10 -18 9z" fill="#9cc58a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
-     ${face(58,12,9,'#ee95a2')}`},
-  {id:'dorayaki',name:'どらやき',emoji:'🥞',col:'#c9935f',svg:
-    `<ellipse cx="50" cy="66" rx="40" ry="18" fill="#c48a55" ${st}/><ellipse cx="50" cy="58" rx="37" ry="14" fill="#7a5049"/>
-     <ellipse cx="50" cy="48" rx="40" ry="22" fill="#dfa96f" ${st}/><ellipse cx="50" cy="42" rx="26" ry="11" fill="#e9bd87" opacity=".7"/>
-     ${face(48,12,7,'#e48f7c')}`},
+  {id:'ichigo',name:'いちご',emoji:'🍓',col:'#ec7a74',svg:
+    `<path d="M50 90 C27 86 13 62 15 44 C17 30 32 26 50 31 C68 26 83 30 85 44 C87 62 73 86 50 90Z" fill="#ec7a74"/>
+     <g fill="#fbe0a6"><ellipse cx="30" cy="46" rx="1.8" ry="2.6"/><ellipse cx="70" cy="46" rx="1.8" ry="2.6"/><ellipse cx="36" cy="72" rx="1.8" ry="2.6"/><ellipse cx="64" cy="72" rx="1.8" ry="2.6"/><ellipse cx="50" cy="80" rx="1.8" ry="2.6"/></g>
+     <path d="M50 33 L33 24 L45 26 L42 12 L50 23 L58 12 L55 26 L67 24 Z" fill="#8cc276"/>
+     ${face(52,11,'#f7b0a8')}`},
   {id:'purin',name:'プリン',emoji:'🍮',col:'#f3d27a',svg:
-    `<ellipse cx="50" cy="84" rx="42" ry="9" fill="#fbf8f2" ${st}/>
-     <path d="M22 82 L30 34 Q50 25 70 34 L78 82 Q50 90 22 82 Z" fill="#f6dc8e" ${st}/>
-     <path d="M30 34 Q50 25 70 34 L68 46 Q60 52 56 46 Q50 54 44 46 Q40 52 32 46 Z" fill="#b97a4f" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
-     ${face(62,11,8,'#f0a58a')}`},
-  {id:'onigiri',name:'おにぎり',emoji:'🍙',col:'#efeae2',svg:
-    `<path d="M50 12 Q60 12 84 60 Q93 86 50 86 Q7 86 16 60 Q40 12 50 12 Z" fill="#fbf8f2" ${st}/>
-     <path d="M33 66 H67 V86 Q50 88 33 86 Z" fill="#4d4a48" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
-     ${face(48,11,8,'#f2b3b3')}`},
-  {id:'melon',name:'メロンパン',emoji:'🍈',col:'#b7d48f',svg:
-    `<circle cx="50" cy="54" r="36" fill="#c9df9f" ${st}/>
-     <path d="M28 30 L72 76 M20 46 L56 84 M42 22 L80 62 M72 30 L28 76 M80 46 L44 84 M58 22 L20 62" stroke="#a5c47c" stroke-width="2.6" stroke-linecap="round"/>
-     <circle cx="50" cy="54" r="36" fill="none" ${st}/>
-     <ellipse cx="50" cy="60" rx="21" ry="15" fill="#c9df9f"/>${face(56,11,8,'#ee9f8f')}`},
-  {id:'soda',name:'ソーダアイス',emoji:'🍦',col:'#8fb8d8',svg:
-    `<rect x="44" y="70" width="12" height="24" rx="5" fill="#e6cb9f" ${st}/>
-     <rect x="22" y="8" width="56" height="68" rx="22" fill="#a9cbe6" ${st}/>
-     <path d="M30 22 q4 -6 10 -6" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
-     <circle cx="64" cy="22" r="2" fill="#fff" opacity=".8"/><circle cx="33" cy="64" r="2" fill="#fff" opacity=".7"/>
-     ${face(42,11,8,'#f2adb0')}`},
-  {id:'candy',name:'キャンディ',emoji:'🍬',col:'#f0a868',svg:
-    `<path d="M26 50 L6 32 Q2 50 6 68 Z" fill="#f8cfa6" ${st}/><path d="M74 50 L94 32 Q98 50 94 68 Z" fill="#f8cfa6" ${st}/>
-     <circle cx="50" cy="50" r="30" fill="#f2ad6c" ${st}/><path d="M28 36 q10 -12 24 -14" stroke="#f9d3a9" stroke-width="5" stroke-linecap="round" fill="none"/>
-     ${face(48,10,8,'#e8857a')}`},
+    `<ellipse cx="50" cy="85" rx="42" ry="8" fill="#e6ddd0"/>
+     <path d="M23 83 L31 34 Q50 25 69 34 L77 83 Q50 89 23 83 Z" fill="#f4d47c"/>
+     <path d="M31 34 Q50 25 69 34 L67.4 44 Q50 50 32.6 44 Z" fill="#b97a52"/>
+     ${face(61,11,'#f0a58a')}`},
+  {id:'donut',name:'ドーナツ',emoji:'🍩',col:'#f2a9b8',svg:
+    `<path fill-rule="evenodd" d="M50 13a37 37 0 1 0 .01 0Z M50 30a9 9 0 1 0 .01 0Z" fill="#e8bf8c"/>
+     <path fill-rule="evenodd" d="M50 17a33 33 0 0 0 -33 33 q3 6 8 2 q5 6 10 1 q5 6 11 2 q5 5 11 1 q5 5 11 0 q6 4 10 -2 q4 4 5 -4 a33 33 0 0 0 -33 -33Z M50 30a9 9 0 1 0 .01 0Z" fill="#f2a9b8"/>
+     <g stroke-width="3" stroke-linecap="round"><path d="M28 34 l4 -3" stroke="#fff6d6"/><path d="M70 30 l3 4" stroke="#9cc2e4"/><path d="M76 46 l-1 5" stroke="#fff6d6"/><path d="M24 48 l2 4" stroke="#9cc2e4"/><path d="M60 22 l4 1" stroke="#a9cc85"/></g>
+     ${face(64,11,'#e98f9e')}`},
+  {id:'soda',name:'ソーダアイス',emoji:'🍧',col:'#9cc2e4',svg:
+    `<rect x="44" y="68" width="12" height="25" rx="6" fill="#e3c79c"/>
+     <rect x="22" y="8" width="56" height="68" rx="24" fill="#9cc2e4"/>
+     <rect x="29" y="18" width="5" height="22" rx="2.5" fill="#fff" opacity=".55"/>
+     ${face(44,11,'#f2adb0')}`},
+  {id:'candy',name:'キャンディ',emoji:'🍬',col:'#f2a65a',svg:
+    `<path d="M30 50 L8 32 Q3 50 8 68 Z" fill="#f7c896"/><path d="M70 50 L92 32 Q97 50 92 68 Z" fill="#f7c896"/>
+     <circle cx="50" cy="50" r="29" fill="#f2a65a"/>
+     ${face(48,10,'#ea857c')}`},
+  {id:'budou',name:'ぶどう',emoji:'🍇',col:'#a88bc9',svg:
+    `<path d="M50 30 Q51 20 56 12" stroke="#9a7a5f" stroke-width="4" stroke-linecap="round" fill="none"/>
+     <path d="M54 18 Q66 8 78 14 Q70 26 54 18Z" fill="#8cc276"/>
+     <g fill="#a88bc9"><circle cx="33" cy="40" r="14"/><circle cx="50" cy="36" r="14"/><circle cx="67" cy="40" r="14"/><circle cx="40" cy="62" r="15"/><circle cx="60" cy="62" r="15"/><circle cx="50" cy="78" r="13"/><circle cx="50" cy="54" r="20"/></g>
+     ${face(52,10,'#e9a1c0')}`},
+  {id:'melon',name:'メロンパン',emoji:'🍈',col:'#b7d68f',svg:
+    `<circle cx="50" cy="52" r="37" fill="#b7d68f"/>
+     <path d="M30 26 L76 72 M20 44 L58 82 M44 18 L82 56 M70 26 L24 72 M80 44 L42 82 M56 18 L18 56" stroke="#a5c77d" stroke-width="3" stroke-linecap="round"/>
+     <ellipse cx="50" cy="58" rx="20" ry="14" fill="#b7d68f"/>
+     ${face(54,11,'#ee9f8f')}`},
 ];
 const NT=SWEETS.length;
 // ルノたま（ルノコッコのたまご）：入れかえた相手と同じおやつを全部消す
-const EGG_SVG=`<path d="M50 10 Q78 12 82 56 Q82 88 50 90 Q18 88 18 56 Q22 12 50 10 Z" fill="#fff3c9" ${st}/>
-  <path d="M22 44 l9 7 9 -7 9 7 9 -7 9 7 9 -7 4 3" fill="none" stroke="#e8877f" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M19 62 l9 -6 9 6 9 -6 9 6 9 -6 9 6 9 -6" fill="none" stroke="#86a3c4" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-  <circle cx="34" cy="28" r="3.5" fill="#9cc58a"/><circle cx="62" cy="24" r="3" fill="#f3b65f"/><circle cx="50" cy="78" r="3.5" fill="#e39aa6"/><circle cx="68" cy="74" r="3" fill="#9cc58a"/>
-  <circle cx="42" cy="36" r="3" fill="${INK}"/><circle cx="58" cy="36" r="3" fill="${INK}"/><path d="M46 41 l4 4 4 -4 z" fill="#ec9a5a" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`;
+const EGG_SVG=`<path d="M50 9 Q79 11 83 56 Q83 90 50 91 Q17 90 17 56 Q21 11 50 9 Z" fill="#fde7a3"/>
+  <path d="M50 14 Q74 16 78 56 Q78 85 50 86 Q22 85 22 56 Q26 16 50 14 Z" fill="#fff4cf"/>
+  <path d="M23 46 l9 6 9 -6 9 6 9 -6 9 6 9 -6" fill="none" stroke="#ec8a83" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M23 66 l9 -6 9 6 9 -6 9 6 9 -6 9 6" fill="none" stroke="#8fb8de" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="36" cy="27" r="3.5" fill="#a9cc85"/><circle cx="64" cy="26" r="3" fill="#f2a65a"/><circle cx="44" cy="78" r="3.5" fill="#f2a9b8"/><circle cx="62" cy="77" r="3" fill="#a88bc9"/>
+  <circle cx="42" cy="34" r="3.2" fill="${INK}"/><circle cx="58" cy="34" r="3.2" fill="${INK}"/><path d="M46 39 l4 4 4 -4 z" fill="#f2a65a"/>`;
 const svgOf=(i,extra='')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ${extra}>${i<0?EGG_SVG:SWEETS[i].svg}</svg>`;
 const BOMB_RING=`<circle cx="50" cy="50" r="44" fill="none" stroke="#e3c26b" stroke-width="7" stroke-dasharray="12 8"/>`;
-const BOMB_STAR=`<path d="M80 6 l5 11 12 2 -9 8 2 12 -10 -6 -10 6 2 -12 -9 -8 12 -2 z" fill="#f3d27a" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+const BOMB_STAR=`<path d="M80 6 l5 11 12 2 -9 8 2 12 -10 -6 -10 6 2 -12 -9 -8 12 -2 z" fill="#f3c24f"/>`;
 const BOMB_BADGE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${BOMB_RING}</svg>`;
 
 /* ===== 音 ===== */
@@ -635,7 +637,7 @@ function draw(){
     if(t.sp===1&&t.pop<0){ // ボムの星
       const bx=cx+cell*.3, by=cy-cell*.3, R=cell*.13;
       ctx.beginPath();for(let i=0;i<10;i++){const an=-Math.PI/2+i*Math.PI/5,rr=i%2?R*.45:R;ctx.lineTo(bx+Math.cos(an)*rr,by+Math.sin(an)*rr)}
-      ctx.closePath();ctx.fillStyle='#f3d27a';ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=INK;ctx.stroke();
+      ctx.closePath();ctx.fillStyle='#f3c24f';ctx.fill();
     }
     if(t.gold&&t.pop<0){ // きらり
       const k=(Math.sin(G.clock*6+t.id)+1)/2, sx=cx-cell*.28, sy=cy-cell*.28, L=cell*(.06+.08*k);
@@ -646,8 +648,8 @@ function draw(){
   for(const p of G.fx){
     ctx.globalAlpha=Math.max(0,1-p.t/p.life);
     if(p.ring){ctx.strokeStyle='#f3b65f';ctx.lineWidth=cell*.12;ctx.beginPath();ctx.arc(p.x*cell,p.y*cell,cell*(.4+p.t/p.life*1.2),0,7);ctx.stroke();continue}
-    ctx.fillStyle=p.col;ctx.strokeStyle=INK;ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(p.x*cell,p.y*cell,p.sz*cell,0,7);ctx.fill();ctx.stroke();
+    ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(p.x*cell,p.y*cell,p.sz*cell,0,7);ctx.fill();
   }
   ctx.globalAlpha=1;
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
@@ -787,8 +789,8 @@ function showResult(){
   $('rCombo').textContent=S.maxCombo;
   $('rSp').textContent=`${S.bombs}・${S.eggs}`;
   $('rCatches').innerHTML=SWEETS.map((a,i)=>`<div>${svgOf(i,`role="img" aria-label="${a.name}"`)}${S.caught[i]}</div>`).join('');
-  $('rFav').textContent=total?`いちばんポンしたのは ${SWEETS[fav].name}（${S.caught[fav]}こ）`:'';
-  const text=`おやつポン ステージ${reached}まで到達！\n${S.score.toLocaleString()}点・最大${S.maxCombo}コンボ\n称号は「${rank}」でした${SWEETS[fav].emoji}\n#おやつポン`;
+  $('rFav').textContent=total?`いちばん集めたのは ${SWEETS[fav].name}（${S.caught[fav]}こ）`:'';
+  const text=`ころころおやつ ステージ${reached}まで到達！\n${S.score.toLocaleString()}点・最大${S.maxCombo}コンボ\n称号は「${rank}」でした${SWEETS[fav].emoji}\n#ころころおやつ`;
   lastShare={text,rank,reached,score:S.score,combo:S.maxCombo,bombs:S.bombs,eggs:S.eggs,caught:S.caught.slice(),fav,total};
   $('xBtn').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(GAME_URL);
   show('result');
@@ -810,7 +812,7 @@ async function makeShareImage(){
   for(let y=0;y<H;y+=60)for(let x=0;x<W;x+=60) if(((x+y)/60)%2){c.fillStyle='#F1E9DC';c.fillRect(x,y,60,60)}
   c.fillStyle='#FFFDF8'; rrect(c,60,60,W-120,H-120,56); c.fill(); c.lineWidth=8; c.strokeStyle='#5B4D45'; c.stroke();
   c.textAlign='center'; c.textBaseline='middle';
-  c.fillStyle='#8E8077'; c.font='44px '+POP; c.fillText('おやつポン',W/2,140);
+  c.fillStyle='#8E8077'; c.font='44px '+POP; c.fillText('ころころおやつ',W/2,140);
   const ims=await Promise.all(SWEETS.map((a,i)=>svgImg(svgOf(i,'width="200" height="200"'))));
   if(ims[S.fav]&&S.total) c.drawImage(ims[S.fav],W/2-110,180,220,220);
   c.fillStyle='#8E8077'; c.font=BODY; c.fillText('わたしの称号は…',W/2,440);
@@ -822,7 +824,7 @@ async function makeShareImage(){
   const sz=96, gp=18, x0=W/2-(7*sz+6*gp)/2;
   ims.forEach((im,i)=>{if(im)c.drawImage(im,x0+i*(sz+gp),818,sz,sz);
     c.fillStyle='#5B4D45';c.font='30px '+POP;c.fillText(String(S.caught[i]),x0+i*(sz+gp)+sz/2,942)});
-  c.fillStyle='#8E8077'; c.font='600 26px "Zen Maru Gothic",sans-serif'; c.fillText('#おやつポン ・ runococco.github.io/picoruno.',W/2,994);
+  c.fillStyle='#8E8077'; c.font='600 26px "Zen Maru Gothic",sans-serif'; c.fillText('#ころころおやつ ・ runococco.github.io/picoruno.',W/2,994);
   return cv2;
 }
 let shareBlob=null;
@@ -834,7 +836,7 @@ async function openShare(){
 }
 async function doShare(){
   if(!shareBlob) return;
-  const file=new File([shareBlob],'oyatsupon-stage'+lastShare.reached+'.png',{type:'image/png'});
+  const file=new File([shareBlob],'korokoro-stage'+lastShare.reached+'.png',{type:'image/png'});
   try{
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:lastShare.text+'\n'+GAME_URL});return}
   }catch(e){if(e&&e.name==='AbortError')return}
@@ -852,10 +854,10 @@ let toastT=0;
 function toast(s){const t=$('toast');t.textContent=s;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200)}
 
 /* ===== タイトルの飾り ===== */
-$('logo').innerHTML=[...'おやつポン'].map((ch,i)=>`<span class="c${i}" style="--i:${i}">${ch}</span>`).join('');
+$('logo').innerHTML=[...'ころころおやつ'].map((ch,i)=>`<span class="c${i}" style="--i:${i}">${ch}</span>`).join('');
 $('parade').innerHTML=SWEETS.map((a,i)=>`<i style="--i:${i}">${svgOf(i)}</i>`).join('');
 $('specials').innerHTML=
-  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${BOMB_RING}<g transform="translate(10 10) scale(.8)">${SWEETS[2].svg}</g>${BOMB_STAR}</svg><b>ボム</b>4つそろえると<br>まわり9マスをポン</div>`+
+  `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${BOMB_RING}<g transform="translate(10 10) scale(.8)">${SWEETS[1].svg}</g>${BOMB_STAR}</svg><b>ボム</b>4つそろえると<br>まわり9マスを消す</div>`+
   `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true">${EGG_SVG}</svg><b>ルノたま</b>5つそろえると<br>相手と同じ種類を全部</div>`+
   `<div class="sp"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#ffeca0" opacity=".7"/><g transform="translate(10 10) scale(.8)">${SWEETS[0].svg}</g><path d="M22 14 v16 M14 22 h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg><b>キラキラ</b>たまに出る<br>消すと＋2秒</div>`;
 
@@ -884,7 +886,7 @@ window.__oyatsu={get G(){return G},findMove,trySwap};
 <script>
 /* 遊んだ回数を数える（トップページの ▶ 回数）。同じタブでの再読みこみは1回だけ数えます。 */
 function pingPlay(){
-  var G="おやつポン", K="picoruno-played:"+G;
+  var G="ころころおやつ", K="picoruno-played:"+G;
   try{ if(sessionStorage.getItem(K)) return; sessionStorage.setItem(K,"1"); }catch(e){}
   var KEY="sb_publishable_5hbtIPW-1y5MqsoiLC6X_A_oZMG0Z5Z";
   fetch("https://fymwlpbspigpeaoenhhp.supabase.co/rest/v1/rpc/add_play",{method:"POST",keepalive:true,
