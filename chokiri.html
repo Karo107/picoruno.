@@ -115,6 +115,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card{background:var(--surface);color:var(--ink);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;max-width:520px;width:100%}
 .card img{width:100%;max-height:62vh;object-fit:contain;border-radius:4px}
 .card p{margin:0;font-size:12px;color:var(--muted);text-align:center}
+.card h2{margin:0;font:600 17px/1.2 var(--f-disp);letter-spacing:.08em}
+.acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%}
+.acts .chip{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.acts .chip.main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.donebtn{position:absolute;left:50%;bottom:-21px;z-index:2;transform:translateX(-50%);white-space:nowrap;display:flex;align-items:center;gap:8px;
+  font:700 15px/1 var(--f-body);letter-spacing:.04em;color:var(--accent-ink);background:var(--accent);border:0;border-radius:999px;padding:13px 20px;
+  box-shadow:0 4px 14px rgba(120,40,20,.28);cursor:pointer;animation:donePop .45s ease-out}
+@media (orientation: landscape) and (min-width:600px){.donebtn{bottom:14px}}
+@keyframes donePop{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .stagebox{position:relative}
 .guide{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
   font:600 17px/1 var(--f-disp);letter-spacing:.14em;color:var(--ink);background:rgba(251,248,240,.9);padding:11px 20px;border-radius:999px;
@@ -156,6 +165,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="stagebox" id="box">
       <canvas id="stage"></canvas>
       <div class="guide" id="guide" aria-live="polite">折り方をえらぼう</div>
+      <button class="donebtn" id="doneBtn" type="button" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>できた！ 保存・シェア</button>
     </div>
     <div id="pick" class="pick" hidden>
       <div class="pick-head"><h2 class="pick-title">どの紙で切りますか</h2><span class="pick-acts"><button class="chip warn" id="pickReset" type="button" hidden>まっさらにする</button><button class="chip" id="pickBack" type="button" hidden>とじる</button></span></div>
@@ -176,8 +186,14 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <div class="modal" id="modal" hidden>
   <div class="card">
+    <h2>できあがり！</h2>
     <img id="outImg" alt="できあがった切り絵">
-    <p>画像を長押し（パソコンは右クリック）で保存できます</p>
+    <div class="acts">
+      <button class="chip main" id="saveImg" type="button">画像を保存</button>
+      <button class="chip main" id="shareImg" type="button">シェア</button>
+      <a class="chip" id="xShare" href="https://twitter.com/intent/tweet" target="_blank" rel="noopener">𝕏 に投稿</a>
+    </div>
+    <p>うまく保存できないときは、画像を長押し（パソコンは右クリック）してください</p>
     <button class="chip" id="closeModal" type="button">とじる</button>
   </div>
 </div>
@@ -620,7 +636,7 @@ function frame(now){raf=0;const dt=Math.min(.05,Math.max(0,(now-lastT)/1000));la
  if(K.anim){const a=K.anim;let u=Math.min(1,(now-a.t0)/a.dur);if(u<0)u=0;const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
   const ez=a.f1===0&&!RM?1+2.2*Math.pow(u-1,3)+1.2*Math.pow(u-1,2):e;
   K.view={cx:lerp(a.v0.cx,a.v1.cx,e),cy:lerp(a.v0.cy,a.v1.cy,e),z:lerp(a.v0.z,a.v1.z,ez)};K.foldAmt=lerp(a.f0,a.f1,e);
-  if(u>=1){K.anim=null;if(a.next)a.next();else if(a.f1===0&&K.cuts.length)celebrate()}else req()}
+  if(u>=1){K.anim=null;if(a.next)a.next();else if(a.f1===0&&K.cuts.length)celebrate();updateUI()}else req()}
  stepParts(dt);render();if(parts.length||(K.drawing&&K.tool==='scissors'))req()}
 function render(){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,W);if(!K.paper)return;drawKirie(ctx,W,K.view,K.foldAmt,true);drawParts(ctx)}
 function resize(){const r=wrap.getBoundingClientRect();const s=Math.max(160,Math.floor(Math.min(r.width,r.height)-6));W=s;cv.style.width=s+'px';cv.style.height=s+'px';box.style.width=box.style.height=s+'px';cv.width=Math.round(s*DPR);cv.height=Math.round(s*DPR);
@@ -673,7 +689,23 @@ $('#redoFab').addEventListener('click',redo);
 const resetFab=$('#resetFab');resetFab.addEventListener('click',()=>{if(K.anim||omaBusy||(!K.cuts.length&&!K.folded))return;resetPaper()});
 foldFab.addEventListener('click',()=>{if(K.anim||omaBusy||!SYM[K.fold])return;animateFold(!K.folded)});
 const omaBtn=document.createElement('button');omaBtn.type='button';omaBtn.className='oma';omaBtn.textContent='おまかせ';omaBtn.addEventListener('click',()=>omakase());
-$('#imgBtn').addEventListener('click',()=>{const S=1200,c=document.createElement('canvas');c.width=c.height=S;drawKirie(c.getContext('2d'),S,fullView(),0,false);$('#outImg').src=c.toDataURL('image/png');$('#modal').hidden=false});
+/* 保存・シェア：台紙ごとの切り絵に、すみに小さく名前を入れる */
+const GAME_URL='https://runococco.github.io/picoruno./chokiri.html';
+const SHARE_TXT='ちょきりで切り絵をつくったよ ✂️ #ちょきり #picoruno';
+let outBlob=null;
+function openOut(){const S=1200,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');drawKirie(g,S,fullView(),0,false);
+ g.font='600 30px "Zen Old Mincho","Hiragino Mincho ProN",serif';g.textAlign='right';g.textBaseline='bottom';g.fillStyle='rgba(43,38,34,.55)';g.fillText('ちょきり ・ picoruno.',S-28,S-24);
+ $('#outImg').src=c.toDataURL('image/png');outBlob=null;c.toBlob(b=>{outBlob=b},'image/png');
+ $('#xShare').href='https://twitter.com/intent/tweet?text='+encodeURIComponent(SHARE_TXT)+'&url='+encodeURIComponent(GAME_URL);$('#modal').hidden=false}
+const getBlob=()=>outBlob?Promise.resolve(outBlob):fetch($('#outImg').src).then(r=>r.blob());
+const fname=()=>'chokiri-'+new Date().toISOString().slice(0,10)+'.png';
+$('#imgBtn').addEventListener('click',openOut);
+$('#doneBtn').addEventListener('click',openOut);
+$('#saveImg').addEventListener('click',async()=>{try{const b=await getBlob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fname();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('画像を保存しました')}catch(e){toast('画像を長押しして保存してください')}});
+$('#shareImg').addEventListener('click',async()=>{try{const b=await getBlob();const file=new File([b],fname(),{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:SHARE_TXT+'\n'+GAME_URL});return}
+  if(navigator.share){await navigator.share({text:SHARE_TXT,url:GAME_URL});return}
+  await navigator.clipboard.writeText(SHARE_TXT+'\n'+GAME_URL);toast('シェア用の文をコピーしました')}catch(e){if(!e||e.name!=='AbortError')window.open($('#xShare').href,'_blank','noopener')}});
 $('#foot').insertBefore(omaBtn,foldFab);
 $('#paperChip').addEventListener('click',openPicker);
 $('#closeModal').addEventListener('click',()=>{$('#modal').hidden=true});
@@ -711,6 +743,7 @@ function updateUI(){const pk=K.phase==='pick';pick.hidden=!pk;box.hidden=pk;$('#
  kFolds.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.fold===K.fold));
  kTools.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===K.tool));
  foldFab.textContent=K.folded?'ひらく':'たたむ';
+ $('#doneBtn').hidden=pk||!K.paper||K.folded||!K.cuts.length||!!K.anim||omaBusy;
  $('#guide').classList.toggle('off',K.phase!=='cut'||K.folded||K.cuts.length>0||!!K.anim||omaBusy);
  undoFab.disabled=!K.hist.length&&!K.line.length;$('#redoFab').disabled=!(K.fut&&K.fut.length);resetFab.disabled=!K.cuts.length&&!K.folded;
  const T={scissors:'ハサミで、紙を横切るように線をなぞってください。線で分かれた小さいほうが切り落とされます。',
