@@ -163,13 +163,11 @@ body{background:var(--hinoki);color:var(--ink);font-family:var(--font-body);-web
     linear-gradient(#fff3d6,#ffd98f);
   box-shadow:inset 0 0 24px rgba(255,190,90,.6);transition:transform .7s cubic-bezier(.6,0,.3,1)}
 .door.l{left:0}.door.r{right:0}
-.noren-big{position:absolute;left:-2%;top:6px;width:104%;height:62%;z-index:2;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
-.noren-big .np{transform-box:fill-box;transform-origin:50% 0;animation:sway 4s ease-in-out infinite}
-.noren-big .p2{animation-delay:-1.3s}.noren-big .p3{animation-delay:-2.6s}
-@keyframes sway{0%,100%{transform:skewX(0)}50%{transform:skewX(-2deg)}}
-.noren-title{position:absolute;left:-2%;width:104%;top:6px;height:46%;z-index:3;display:grid;grid-template-columns:repeat(3,1fr);align-items:center;justify-items:center;pointer-events:none}
-.noren-title span{font-family:var(--font-display);color:#f3efe6;font-size:clamp(1.5rem,8.5vw,2.2rem);line-height:1;writing-mode:vertical-rl;letter-spacing:.06em;text-shadow:0 2px 0 rgba(0,0,0,.35)}
-.noren-title .red{color:#ff9a8a}
+.noren-big{position:absolute;left:-2%;top:6px;width:104%;height:64%;z-index:2;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
+/* のれんは竿を支点に、風でゆっくり前後に揺れる（文字も布と一緒に動く） */
+.noren-big .np{transform-box:fill-box;transform-origin:50% 0;animation:sway 6s ease-in-out infinite}
+.noren-big .p2{animation-delay:-2s}.noren-big .p3{animation-delay:-4s}
+@keyframes sway{0%,100%{transform:rotate(0) scaleY(1)}25%{transform:rotate(.7deg) scaleY(.985)}50%{transform:rotate(0) scaleY(1)}75%{transform:rotate(-.7deg) scaleY(.985)}}
 .rod{position:absolute;left:-3%;right:-3%;top:0;height:8px;border-radius:4px;background:linear-gradient(#a57a46,#6b4a2e);z-index:4}
 .lantern{position:absolute;left:4px;top:28px;width:38px;height:62px;border-radius:45%;background:radial-gradient(ellipse at 45% 40%,#ff8a6a 0%,#d8341e 55%,#8c1a0e 100%);box-shadow:0 0 26px 6px rgba(255,120,60,.45);display:flex;align-items:center;justify-content:center;z-index:3;animation:glow 3s ease-in-out infinite}
 .lantern::before{content:"";position:absolute;inset:6px 0;background:repeating-linear-gradient(0deg,transparent 0 6px,rgba(80,10,0,.25) 6px 7px);border-radius:45%}
@@ -188,7 +186,7 @@ body{background:var(--hinoki);color:var(--ink);font-family:var(--font-body);-web
 /* のれんをくぐる */
 .entrance.opening .door.l{transform:translateX(-100%)}
 .entrance.opening .door.r{transform:translateX(100%)}
-.entrance.opening .noren-big,.entrance.opening .noren-title{transition:transform .6s ease-in,opacity .6s ease-in;transform:translateY(-18%) scaleY(.6);opacity:.2}
+.entrance.opening .noren-big{transition:transform .6s ease-in,opacity .6s ease-in;transform:translateY(-18%) scaleY(.6);opacity:.2}
 .entrance.opening .shop{transition:transform .75s cubic-bezier(.5,0,.7,.4);transform:scale(1.6) translateY(8%)}
 .entrance.opening{transition:opacity .35s .45s;opacity:0}
 .entrance.opening .board{transition:opacity .2s;opacity:0}
@@ -275,7 +273,7 @@ body{background:var(--hinoki);color:var(--ink);font-family:var(--font-body);-web
         <div class="doorway">
           <div class="inside"></div>
           <div class="door l"></div><div class="door r"></div>
-          <svg class="noren-big" viewBox="0 0 300 150" preserveAspectRatio="none">
+          <svg class="noren-big" viewBox="0 0 300 192" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <pattern id="sgh" width="24" height="12" patternUnits="userSpaceOnUse">
                 <g fill="none" stroke="#f3efe6" stroke-width="1.6">
@@ -286,11 +284,13 @@ body{background:var(--hinoki);color:var(--ink);font-family:var(--font-body);-web
               </pattern>
               <linearGradient id="nshade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset=".2" stop-color="#000" stop-opacity="0"/></linearGradient>
             </defs>
-            <g class="np p1"><rect x="2" y="0" width="94" height="150" fill="#1d2740"/><rect x="2" y="112" width="94" height="38" fill="url(#sgh)" opacity=".85"/><rect x="2" y="0" width="94" height="150" fill="url(#nshade)"/></g>
-            <g class="np p2"><rect x="103" y="0" width="94" height="150" fill="#1d2740"/><rect x="103" y="112" width="94" height="38" fill="url(#sgh)" opacity=".85"/><rect x="103" y="0" width="94" height="150" fill="url(#nshade)"/></g>
-            <g class="np p3"><rect x="204" y="0" width="94" height="150" fill="#1d2740"/><rect x="204" y="112" width="94" height="38" fill="url(#sgh)" opacity=".85"/><rect x="204" y="0" width="94" height="150" fill="url(#nshade)"/></g>
+            <g class="np p1"><rect x="2" y="0" width="94" height="192" fill="#1d2740"/><rect x="2" y="146" width="94" height="46" fill="url(#sgh)" opacity=".85"/><rect x="2" y="0" width="94" height="192" fill="url(#nshade)"/>
+              <text x="49" y="22" font-size="40" fill="#f3efe6" style="writing-mode:vertical-rl;font-family:var(--font-display);letter-spacing:.06em" text-anchor="start">すし、</text></g>
+            <g class="np p2"><rect x="103" y="0" width="94" height="192" fill="#1d2740"/><rect x="103" y="146" width="94" height="46" fill="url(#sgh)" opacity=".85"/><rect x="103" y="0" width="94" height="192" fill="url(#nshade)"/>
+              <text x="150" y="22" font-size="40" fill="#f3efe6" style="writing-mode:vertical-rl;font-family:var(--font-display);letter-spacing:.06em" text-anchor="start">すし、</text></g>
+            <g class="np p3"><rect x="204" y="0" width="94" height="192" fill="#1d2740"/><rect x="204" y="146" width="94" height="46" fill="url(#sgh)" opacity=".85"/><rect x="204" y="0" width="94" height="192" fill="url(#nshade)"/>
+              <text x="251" y="22" font-size="40" fill="#ff9a8a" style="writing-mode:vertical-rl;font-family:var(--font-display);letter-spacing:.06em" text-anchor="start">すし！</text></g>
           </svg>
-          <div class="noren-title"><span>すし、</span><span>すし、</span><span class="red">すし！</span></div>
           <div class="rod"></div>
         </div>
         <div class="morijio"><i></i></div>
