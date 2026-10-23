@@ -393,13 +393,6 @@ const STORE = {
       return d;
     }catch(e){ return this._read(); }
   },
-  async addPlay(id){
-    try{
-      const r=await fetch(SB_URL+"/rest/v1/rpc/add_play",{method:"POST",headers:SB_H,body:JSON.stringify({g:id})});
-      if(!r.ok) throw new Error(r.status);
-      return {plays: await r.json()};
-    }catch(e){ const d=this._read(); d[id]=d[id]||{plays:0,likes:0}; d[id].plays++; this._write(d); return d[id]; }
-  },
   async addLike(id,delta){
     try{
       const r=await fetch(SB_URL+"/rest/v1/rpc/add_like",{method:"POST",headers:SB_H,body:JSON.stringify({g:id,d:delta})});
@@ -446,8 +439,14 @@ function burst(btn){
       saveLiked(liked);
       const r=await STORE.addLike(id, on?1:-1); countUp(lEl,r.likes);
     });
-    card.querySelector(".cardlink").addEventListener("click", async ()=>{
-      const r=await STORE.addPlay(id); countUp(pEl,r.plays);
+    /* 回数は各ゲームのページをひらいたときに数えます（直接ひらいた人も数えるため） */
+  });
+  /* ゲームのタブから戻ってきたら、最新の回数にする */
+  document.addEventListener("visibilitychange", async ()=>{
+    if(document.visibilityState!=="visible") return;
+    const d=await STORE.load();
+    document.querySelectorAll(".card[data-id]").forEach(card=>{
+      const s=d[card.dataset.id]; if(s) countUp(card.querySelector(".n-play"), s.plays);
     });
   });
 })();
