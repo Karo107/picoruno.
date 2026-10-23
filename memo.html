@@ -133,7 +133,7 @@ h1 small{display:block;font-family:var(--body);font-size:.85rem;font-weight:500;
 .modal .box{background:var(--paper);border-radius:16px;padding:20px;max-width:360px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
 .modal p{margin:0;line-height:1.7;font-size:.9rem}
 .toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.85rem;
-  padding:10px 16px;border-radius:999px;z-index:40;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;animation:fadein .2s ease-out}
+  padding:10px 16px;border-radius:16px;z-index:40;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;animation:fadein .2s ease-out}
 footer{margin-top:22px;text-align:center;font-size:.72rem;color:var(--muted)}
 footer a{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -154,6 +154,7 @@ footer a{color:var(--muted)}
         <p class="lead">ページをめくると、誰かのひとことが1枚だけ届きます。<br>返事を1行書くと、その返事がまた次の誰かに届きます。</p>
       </div>
       <button class="btn" id="b-flip" type="button">ページをめくる</button>
+      <button class="btn sub" id="b-new" type="button">自分からメモを書く</button>
       <button class="btn sub" id="b-mine" type="button">わたしのメモ<span class="badge" id="badge" hidden>0</span></button>
       <p class="today" id="today"></p>
       <p class="note-offline" id="offline-note" hidden>いまはメモ帳の共有サーバーにつながっていません。この端末の中で遊べます。書いた返事は「友だちに回す」リンクで、ほかの人に届けられます。</p>
@@ -179,7 +180,7 @@ footer a{color:var(--muted)}
     <section id="s-write" hidden>
       <div class="paper">
         <p class="quoted" id="write-quote"></p>
-        <label for="reply" class="from">あなたの返事（1行・40文字まで）</label>
+        <label for="reply" class="from" id="write-label">あなたの返事（1行・40文字まで）</label>
         <input class="line-in" id="reply" type="text" autocomplete="off" enterkeyhint="send" placeholder="ここに1行だけ">
         <div class="counter"><span id="ink-name">えんぴつ</span><span id="count">0 / 40</span></div>
         <p class="err" id="err" role="alert"></p>
@@ -195,9 +196,9 @@ footer a{color:var(--muted)}
     <!-- 送ったあと -->
     <section id="s-done" hidden>
       <div class="paper card-res" id="res">
-        <p class="lbl">知らない誰かから届いたメモ</p>
+        <p class="lbl" id="res-in-lbl">知らない誰かから届いたメモ</p>
         <p class="t1" id="res-in"></p>
-        <p class="lbl">わたしの返事</p>
+        <p class="lbl" id="res-out-lbl">わたしの返事</p>
         <p class="t2" id="res-out"></p>
         <div class="foot"><span>#誰かのメモ帳</span><span id="res-date"></span></div>
       </div>
@@ -432,11 +433,16 @@ inkBox.addEventListener("keydown", e=>{
 });
 paintInk();
 
-function openWrite(){
-  if(!cur) return show("s-title");
+let writingNew = false;   // true：返事ではなく、自分から新しいメモを書いている
+function openWrite(isNew){
+  writingNew = isNew===true;
+  if(!writingNew && !cur) return show("s-title");
   rollDay();
   if(S.day.sent >= DAILY_MAX){ toast("きょうのページはここまで。また明日めくってね"); return; }
-  $("write-quote").textContent = cur.text;
+  $("write-quote").hidden = writingNew;
+  $("write-quote").textContent = writingNew ? "" : cur.text;
+  $("write-label").textContent = writingNew ? "新しいメモ（1行・40文字まで）" : "あなたの返事（1行・40文字まで）";
+  $("reply").placeholder = writingNew ? "知らない誰かに届けたいひとこと" : "ここに1行だけ";
   $("reply").value = ""; $("err").textContent = ""; validate();
   show("s-write");
   setTimeout(()=>$("reply").focus(), 60);
@@ -456,17 +462,18 @@ $("reply").addEventListener("keydown", e=>{
 
 let sending = false, last = null;   // last: さっき送った返事 {text, ink, key, id?, depth, to}
 async function send(){
-  if(sending || !validate() || !cur) return;
+  if(sending || !validate() || (!cur && !writingNew)) return;
+  const from = writingNew ? null : cur;
   const text = clean($("reply").value);
   rollDay();
   if(S.day.sent >= DAILY_MAX){ toast("きょうのページはここまで。また明日めくってね"); return; }
   sending = true; $("b-send").disabled = true;
-  const entry = {key: randKey(), text, ink: S.ink, at: new Date().toISOString(), to: cur.text, depth: (cur.depth||1)+1, replies: [], seenN: 0};
-  if(cur.key) entry.toKey = cur.key;
+  const entry = {key: randKey(), text, ink: S.ink, at: new Date().toISOString(), to: from ? from.text : "", depth: from ? (from.depth||1)+1 : 1, replies: [], seenN: 0};
+  if(from && from.key) entry.toKey = from.key;
   try{
     if(!offline){
       try{
-        const rows = await rpc("memo_post", {p_body: text, p_parent: cur.id || null, p_ink: S.ink});
+        const rows = await rpc("memo_post", {p_body: text, p_parent: (from && from.id) || null, p_ink: S.ink});
         const r = Array.isArray(rows) ? rows[0] : rows;
         if(r && r.id){ entry.id = r.id; entry.depth = r.depth || entry.depth; }
       }catch(e){
@@ -481,7 +488,7 @@ async function send(){
     $("reply").value = "";   // 紙ひこうきが飛んでいるあいだに二重送信しないように
     flyPlane();
     sSend();
-    setTimeout(()=>showDone(cur, entry), 650);
+    setTimeout(()=>showDone(entry), 650);
   } finally {
     sending = false; validate(true);   // サーバーからのエラー文は消さずに残す
   }
@@ -492,14 +499,18 @@ function flyPlane(){
 }
 
 /* ===== 送ったあと（スクショしたくなるカード） ===== */
-function showDone(from, entry){
-  $("res-in").textContent = "「"+from.text+"」";
+function showDone(entry){
+  const isNew = !entry.to;
+  $("res-in").hidden = $("res-in-lbl").hidden = isNew;
+  $("res-in").textContent = isNew ? "" : "「"+entry.to+"」";
+  $("res-out-lbl").textContent = isNew ? "わたしのメモ" : "わたしの返事";
   $("res-out").textContent = "「"+entry.text+"」";
   $("res-out").style.color = INKS[entry.ink].c;
   $("res-date").textContent = fmtDate(entry.at)+" ・ picoruno.";
+  const what = isNew ? "メモ" : "返事";
   $("after").textContent = entry.id
-    ? "あなたの返事は、次にページをめくる誰かに届きます。返事がつくと「わたしのメモ」がひかります。"
-    : "この返事を「友だちに回す」と、受け取った人があなたのメモに返事を書けます。";
+    ? "あなたの"+what+"は、次にページをめくる誰かに届きます。返事がつくと「わたしのメモ」がひかります。"
+    : "この"+what+"を「友だちに回す」と、受け取った人があなたのメモに返事を書けます。";
   show("s-done");
 }
 
@@ -559,7 +570,7 @@ async function readLink(){
 async function passOn(){
   if(!last) return;
   const url = relayLink(last);
-  const text = "知らない誰かのメモに返事を書きました。続きを書いてくれる？ #誰かのメモ帳";
+  const text = (last.to ? "知らない誰かのメモに返事を書きました。" : "メモを1枚書きました。")+"続きを書いてくれる？ #誰かのメモ帳";
   if(navigator.share){
     try{ await navigator.share({title:"誰かのメモ帳", text, url}); return; }catch(e){ if(e && e.name==="AbortError") return; }
   }
@@ -569,7 +580,7 @@ async function passOn(){
 function shareX(){
   if(!last) return;
   const clip = s => len(s)>40 ? Array.from(s).slice(0,39).join("")+"…" : s;
-  const text = "知らない誰かから「"+clip(last.to)+"」と届いたので「"+clip(last.text)+"」と返しました\n続きを書いてくれる人→\n#誰かのメモ帳 #picoruno";
+  const text = (last.to ? "知らない誰かから「"+clip(last.to)+"」と届いたので「"+clip(last.text)+"」と返しました" : "知らない誰かに「"+clip(last.text)+"」とメモを流しました")+"\n続きを書いてくれる人→\n#誰かのメモ帳 #picoruno";
   const u = "https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(relayLink(last));
   window.open(u, "_blank", "noopener");
 }
@@ -601,11 +612,13 @@ async function saveImage(){
   x.fillStyle="#3b3346"; x.font="600 64px "+hand; x.fillText("誰かのメモ帳", left, py+120);
   // 罫線（py+150 から72pxおき）のすぐ上に文字の下端がくるように、1行=72pxで進める
   let y = py+148+72;
-  x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText("知らない誰かから届いたメモ", left, y); y+=72;
-  x.fillStyle="#3b3346"; x.font="400 50px "+hand;
-  wrapLines(x, "「"+last.to+"」", maxW).forEach(l=>{ x.fillText(l, left, y); y+=72; });
-  y += 72;
-  x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText("わたしの返事", left, y); y+=72;
+  if(last.to){
+    x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText("知らない誰かから届いたメモ", left, y); y+=72;
+    x.fillStyle="#3b3346"; x.font="400 50px "+hand;
+    wrapLines(x, "「"+last.to+"」", maxW).forEach(l=>{ x.fillText(l, left, y); y+=72; });
+    y += 72;
+  }
+  x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText(last.to ? "わたしの返事" : "わたしのメモ", left, y); y+=72;
   x.fillStyle=INKS[last.ink].c; x.font="600 60px "+hand;
   wrapLines(x, "「"+last.text+"」", maxW).forEach(l=>{ x.fillText(l, left, y); y+=72; });
   x.fillStyle="#8a7f72"; x.font="500 30px "+body;
@@ -648,7 +661,7 @@ function paintMine(){
   S.mine.forEach(m=>{
     const reps = m.replies || [], unseen = Math.max(0, reps.length-(m.seenN||0));
     const d = document.createElement("div"); d.className = "mine-item" + (reps.length ? " lit" : "");
-    const to = document.createElement("p"); to.className="to"; to.textContent = "「"+m.to+"」への返事"; d.appendChild(to);
+    const to = document.createElement("p"); to.className="to"; to.textContent = m.to ? "「"+m.to+"」への返事" : "自分から書いたメモ"; d.appendChild(to);
     const me = document.createElement("p"); me.className="me"; me.textContent = m.text; me.style.color = INKS[m.ink]?.c || INKS[0].c; d.appendChild(me);
     reps.forEach((r,i)=>{
       const rp = document.createElement("div"); rp.className="rep"; rp.style.color = INKS[r.ink]?.c || INKS[0].c;
@@ -686,10 +699,11 @@ const home = ()=>{ paintTitle(); show("s-title"); };
 $("b-flip").addEventListener("click", draw);
 $("b-next").addEventListener("click", draw);
 $("b-more").addEventListener("click", draw);
-$("b-reply").addEventListener("click", openWrite);
+$("b-reply").addEventListener("click", ()=>openWrite(false));
 $("b-send").addEventListener("click", send);
 $("b-back1").addEventListener("click", home);
-$("b-back2").addEventListener("click", ()=>show("s-read"));
+$("b-back2").addEventListener("click", ()=>writingNew ? home() : show("s-read"));
+$("b-new").addEventListener("click", ()=>openWrite(true));
 $("b-back3").addEventListener("click", home);
 $("b-back4").addEventListener("click", home);
 $("b-mine").addEventListener("click", openMine);
