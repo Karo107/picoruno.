@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#efe4cf">
+<title>誰かのメモ帳</title>
+<meta name="description" content="知らない誰かのひとことが、1枚だけ届きます。返事を1行書くと、その返事がまた次の誰かに届く。匿名のメモリレー。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="誰かのメモ帳">
+<meta property="og:description" content="知らない誰かから、メモが1枚届きました。あなたなら、なんて返す？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./memo.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fbf6ea'/%3E%3Cpath d='M7 11h18M7 16h18M7 21h12' stroke='%23a9c6e0' stroke-width='1.5'/%3E%3Cpath d='M10 4v24' stroke='%23e79a92' stroke-width='1.5'/%3E%3Cpath d='M15 19l9-9 2 2-9 9-3 1z' fill='%233b3346'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: a single notebook page on a warm desk. Each screen (title / read / write / done / mine) is one <section> swapped in place; the memo text is always the biggest thing on screen. */
+:root{
+  --desk:#efe4cf;
+  --desk-2:#e6d7bb;
+  --paper:#fffdf6;
+  --rule:#cfe0ee;
+  --margin:#ef9f97;
+  --ink:#3b3346;
+  --muted:#8a7f72;
+  --gold:#f2b84b;
+  --glow:#ffd36e;
+  --accent:#e0705f;
+  --hand:"Klee One","Zen Maru Gothic","Hiragino Maru Gothic ProN",serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:radial-gradient(120% 90% at 50% 0%,#f6eedd 0%,var(--desk) 55%,var(--desk-2) 100%);color:var(--ink);font-family:var(--body);
+  -webkit-tap-highlight-color:transparent;min-height:100%;overflow-x:hidden}
+button{font-family:var(--body);color:inherit}
+.wrap{max-width:460px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));box-sizing:border-box;min-height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+header a{color:var(--muted);font-size:.8rem;text-decoration:none}
+header a:hover{text-decoration:underline}
+.icon{background:rgba(255,255,255,.55);border:1px solid rgba(59,51,70,.15);border-radius:999px;padding:6px 12px;font-size:.78rem;cursor:pointer}
+main{flex:1;display:flex;flex-direction:column}
+section{flex:1;display:flex;flex-direction:column;gap:16px;animation:fadein .35s ease-out}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* notebook paper */
+.paper{position:relative;background:var(--paper);border-radius:6px 14px 14px 6px;padding:26px 22px 22px 46px;
+  box-shadow:0 1px 0 rgba(0,0,0,.04),0 14px 30px -12px rgba(80,55,20,.35);
+  background-image:linear-gradient(90deg,transparent 33px,var(--margin) 33px,var(--margin) 34.5px,transparent 34.5px),
+    repeating-linear-gradient(180deg,transparent 0,transparent 35px,var(--rule) 35px,var(--rule) 36px);
+  background-position:0 0,0 26px}
+/* everything on the paper sits on the 36px ruled rows */
+.paper>*{margin:0}
+.paper::before{content:"";position:absolute;left:10px;top:18px;bottom:18px;width:10px;
+  background:radial-gradient(circle at 50% 50%,var(--desk-2) 4px,transparent 4.5px) 0 0/10px 36px repeat-y;opacity:.9}
+
+h1{font-family:var(--hand);font-weight:600;font-size:2.05rem;margin:0;letter-spacing:.04em;line-height:72px}
+h1 small{display:block;font-family:var(--body);font-size:.85rem;font-weight:500;color:var(--muted);letter-spacing:.08em;line-height:36px}
+.lead{font-family:var(--hand);font-size:1.08rem;line-height:36px;margin:0}
+.btn{display:block;width:100%;border:none;border-radius:14px;padding:15px 18px;font-size:1.05rem;font-weight:700;cursor:pointer;
+  background:var(--ink);color:#fffdf6;box-shadow:0 4px 0 #1f1a27;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1f1a27}
+.btn.sub{background:rgba(255,255,255,.7);color:var(--ink);box-shadow:0 3px 0 rgba(59,51,70,.25);border:1px solid rgba(59,51,70,.18)}
+.btn.sub:active{box-shadow:0 0 0 rgba(59,51,70,.25)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn:focus-visible,.icon:focus-visible,.link:focus-visible,.ink-dot:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+.link{background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;text-decoration:underline;padding:6px}
+.center{text-align:center}
+.badge{display:inline-block;min-width:1.4em;padding:1px 7px;margin-left:6px;border-radius:999px;background:var(--accent);color:#fff;font-size:.78rem;line-height:1.5;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.today{font-size:.8rem;color:var(--muted);text-align:center;letter-spacing:.04em}
+.note-offline{font-size:.76rem;color:var(--muted);background:rgba(255,255,255,.45);border:1px dashed rgba(59,51,70,.25);border-radius:10px;padding:8px 10px;line-height:1.6}
+
+/* the delivered memo */
+.memo{min-height:180px}
+.memo.flip{animation:flip .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes flip{0%{transform:perspective(900px) rotateY(-75deg) translateX(30px);opacity:0;transform-origin:left center}
+  100%{transform:perspective(900px) rotateY(0);opacity:1;transform-origin:left center}}
+.from{display:block;font-size:.78rem;color:var(--muted);letter-spacing:.06em;margin:0;line-height:36px}
+.text{font-family:var(--hand);font-size:1.6rem;line-height:36px;margin:0;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap}
+.meta{display:flex;justify-content:space-between;gap:0 8px;font-size:.75rem;color:var(--muted);margin:0;line-height:36px;flex-wrap:wrap}
+.special{font-size:.85rem;background:#fff4d4;border:1px solid #f0d58a;border-radius:10px;padding:8px 12px;line-height:1.6}
+
+/* write */
+.quoted{font-family:var(--hand);font-size:1rem;color:var(--muted);margin:0;line-height:36px;overflow-wrap:anywhere}
+.quoted::before{content:"届いたメモ";font-family:var(--body);font-size:.72rem;display:block;letter-spacing:.06em}
+.line-in{display:block;width:100%;height:36px;box-sizing:border-box;border:none;border-bottom:2px dashed rgba(59,51,70,.3);background:transparent;padding:0 2px;
+  font-family:var(--hand);font-size:1.45rem;color:var(--ink);outline:none;border-radius:0}
+.line-in:focus{border-bottom-color:var(--ink)}
+.line-in::placeholder{color:#bdb3a6}
+.counter{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);line-height:36px}
+.counter .over{color:var(--accent);font-weight:700}
+.err{color:var(--accent);font-size:.82rem;min-height:36px;line-height:18px;margin:0}
+.inks{display:flex;align-items:center;gap:10px;font-size:.78rem;color:var(--muted)}
+.ink-dot{width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(59,51,70,.25);cursor:pointer;padding:0}
+.ink-dot[aria-checked="true"]{box-shadow:0 0 0 3px var(--ink)}
+.rules{font-size:.72rem;color:var(--muted);line-height:1.6;margin:0}
+
+/* paper plane */
+.plane{position:fixed;left:50%;top:55%;font-size:3rem;pointer-events:none;z-index:20;animation:fly 1.1s cubic-bezier(.4,.1,.3,1) forwards}
+@keyframes fly{0%{transform:translate(-50%,0) rotate(0) scale(.6);opacity:0}15%{opacity:1;transform:translate(-50%,-10px) rotate(-8deg) scale(1)}
+  100%{transform:translate(60vw,-70vh) rotate(-25deg) scale(.5);opacity:0}}
+
+/* done / result card */
+.card-res .lbl{font-size:.72rem;color:var(--muted);letter-spacing:.08em;margin:0;line-height:36px}
+.card-res .t1{font-family:var(--hand);font-size:1.2rem;line-height:36px;margin:0 0 36px;overflow-wrap:anywhere}
+.card-res .t2{font-family:var(--hand);font-size:1.5rem;line-height:36px;margin:0;overflow-wrap:anywhere}
+.card-res .foot{display:flex;justify-content:space-between;gap:8px;font-size:.72rem;color:var(--muted);margin-top:36px;line-height:36px}
+.after{font-size:.85rem;line-height:1.7;text-align:center;margin:0}
+
+/* mine */
+.list{display:flex;flex-direction:column;gap:12px}
+.mine-item{background:var(--paper);border-radius:10px;padding:12px 14px;box-shadow:0 6px 16px -10px rgba(80,55,20,.4);position:relative}
+.mine-item.lit{animation:lit 2.2s ease-in-out infinite}
+@keyframes lit{0%,100%{box-shadow:0 0 0 2px var(--glow),0 0 18px 2px rgba(255,211,110,.55)}50%{box-shadow:0 0 0 2px var(--glow),0 0 32px 8px rgba(255,211,110,.75)}}
+.mine-item .to{font-size:.72rem;color:var(--muted);margin:0 0 2px;overflow-wrap:anywhere}
+.mine-item .me{font-family:var(--hand);font-size:1.15rem;margin:0;overflow-wrap:anywhere}
+.mine-item .st{font-size:.72rem;color:var(--muted);margin-top:6px}
+.rep{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fff7dc;font-family:var(--hand);font-size:1.02rem;overflow-wrap:anywhere}
+.rep .new{font-family:var(--body);font-size:.66rem;color:#fff;background:var(--accent);border-radius:6px;padding:0 5px;margin-right:6px;vertical-align:2px}
+.empty{font-size:.85rem;color:var(--muted);text-align:center;line-height:1.8;padding:24px 0}
+
+/* modal / toast */
+.modal{position:fixed;inset:0;background:rgba(40,30,20,.45);display:grid;place-items:center;z-index:30;padding:16px}
+.modal .box{background:var(--paper);border-radius:16px;padding:20px;max-width:360px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
+.modal p{margin:0;line-height:1.7;font-size:.9rem}
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.85rem;
+  padding:10px 16px;border-radius:16px;z-index:40;max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;animation:fadein .2s ease-out}
+footer{margin-top:22px;text-align:center;font-size:.72rem;color:var(--muted)}
+footer a{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="https://runococco.github.io/picoruno./">← picoruno.</a>
+    <button class="icon" id="sound" type="button" aria-pressed="true">♪ おと：オン</button>
+  </header>
+
+  <main>
+    <!-- タイトル -->
+    <section id="s-title">
+      <div class="paper">
+        <h1><small>知らない誰かと、1行ずつ。</small>誰かのメモ帳</h1>
+        <p class="lead">ページをめくると、誰かのひとことが1枚だけ届きます。<br>返事を1行書くと、その返事がまた次の誰かに届きます。</p>
+      </div>
+      <button class="btn" id="b-flip" type="button">ページをめくる</button>
+      <button class="btn sub" id="b-new" type="button">自分からメモを書く</button>
+      <button class="btn sub" id="b-mine" type="button">わたしのメモ<span class="badge" id="badge" hidden>0</span></button>
+      <p class="today" id="today"></p>
+      <p class="note-offline" id="offline-note" hidden>いまはメモ帳の共有サーバーにつながっていません。この端末の中で遊べます。書いた返事は「友だちに回す」リンクで、ほかの人に届けられます。</p>
+    </section>
+
+    <!-- 届いたメモ -->
+    <section id="s-read" hidden>
+      <p class="special" id="read-special" hidden></p>
+      <div class="paper memo" id="memo">
+        <p class="from" id="read-from">誰かのメモ</p>
+        <p class="text" id="read-text"></p>
+        <div class="meta"><span id="read-no"></span><span id="read-depth"></span></div>
+      </div>
+      <button class="btn" id="b-reply" type="button">返事を書く</button>
+      <div class="row">
+        <button class="btn sub" id="b-next" type="button">べつのページ</button>
+        <button class="btn sub" id="b-back1" type="button">とじる</button>
+      </div>
+      <p class="center"><button class="link" id="b-report" type="button">このメモをよくないメモとして知らせる</button></p>
+    </section>
+
+    <!-- 返事を書く -->
+    <section id="s-write" hidden>
+      <div class="paper">
+        <p class="quoted" id="write-quote"></p>
+        <label for="reply" class="from" id="write-label">あなたの返事（1行・40文字まで）</label>
+        <input class="line-in" id="reply" type="text" autocomplete="off" enterkeyhint="send" placeholder="ここに1行だけ">
+        <div class="counter"><span id="ink-name">えんぴつ</span><span id="count">0 / 40</span></div>
+        <p class="err" id="err" role="alert"></p>
+      </div>
+      <div class="inks" role="radiogroup" aria-label="インクの色">
+        <span>インク</span>
+      </div>
+      <button class="btn" id="b-send" type="button" disabled>送る</button>
+      <button class="btn sub" id="b-back2" type="button">もどる</button>
+      <p class="rules">名前・連絡先・URL・人を傷つけることばは送れません。送ったメモは知らない誰かに届き、あとから消すことはできません。</p>
+    </section>
+
+    <!-- 送ったあと -->
+    <section id="s-done" hidden>
+      <div class="paper card-res" id="res">
+        <p class="lbl" id="res-in-lbl">知らない誰かから届いたメモ</p>
+        <p class="t1" id="res-in"></p>
+        <p class="lbl" id="res-out-lbl">わたしの返事</p>
+        <p class="t2" id="res-out"></p>
+        <div class="foot"><span>#誰かのメモ帳</span><span id="res-date"></span></div>
+      </div>
+      <p class="after" id="after"></p>
+      <button class="btn" id="b-pass" type="button">友だちに回す</button>
+      <div class="row">
+        <button class="btn sub" id="b-x" type="button">Xでシェア</button>
+        <button class="btn sub" id="b-img" type="button">画像を保存</button>
+      </div>
+      <div class="row">
+        <button class="btn sub" id="b-more" type="button">もう1枚めくる</button>
+        <button class="btn sub" id="b-back3" type="button">表紙へ</button>
+      </div>
+    </section>
+
+    <!-- わたしのメモ -->
+    <section id="s-mine" hidden>
+      <div class="paper"><h1 style="font-size:1.6rem;line-height:36px">わたしのメモ</h1>
+        <p class="lead" style="font-size:.95rem">返事がついたメモは、ひかります。</p></div>
+      <div class="list" id="mine-list"></div>
+      <button class="btn sub" id="b-back4" type="button">表紙へ</button>
+    </section>
+  </main>
+
+  <footer>© 2026 picoruno. ／ ルノコッコ ・ <a href="terms.html">利用規約</a></footer>
+</div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-text">
+  <div class="box">
+    <p id="modal-text">このメモを「よくないメモ」として知らせますか？<br>何人かから知らせが届くと、このメモはもう誰にも届かなくなります。</p>
+    <div class="row"><button class="btn" id="m-yes" type="button">知らせる</button><button class="btn sub" id="m-no" type="button">やめる</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+"use strict";
+/* ===== 設定 ===== */
+const SITE = "https://runococco.github.io/picoruno./memo.html";
+const SB_URL = "https://fymwlpbspigpeaoenhhp.supabase.co";
+const SB_KEY = "sb_publishable_5hbtIPW-1y5MqsoiLC6X_A_oZMG0Z5Z";
+const MAX_LEN = 40;          // 1行の上限（サーバー側も同じ）
+const DAILY_MAX = 10;        // 1日に送れる返事の数（サーバー側は40で止める）
+const INKS = [
+  {name:"えんぴつ", c:"#3b3346"},
+  {name:"あお",     c:"#2f5fa8"},
+  {name:"あか",     c:"#c8443c"},
+  {name:"みどり",   c:"#2e7d5b"},
+];
+/* サーバーにつながらないとき用の「はじまりのメモ」（supabase/memo-notes.sql と同じ文） */
+const SEEDS = [
+  "きょうの晩ごはん、なにがいいと思う？","雨の音を聞きながらこれを書いています","さっき空を見たら、雲がくじらの形だった",
+  "ちいさい頃の夢、まだ覚えてる？","最近ちょっとだけがんばってる","あしたは早起きするぞ（たぶん無理）",
+  "好きなおにぎりの具を教えてください","コンビニの新作アイス、当たりだった","眠れない夜はなにしてる？",
+  "今年いちばんうれしかったことを書いて","このメモ、どこまで旅するんだろう","いま聴いてる曲が最高すぎる",
+  "猫派？犬派？それとも…","がんばってる人、えらい","冷蔵庫にプリンがあるのを思い出した",
+  "靴ひもがほどけたまま一日すごした","どこか遠くに行きたい気分","しりとりしよう。りんご",
+  "知らない誰かさん、こんにちは","ねむい。とにかくねむい","最近笑ったことある？",
+  "きょうはいい日だった。あなたは？","夏と冬ならどっちが好き？","いまから自分にごほうびを買いに行く",
+  "宇宙人って本当にいると思う","おすすめの本があったら教えて","朝ごはんはパン派です",
+  "子どもの頃の秘密基地、どこにあった？","これを読んだ人に、いいことがありますように","お風呂で考えごとをすると長くなる"
+];
+
+/* ===== 保存（この端末の中だけ） ===== */
+const SKEY = "memo-v1";
+const todayStr = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+function freshState(){ return {mine:[], seen:[], seenSeeds:[], day:{d:todayStr(), sent:0, flips:0}, ink:0, mute:false, links:[]}; }
+let S = freshState();
+try{
+  const raw = JSON.parse(localStorage.getItem(SKEY)||"null");
+  if(raw && typeof raw==="object"){
+    S = Object.assign(freshState(), raw);
+    if(!Array.isArray(S.mine)) S.mine=[];
+    if(!Array.isArray(S.seen)) S.seen=[];
+    if(!Array.isArray(S.seenSeeds)) S.seenSeeds=[];
+    if(!Array.isArray(S.links)) S.links=[];
+    if(!S.day || typeof S.day!=="object") S.day={d:todayStr(),sent:0,flips:0};
+    if(!(S.ink>=0 && S.ink<INKS.length)) S.ink=0;
+  }
+}catch(e){}
+function save(){ try{ localStorage.setItem(SKEY, JSON.stringify(S)); }catch(e){} }
+function rollDay(){ const t=todayStr(); if(S.day.d!==t) S.day={d:t, sent:0, flips:0}; }
+rollDay();
+
+/* ===== 文字のチェック（サーバーの memo_ng_reason と同じ考え方） ===== */
+function clean(s){ return String(s==null?"":s).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g," ").replace(/\s+/g," ").trim(); }
+const len = s => Array.from(s).length;
+function ngReason(text){
+  const s = text.normalize("NFKC").toLowerCase();
+  const flat = s.replace(/[ァ-ヶ]/g, c=>String.fromCharCode(c.charCodeAt(0)-0x60))
+                .replace(/[\s　・.,、。!！?？_\-~〜ー*＊/／|｜"'`]+/g, "");
+  if(/(https?:|www\.|[a-z0-9-]+\.(com|net|org|jp|io|me|ly|gl|co|xyz|info|tv)(?![a-z0-9]))/.test(s)) return "URLは書けません";
+  if(/@[a-z0-9_]{2,}/.test(s)) return "アカウント名は書けません";
+  if(/[0-9]{9,}/.test(s.replace(/[\s()‐ー－-]+/g,""))) return "電話番号のような数字は書けません";
+  if(/(line|らいん|insta|いんすた|discord|でぃすこ|kakao|かかお)(id|あいでぃ|交換|こうかん)/.test(flat)) return "連絡先の交換はできません";
+  if(/(死ね|氏ね|殺す|殺せ|前しね|まえしね|めえしね)/.test(flat) || /(^|[^ぁ-ゖ一-龥])しね/.test(flat)) return "人を傷つけることばは送れません";
+  if(/(ころす|ころせ|きえろ|じさつしろ|がいじ|きちがい|きもいんだよ|ちんこ|ちんぽ|まんこ|せっくす|れいぷ|sex|fuck|shit|nigg)/.test(flat)) return "人を傷つけることばは送れません";
+  return null;
+}
+
+/* ===== サーバー（Supabase）。つながらなければ offline に切りかえる ===== */
+let offline = false;
+class RpcError extends Error{ constructor(code){ super(code); this.code=code; } }
+async function rpc(name, body){
+  if(offline) throw new RpcError("offline");
+  const ac = new AbortController(), timer = setTimeout(()=>ac.abort(), 7000);
+  let r;
+  try{
+    r = await fetch(SB_URL+"/rest/v1/rpc/"+name, {method:"POST", signal:ac.signal,
+      headers:{apikey:SB_KEY, Authorization:"Bearer "+SB_KEY, "Content-Type":"application/json"}, body:JSON.stringify(body||{})});
+  }catch(e){ clearTimeout(timer); goOffline(); throw new RpcError("offline"); }
+  clearTimeout(timer);
+  if(r.ok){ const txt = await r.text(); return txt ? JSON.parse(txt) : null; }
+  let msg = ""; try{ msg = (await r.json()).message || ""; }catch(e){}
+  if(/^memo_(rate|ng|dup|length)$/.test(msg)) throw new RpcError(msg);
+  // 関数がまだ作られていない（404）などは、オフラインあつかいにする
+  goOffline(); throw new RpcError("offline");
+}
+function goOffline(){ if(!offline){ offline=true; $("offline-note").hidden=false; } }
+
+/* ===== 画面まわり ===== */
+const $ = id => document.getElementById(id);
+const screens = ["s-title","s-read","s-write","s-done","s-mine"];
+function show(id){
+  screens.forEach(s=>$(s).hidden = s!==id);
+  window.scrollTo(0,0);
+  const f = $(id).querySelector(".btn");
+  if(id!=="s-write" && f) f.focus({preventScroll:true});
+}
+let toastT;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, 2600); }
+const fmtDate = iso => { const d = iso ? new Date(iso) : new Date(); return isNaN(d) ? "" : (d.getMonth()+1)+"月"+d.getDate()+"日"; };
+const randKey = () => { const a=new Uint8Array(6); crypto.getRandomValues(a); return Array.from(a,b=>b.toString(36).padStart(2,"0")).join("").slice(0,10); };
+
+/* ===== おと（紙をめくる・ペンの音を合成） ===== */
+let AC = null;
+function audio(){ if(S.mute) return null; try{ AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); }catch(e){ return null; } return AC; }
+function noise(dur, freq, vol){
+  const ac = audio(); if(!ac) return;
+  const n = Math.floor(ac.sampleRate*dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<n;i++){ const t=i/n; d[i]=(Math.random()*2-1)*Math.pow(1-t,2)*Math.min(1,t*12); }
+  const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  f.type="bandpass"; f.frequency.value=freq; f.Q.value=.8; g.gain.value=vol;
+  src.buffer=buf; src.connect(f); f.connect(g); g.connect(ac.destination); src.start();
+}
+function chime(){
+  const ac = audio(); if(!ac) return;
+  [660, 990].forEach((hz,i)=>{ const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime+i*.09;
+    o.type="sine"; o.frequency.value=hz; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.12,t+.02); g.gain.exponentialRampToValueAtTime(.001,t+.6);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+.65); });
+}
+const sFlip = () => noise(.32, 2400, .5);
+const sSend = () => { noise(.5, 900, .35); setTimeout(chime, 380); };
+function paintSound(){ $("sound").textContent = S.mute ? "♪ おと：オフ" : "♪ おと：オン"; $("sound").setAttribute("aria-pressed", String(!S.mute)); }
+$("sound").addEventListener("click", ()=>{ S.mute=!S.mute; save(); paintSound(); if(!S.mute) sFlip(); });
+paintSound();
+
+/* ===== 表紙 ===== */
+function newReplies(){ return S.mine.reduce((a,m)=>a + Math.max(0,(m.replies||[]).length - (m.seenN||0)), 0); }
+function paintTitle(){
+  rollDay();
+  const n = newReplies(), b = $("badge");
+  b.hidden = n===0; b.textContent = n;
+  $("b-mine").setAttribute("aria-label", n ? "わたしのメモ（新しい返事 "+n+"件）" : "わたしのメモ");
+  $("today").textContent = "きょう返事を書いたメモ "+S.day.sent+" / "+DAILY_MAX+" 枚";
+}
+
+/* ===== メモを1枚引く ===== */
+let cur = null;   // いま読んでいるメモ {text, id?, seed?, key?, depth, ink, at, viaLink?}
+let busy = false;
+async function draw(){
+  if(busy) return; busy = true;
+  $("b-flip").disabled = $("b-next").disabled = $("b-more").disabled = true;
+  try{
+    let note = null;
+    // 読みつくしていたら「見たリスト」を空にして、もう1回だけ引きなおす
+    for(let tries=0; !note && !offline && tries<2; tries++){
+      const exclude = [...new Set([...S.seen.slice(-150), ...S.mine.filter(m=>m.id).map(m=>m.id)])].slice(-200);
+      try{
+        const rows = await rpc("memo_draw", {p_exclude: exclude});
+        const r = Array.isArray(rows) ? rows[0] : null;
+        if(r && typeof r.body==="string" && clean(r.body)){
+          note = {text: clean(r.body), id: r.id, depth: r.depth||1, ink: r.ink||0, at: r.created_at};
+          S.seen.push(r.id); if(S.seen.length>200) S.seen = S.seen.slice(-200);
+        }
+      }catch(e){}
+      if(!note){ if(!S.seen.length) break; S.seen = []; }
+    }
+    if(!note){
+      let left = SEEDS.map((_,i)=>i).filter(i=>!S.seenSeeds.includes(i));
+      if(!left.length){ S.seenSeeds = []; left = SEEDS.map((_,i)=>i); }
+      const i = left[Math.floor(Math.random()*left.length)];
+      S.seenSeeds.push(i);
+      note = {text: SEEDS[i], seed: i, depth: 1, ink: 0};
+    }
+    S.day.flips++; save();
+    openNote(note);
+  } finally {
+    busy = false;
+    $("b-flip").disabled = $("b-next").disabled = $("b-more").disabled = false;
+  }
+}
+function openNote(note, special){
+  cur = note;
+  $("read-text").textContent = note.text;
+  $("read-text").style.color = INKS[note.ink]?.c || INKS[0].c;
+  $("read-from").textContent = note.viaLink ? "回ってきたメモ" : "誰かのメモ";
+  $("read-no").textContent = note.id ? "No."+note.id : (note.seed!=null ? "はじまりのメモ" : "");
+  $("read-depth").textContent = note.depth>1 ? "リレー "+note.depth+"人目" : "";
+  $("read-special").hidden = !special; if(special) $("read-special").textContent = special;
+  $("b-report").hidden = note.seed!=null;
+  show("s-read");
+  const m = $("memo"); m.classList.remove("flip"); void m.offsetWidth; m.classList.add("flip");
+  sFlip();
+}
+
+/* ===== 返事を書く ===== */
+const inkBox = document.querySelector(".inks");
+INKS.forEach((k,i)=>{
+  const b = document.createElement("button");
+  b.type="button"; b.className="ink-dot"; b.style.background=k.c; b.setAttribute("role","radio"); b.setAttribute("aria-label", k.name);
+  b.addEventListener("click", ()=>{ S.ink=i; save(); paintInk(); $("reply").focus(); });
+  inkBox.appendChild(b);
+});
+function paintInk(){
+  inkBox.querySelectorAll(".ink-dot").forEach((b,i)=>{ b.setAttribute("aria-checked", String(i===S.ink)); b.tabIndex = i===S.ink?0:-1; });
+  $("reply").style.color = INKS[S.ink].c; $("ink-name").textContent = INKS[S.ink].name;
+}
+inkBox.addEventListener("keydown", e=>{
+  const d = e.key==="ArrowRight"||e.key==="ArrowDown" ? 1 : e.key==="ArrowLeft"||e.key==="ArrowUp" ? -1 : 0;
+  if(!d) return; e.preventDefault(); S.ink=(S.ink+d+INKS.length)%INKS.length; save(); paintInk(); inkBox.querySelectorAll(".ink-dot")[S.ink].focus();
+});
+paintInk();
+
+let writingNew = false;   // true：返事ではなく、自分から新しいメモを書いている
+function openWrite(isNew){
+  writingNew = isNew===true;
+  if(!writingNew && !cur) return show("s-title");
+  rollDay();
+  if(S.day.sent >= DAILY_MAX){ toast("きょうのページはここまで。また明日めくってね"); return; }
+  $("write-quote").hidden = writingNew;
+  $("write-quote").textContent = writingNew ? "" : cur.text;
+  $("write-label").textContent = writingNew ? "新しいメモ（1行・40文字まで）" : "あなたの返事（1行・40文字まで）";
+  $("reply").placeholder = writingNew ? "知らない誰かに届けたいひとこと" : "ここに1行だけ";
+  $("reply").value = ""; $("err").textContent = ""; validate();
+  show("s-write");
+  setTimeout(()=>$("reply").focus(), 60);
+}
+function validate(keepErr){
+  const v = clean($("reply").value), n = len(v), over = n>MAX_LEN;
+  $("count").innerHTML = ""; const sp = document.createElement("span"); sp.textContent = n+" / "+MAX_LEN; if(over) sp.className="over"; $("count").appendChild(sp);
+  const reason = n ? ngReason(v) : null;
+  if(!keepErr || over || reason) $("err").textContent = over ? "40文字までにしてね" : (reason || "");
+  $("b-send").disabled = !n || over || !!reason || sending;
+  return !$("b-send").disabled;
+}
+$("reply").addEventListener("input", ()=>validate());
+$("reply").addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.isComposing && e.keyCode!==229){ e.preventDefault(); send(); }
+});
+
+let sending = false, last = null;   // last: さっき送った返事 {text, ink, key, id?, depth, to}
+async function send(){
+  if(sending || !validate() || (!cur && !writingNew)) return;
+  const from = writingNew ? null : cur;
+  const text = clean($("reply").value);
+  rollDay();
+  if(S.day.sent >= DAILY_MAX){ toast("きょうのページはここまで。また明日めくってね"); return; }
+  sending = true; $("b-send").disabled = true;
+  const entry = {key: randKey(), text, ink: S.ink, at: new Date().toISOString(), to: from ? from.text : "", depth: from ? (from.depth||1)+1 : 1, replies: [], seenN: 0};
+  if(from && from.key) entry.toKey = from.key;
+  try{
+    if(!offline){
+      try{
+        const rows = await rpc("memo_post", {p_body: text, p_parent: (from && from.id) || null, p_ink: S.ink});
+        const r = Array.isArray(rows) ? rows[0] : rows;
+        if(r && r.id){ entry.id = r.id; entry.depth = r.depth || entry.depth; }
+      }catch(e){
+        const msg = {memo_rate:"少し書きすぎかも。時間をおいてまた書いてね", memo_ng:"そのことばは送れません", memo_dup:"同じメモはもう送ってあります", memo_length:"40文字までにしてね"}[e.code];
+        if(msg){ $("err").textContent = msg; return; }
+        // offline になった：この端末に残して、リンクで回せるようにする
+      }
+    }
+    S.mine.unshift(entry); if(S.mine.length>50) S.mine.length = 50;
+    S.day.sent++; save();
+    last = entry;
+    $("reply").value = "";   // 紙ひこうきが飛んでいるあいだに二重送信しないように
+    flyPlane();
+    sSend();
+    setTimeout(()=>showDone(entry), 650);
+  } finally {
+    sending = false; validate(true);   // サーバーからのエラー文は消さずに残す
+  }
+}
+function flyPlane(){
+  const p = document.createElement("div"); p.className="plane"; p.textContent="✈"; p.setAttribute("aria-hidden","true");
+  document.body.appendChild(p); setTimeout(()=>p.remove(), 1200);
+}
+
+/* ===== 送ったあと（スクショしたくなるカード） ===== */
+function showDone(entry){
+  const isNew = !entry.to;
+  $("res-in").hidden = $("res-in-lbl").hidden = isNew;
+  $("res-in").textContent = isNew ? "" : "「"+entry.to+"」";
+  $("res-out-lbl").textContent = isNew ? "わたしのメモ" : "わたしの返事";
+  $("res-out").textContent = "「"+entry.text+"」";
+  $("res-out").style.color = INKS[entry.ink].c;
+  $("res-date").textContent = fmtDate(entry.at)+" ・ picoruno.";
+  const what = isNew ? "メモ" : "返事";
+  $("after").textContent = entry.id
+    ? "あなたの"+what+"は、次にページをめくる誰かに届きます。返事がつくと「わたしのメモ」がひかります。"
+    : "この"+what+"を「友だちに回す」と、受け取った人があなたのメモに返事を書けます。";
+  show("s-done");
+}
+
+/* ===== リレー用リンク：#to=（base64url の JSON） ===== */
+function b64e(obj){
+  const bytes = new TextEncoder().encode(JSON.stringify(obj)); let s=""; bytes.forEach(b=>s+=String.fromCharCode(b));
+  return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64d(str){
+  const s = atob(str.replace(/-/g,"+").replace(/_/g,"/")); const bytes = Uint8Array.from(s, c=>c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+function relayLink(entry){
+  const o = {t: entry.text, d: entry.depth, k: entry.key, c: entry.ink};
+  if(entry.id) o.i = entry.id;
+  if(entry.toKey) o.p = entry.toKey;
+  return SITE + "#to=" + b64e(o);
+}
+async function readLink(){
+  const m = location.hash.match(/^#to=([A-Za-z0-9_-]{4,800})$/);
+  if(!m) return false;
+  history.replaceState(null, "", location.pathname + location.search);
+  let o; try{ o = b64d(m[1]); }catch(e){ toast("このリンクのメモは読めませんでした"); return false; }
+  if(!o || typeof o!=="object") return false;
+  let text = clean(o.t);
+  const id = Number.isSafeInteger(o.i) && o.i>0 ? o.i : null;
+  let depth = Number.isInteger(o.d) && o.d>0 && o.d<100000 ? o.d : 1;
+  const ink = Number.isInteger(o.c) && o.c>=0 && o.c<INKS.length ? o.c : 0;
+  const key = typeof o.k==="string" && /^[a-z0-9]{4,16}$/.test(o.k) ? o.k : null;
+  const parentKey = typeof o.p==="string" && /^[a-z0-9]{4,16}$/.test(o.p) ? o.p : null;
+  // サーバーにある本物のメモなら、サーバーの文を使う（通報で消えたメモは出さない）
+  if(id && !offline){
+    try{
+      const rows = await rpc("memo_get", {p_id: id});
+      const r = Array.isArray(rows) ? rows[0] : null;
+      if(r){ text = clean(r.body); depth = r.depth || depth; }
+      else if(!offline){ toast("このメモはもう読めなくなっています"); return false; }
+    }catch(e){}
+  }
+  if(!text || len(text)>MAX_LEN || ngReason(text)){ toast("このリンクのメモは読めませんでした"); return false; }
+  // 自分のメモへの返事が回ってきた？（オフラインでも「返事がつくと光る」を成立させる）
+  let special = null;
+  if(key && S.mine.some(x=>x.key===key)){ special = "これはあなたが書いたメモです。友だちに回すと、続きを書いてもらえます。"; }
+  else if(parentKey){
+    const mine = S.mine.find(x=>x.key===parentKey);
+    if(mine){
+      mine.replies = mine.replies || [];
+      if(!mine.replies.some(r=>r.text===text)){ mine.replies.push({text, ink, at:new Date().toISOString(), via:"link"}); mine.seenN = mine.replies.length; }
+      special = "あなたのメモ「"+mine.text+"」に返事が届きました！"; save();
+      setTimeout(chime, 500);
+    }
+  }
+  openNote({text, id, depth, ink, key, viaLink:true}, special);
+  return true;
+}
+
+async function passOn(){
+  if(!last) return;
+  const url = relayLink(last);
+  const text = (last.to ? "知らない誰かのメモに返事を書きました。" : "メモを1枚書きました。")+"続きを書いてくれる？ #誰かのメモ帳";
+  if(navigator.share){
+    try{ await navigator.share({title:"誰かのメモ帳", text, url}); return; }catch(e){ if(e && e.name==="AbortError") return; }
+  }
+  try{ await navigator.clipboard.writeText(url); toast("リンクをコピーしました。友だちに送ってね"); }
+  catch(e){ window.prompt("このリンクを友だちに送ってね", url); }
+}
+function shareX(){
+  if(!last) return;
+  const clip = s => len(s)>40 ? Array.from(s).slice(0,39).join("")+"…" : s;
+  const text = (last.to ? "知らない誰かから「"+clip(last.to)+"」と届いたので「"+clip(last.text)+"」と返しました" : "知らない誰かに「"+clip(last.text)+"」とメモを流しました")+"\n続きを書いてくれる人→\n#誰かのメモ帳 #picoruno";
+  const u = "https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+encodeURIComponent(relayLink(last));
+  window.open(u, "_blank", "noopener");
+}
+
+/* ===== 結果を画像に（1080×1350） ===== */
+const NO_START = "」』）)、。，．！？!?ー〜ぁぃぅぇぉっゃゅょ…";   // 行のはじめに来てはいけない文字
+function wrapLines(ctx, text, maxW){
+  const out = []; let line = "";
+  for(const ch of Array.from(text)){
+    if(ctx.measureText(line+ch).width > maxW && line && !NO_START.includes(ch)){ out.push(line); line = ch; } else line += ch;
+  }
+  if(line) out.push(line); return out;
+}
+async function saveImage(){
+  if(!last) return;
+  try{ await document.fonts.load('600 60px "Klee One"'); }catch(e){}
+  const W=1080, H=1350, cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const x=cv.getContext("2d");
+  x.fillStyle="#efe4cf"; x.fillRect(0,0,W,H);
+  // 紙
+  const px=70, py=90, pw=W-140, ph=H-180;
+  x.save(); x.shadowColor="rgba(80,55,20,.3)"; x.shadowBlur=40; x.shadowOffsetY=16; x.fillStyle="#fffdf6"; x.fillRect(px,py,pw,ph); x.restore();
+  x.strokeStyle="#cfe0ee"; x.lineWidth=2;
+  for(let y=py+150; y<py+ph-40; y+=72){ x.beginPath(); x.moveTo(px,y); x.lineTo(px+pw,y); x.stroke(); }
+  x.strokeStyle="#ef9f97"; x.lineWidth=3; x.beginPath(); x.moveTo(px+90,py); x.lineTo(px+90,py+ph); x.stroke();
+  x.fillStyle="#e6d7bb"; for(let y=py+50; y<py+ph-30; y+=72){ x.beginPath(); x.arc(px+40,y,10,0,Math.PI*2); x.fill(); }
+  const left = px+120, maxW = pw-160, hand = '"Klee One","Zen Maru Gothic",serif', body='"Zen Maru Gothic",sans-serif';
+  x.textBaseline="alphabetic";
+  x.fillStyle="#3b3346"; x.font="600 64px "+hand; x.fillText("誰かのメモ帳", left, py+120);
+  // 罫線（py+150 から72pxおき）のすぐ上に文字の下端がくるように、1行=72pxで進める
+  let y = py+148+72;
+  if(last.to){
+    x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText("知らない誰かから届いたメモ", left, y); y+=72;
+    x.fillStyle="#3b3346"; x.font="400 50px "+hand;
+    wrapLines(x, "「"+last.to+"」", maxW).forEach(l=>{ x.fillText(l, left, y); y+=72; });
+    y += 72;
+  }
+  x.fillStyle="#8a7f72"; x.font="500 32px "+body; x.fillText(last.to ? "わたしの返事" : "わたしのメモ", left, y); y+=72;
+  x.fillStyle=INKS[last.ink].c; x.font="600 60px "+hand;
+  wrapLines(x, "「"+last.text+"」", maxW).forEach(l=>{ x.fillText(l, left, y); y+=72; });
+  x.fillStyle="#8a7f72"; x.font="500 30px "+body;
+  const fy = py+148+72*13;
+  x.fillText("#誰かのメモ帳", left, fy);
+  x.textAlign="right"; x.fillText(fmtDate(last.at)+" ・ picoruno.", px+pw-50, fy);
+  const blob = await new Promise(r=>cv.toBlob(r, "image/png"));
+  if(!blob){ toast("画像をつくれませんでした"); return; }
+  const file = new File([blob], "dareka-memo.png", {type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:"誰かのメモ帳"}); return; }catch(e){ if(e && e.name==="AbortError") return; }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "dareka-memo.png";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast("画像を保存しました");
+}
+
+/* ===== わたしのメモ ===== */
+async function fetchReplies(){
+  const ids = S.mine.filter(m=>m.id).map(m=>m.id).slice(0,50);
+  if(!ids.length || offline) return;
+  try{
+    const rows = await rpc("memo_replies", {p_ids: ids});
+    if(!Array.isArray(rows)) return;
+    let changed = false;
+    rows.forEach(r=>{
+      const m = S.mine.find(x=>x.id===r.parent_id); if(!m || typeof r.body!=="string") return;
+      m.replies = m.replies || [];
+      if(!m.replies.some(x=>x.id===r.id)){ m.replies.push({id:r.id, text:clean(r.body), ink:r.ink||0, at:r.created_at}); changed = true; }
+    });
+    if(changed) save();
+  }catch(e){}
+}
+function paintMine(){
+  const box = $("mine-list"); box.innerHTML = "";
+  if(!S.mine.length){
+    const p = document.createElement("p"); p.className="empty"; p.textContent = "まだメモを書いていません。\nページをめくって、誰かに返事を書いてみよう。";
+    p.style.whiteSpace="pre-line"; box.appendChild(p); return;
+  }
+  S.mine.forEach(m=>{
+    const reps = m.replies || [], unseen = Math.max(0, reps.length-(m.seenN||0));
+    const d = document.createElement("div"); d.className = "mine-item" + (reps.length ? " lit" : "");
+    const to = document.createElement("p"); to.className="to"; to.textContent = m.to ? "「"+m.to+"」への返事" : "自分から書いたメモ"; d.appendChild(to);
+    const me = document.createElement("p"); me.className="me"; me.textContent = m.text; me.style.color = INKS[m.ink]?.c || INKS[0].c; d.appendChild(me);
+    reps.forEach((r,i)=>{
+      const rp = document.createElement("div"); rp.className="rep"; rp.style.color = INKS[r.ink]?.c || INKS[0].c;
+      if(i >= reps.length-unseen){ const n=document.createElement("span"); n.className="new"; n.textContent="NEW"; rp.appendChild(n); }
+      rp.appendChild(document.createTextNode(r.text)); d.appendChild(rp);
+    });
+    const st = document.createElement("p"); st.className="st";
+    st.textContent = fmtDate(m.at) + " ・ " + (reps.length ? "返事 "+reps.length+"件" : m.id ? "誰かに届くのを待っています" : "この端末だけのメモ（友だちに回せます）");
+    d.appendChild(st);
+    if(!m.id || !reps.length){
+      const b = document.createElement("button"); b.type="button"; b.className="link"; b.textContent="このメモを友だちに回す";
+      b.addEventListener("click", ()=>{ last = m; passOn(); }); d.appendChild(b);
+    }
+    box.appendChild(d);
+  });
+  S.mine.forEach(m=>m.seenN = (m.replies||[]).length); save();
+}
+async function openMine(){ show("s-mine"); paintMine(); await fetchReplies(); if(!$("s-mine").hidden) paintMine(); }
+
+/* ===== 通報 ===== */
+function openReport(){ if(!cur || cur.seed!=null) return; $("modal").hidden=false; $("m-no").focus(); }
+async function doReport(){
+  $("modal").hidden = true;
+  if(cur && cur.id){ try{ await rpc("memo_report", {p_id: cur.id}); }catch(e){} }
+  toast("知らせてくれてありがとう。このメモはもう出てきません");
+  draw();
+}
+$("m-yes").addEventListener("click", doReport);
+$("m-no").addEventListener("click", ()=>{ $("modal").hidden=true; $("b-report").focus(); });
+$("modal").addEventListener("click", e=>{ if(e.target===$("modal")) $("modal").hidden=true; });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("modal").hidden) $("modal").hidden=true; });
+
+/* ===== ボタン ===== */
+const home = ()=>{ paintTitle(); show("s-title"); };
+$("b-flip").addEventListener("click", draw);
+$("b-next").addEventListener("click", draw);
+$("b-more").addEventListener("click", draw);
+$("b-reply").addEventListener("click", ()=>openWrite(false));
+$("b-send").addEventListener("click", send);
+$("b-back1").addEventListener("click", home);
+$("b-back2").addEventListener("click", ()=>writingNew ? home() : show("s-read"));
+$("b-new").addEventListener("click", ()=>openWrite(true));
+$("b-back3").addEventListener("click", home);
+$("b-back4").addEventListener("click", home);
+$("b-mine").addEventListener("click", openMine);
+$("b-report").addEventListener("click", openReport);
+$("b-pass").addEventListener("click", passOn);
+$("b-x").addEventListener("click", shareX);
+$("b-img").addEventListener("click", saveImage);
+window.addEventListener("hashchange", ()=>{ if(location.hash.startsWith("#to=")) readLink(); });
+
+/* ===== はじまり ===== */
+paintTitle();
+(async ()=>{
+  if(await readLink()) return;
+  await fetchReplies();
+  paintTitle();
+})();
+</script>
+</body>
+</html>
