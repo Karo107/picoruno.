@@ -212,7 +212,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(-
     <div class="stars" id="rStars"></div>
     <p id="rComment"></p>
     <div class="chips" id="rChips"></div>
-    <div class="label">切って断面を見る</div><div class="tabs" id="sandCut"><button data-sc="0" type="button" class="on">切らない</button><button data-sc="2" type="button">半分に切る</button></div>
+    <div class="label" id="sandCutLabel">切って断面を見る</div><div class="tabs" id="sandCut"><button data-sc="0" type="button" class="on">切らない</button><button data-sc="2" type="button">半分に切る</button></div>
     <button class="btn" id="toTray" type="button">天板にならべる</button>
   </section>
 
@@ -1609,7 +1609,7 @@ function showResult(){const all=Object.values(TOP);const used=all.filter(T=>T.co
   const chips=[];if(grooves)chips.push(`スケッパーの筋 ${grooves}本`);if(cutInfo&&cutInfo.type!=='sandwich')chips.push(cutInfo.type==='top'?'上から切り込み':'横から切り込み');
   all.filter(T=>T.count>0).forEach(T=>chips.push(`${T.name} ${T.fmt?T.fmt(T.count):T.count+T.unit}`));
   $('#rChips').innerHTML=chips.map(c=>`<span>${c}</span>`).join('');
-  lastResult={name,stars};$('#nameDone').value=name;setSandBtn(0);chime();pop=0.4;setStep('done');}
+  lastResult={name,stars};$('#nameDone').value=name;setSandBtn(0);{const sw=shapeId==='sandwich';$('#sandCutLabel').hidden=!sw;$('#sandCut').hidden=!sw;}chime();pop=0.4;setStep('done');}
 
 /* ---------- レイアウト ---------- */
 let freeFrac=0.6;
