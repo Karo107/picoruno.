@@ -64,14 +64,7 @@ button,input{font-family:inherit;color:inherit}
 .names .name input{width:100%;font-size:1.15rem;padding:2px 0;text-align:center}
 .names .name input::placeholder{font-family:var(--body);font-weight:700;font-size:.8rem;color:#b9aba0}
 .namehint{font-size:.75rem;color:var(--sub);text-align:center;margin-top:-6px}
-.more{display:flex;flex-direction:column;gap:6px;border-top:1.5px dashed var(--line);padding-top:12px}
-.more h3{margin:0;font-size:.8rem;color:var(--sub);font-weight:700;text-align:center;letter-spacing:.1em}
-.more a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);background:#fff;border-radius:12px;padding:8px 12px;box-shadow:0 0 0 1.5px var(--line) inset}
-.more a b{font-family:var(--mincho);font-weight:800;font-size:.98rem;white-space:nowrap}
-.more a span{font-size:.75rem;color:var(--sub);flex:1;min-width:0;line-height:1.4}
-.more a::after{content:"›";color:var(--shu);font-weight:800;font-size:1.2rem}
-.more a.all{justify-content:center;background:transparent;box-shadow:none;padding:2px;font-size:.82rem;color:var(--shu-d);font-weight:700}
-.more a.all::after{content:none}
+.home{display:block;text-align:center;font-size:.82rem;color:var(--shu-d);font-weight:700;text-decoration:none;padding:2px}
 /* 判定 */
 #judge{bottom:max(14px,env(safe-area-inset-bottom));padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer}
 #judge .pt{font-family:var(--mincho);font-weight:800;font-size:2.3rem;line-height:1;color:var(--shu);min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
@@ -114,6 +107,7 @@ button,input{font-family:inherit;color:inherit}
     <div class="namehint">課長・部長は空けておくと、毎回ちがう名前になります</div>
     <button class="btn" id="start" type="button">押印をはじめる</button>
     <div class="best" id="best"></div>
+    <a class="home" href="https://runococco.github.io/picoruno./">← picoruno. のゲーム一覧へ</a>
   </div>
 </section>
 
@@ -130,7 +124,7 @@ button,input{font-family:inherit;color:inherit}
   <div class="badge" id="rBadge" hidden></div>
   <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
   <button class="btn" id="again" type="button">もう1枚押す</button>
-  <nav class="more" aria-label="ほかのゲーム"><h3>ほかのゲームも遊ぶ</h3><div id="rMore" style="display:flex;flex-direction:column;gap:6px"></div><a class="all" href="./">picoruno. のゲームをぜんぶ見る</a></nav>
+  <a class="home" href="https://runococco.github.io/picoruno./">← picoruno. のゲーム一覧へ</a>
 </section>
 <div class="toast" id="toast" hidden></div>
 
@@ -352,24 +346,6 @@ const SRC = { bg: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQ
 let IMG = {};
 
 const SURNAMES = ["佐藤", "鈴木", "高橋", "田中", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "松本", "井上", "木村", "斎藤", "清水", "山口", "森", "池田", "橋本", "石川", "前田", "藤田", "岡田", "後藤", "長谷川", "村上", "近藤", "坂本"];
-// ほかのゲーム（結果画面で3つ紹介）
-const OTHER_GAMES = [
-  ["tape", "テープのはし", "どこかにある「はし」を爪で探す"], ["kireru", "どこからでも切れます", "小袋の“うそ”を本当にためす"],
-  ["fuchi", "ふちギリギリ", "表面張力の限界まで水を注ぐ"], ["nagareboshi", "流れ星に3回", "消えるまでに願いを3回タイプ"],
-  ["senkou", "線香花火のこり", "火の玉を最後まで落とさない"], ["seihyo", "製氷皿ひとふで", "全部のマスを同じ量に"],
-  ["label", "ラベルきれいに", "ちぎらずに1周はがす"], ["wataame", "わたあめ職人", "大きくふわふわに育てる"],
-  ["tamago", "たまご片手わり", "カラを入れずに割る"], ["elevator", "ぴったりエレベーター", "言われた階でぴったり止める"],
-  ["ochiba", "落ち葉はき", "風に負けずにひとつの山へ"], ["ketsuro", "結露のまど", "くもった窓に指でお絵かき"],
-  ["kutsushita", "くつしたペア", "似た柄にだまされずにそろえる"], ["code", "コードほどき", "からまったケーブルをほどく"],
-  ["akari", "マンションの灯り", "窓の灯りで夜景アート"], ["yukidama", "雪玉ころがし", "大きな雪だるまを作る"],
-  ["renji", "レンジ何秒？", "ちょうどいい温め時間を当てる"], ["domino", "ドミノひとふで", "なぞった線のドミノを倒しきる"],
-  ["mezamashi", "目覚ましぜんぶ止め", "鳴りだす目覚ましを全部止める"]
-];
-function moreGames() {
-  const a = OTHER_GAMES.slice();
-  for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
-  $("rMore").innerHTML = a.slice(0, 3).map(([s, t, d]) => `<a href="${s}.html"><b>${t}</b><span>${d}</span></a>`).join("");
-}
 
 /* ---------- 書類 ---------- */
 const SUBJECTS = ["会議室のおやつ補充について", "金曜日をもう1日ふやす件", "猫の手を正式に借りる件", "コピー機に名前をつける件",
@@ -848,7 +824,7 @@ function showResult() {
   else badge.hidden = true;
   const best = KIT.store.get("hanko-best", 0);
   if (S.total > best) KIT.store.set("hanko-best", S.total);
-  moreGames(); $("result").hidden = false;
+  $("result").hidden = false;
   KIT.music.stop();
   setTimeout(() => startMusic(true), 600);
 }
