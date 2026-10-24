@@ -261,11 +261,12 @@ const cheeks=(y,dx,col)=>`<ellipse cx="${50-dx}" cy="${y}" rx="5" ry="3.2" fill=
 const mouth=y=>`<path d="M47 ${y} q3 3 6 0" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`;
 const face=(y,dx=11,ck='#f19c9c')=>eyes(y,dx)+cheeks(y+6,dx+7,ck)+mouth(y+4);
 const SWEETS=[
-  {id:'ichigo',name:'いちご',emoji:'🍓',col:'#ec7a74',svg:
-    `<path d="M50 90 C27 86 13 62 15 44 C17 30 32 26 50 31 C68 26 83 30 85 44 C87 62 73 86 50 90Z" fill="#ec7a74"/>
-     <g fill="#fbe0a6"><ellipse cx="30" cy="46" rx="1.8" ry="2.6"/><ellipse cx="70" cy="46" rx="1.8" ry="2.6"/><ellipse cx="36" cy="72" rx="1.8" ry="2.6"/><ellipse cx="64" cy="72" rx="1.8" ry="2.6"/><ellipse cx="50" cy="80" rx="1.8" ry="2.6"/></g>
-     <path d="M50 33 L33 24 L45 26 L42 12 L50 23 L58 12 L55 26 L67 24 Z" fill="#8cc276"/>
-     ${face(52,11,'#f7b0a8')}`},
+  {id:'cake',name:'ショートケーキ',emoji:'🍰',col:'#ec7a74',svg:
+    `<rect x="14" y="40" width="72" height="48" rx="9" fill="#fbf1e0"/>
+     <rect x="14" y="70" width="72" height="8" fill="#f2cf8a"/><rect x="14" y="56" width="72" height="5" fill="#f4a7a7"/>
+     <path d="M30 42 q-4 -12 8 -12 q2 -8 12 -6 q10 -2 12 6 q12 0 8 12 Z" fill="#fff8ee"/>
+     <path d="M50 30 C41 29 39 17 50 11 C61 17 59 29 50 30Z" fill="#ec7a74"/><path d="M44 13 L50 8 L56 13 L50 15 Z" fill="#8cc276"/>
+     ${face(48,11,'#f7b0a8')}`},
   {id:'purin',name:'プリン',emoji:'🍮',col:'#f3d27a',svg:
     `<ellipse cx="50" cy="85" rx="42" ry="8" fill="#e6ddd0"/>
      <path d="M23 83 L31 34 Q50 25 69 34 L77 83 Q50 89 23 83 Z" fill="#f4d47c"/>
@@ -285,12 +286,13 @@ const SWEETS=[
     `<path d="M30 50 L8 32 Q3 50 8 68 Z" fill="#f7c896"/><path d="M70 50 L92 32 Q97 50 92 68 Z" fill="#f7c896"/>
      <circle cx="50" cy="50" r="29" fill="#f2a65a"/>
      ${face(48,10,'#ea857c')}`},
-  {id:'budou',name:'ぶどう',emoji:'🍇',col:'#a88bc9',svg:
-    `<path d="M50 30 Q51 20 56 12" stroke="#9a7a5f" stroke-width="4" stroke-linecap="round" fill="none"/>
-     <path d="M54 18 Q66 8 78 14 Q70 26 54 18Z" fill="#8cc276"/>
-     <g fill="#a88bc9"><circle cx="33" cy="40" r="14"/><circle cx="50" cy="36" r="14"/><circle cx="67" cy="40" r="14"/><circle cx="40" cy="62" r="15"/><circle cx="60" cy="62" r="15"/><circle cx="50" cy="78" r="13"/><circle cx="50" cy="54" r="20"/></g>
-     ${face(52,10,'#e9a1c0')}`},
-  {id:'melon',name:'メロンパン',emoji:'🍈',col:'#b7d68f',svg:
+  {id:'cupcake',name:'カップケーキ',emoji:'🧁',col:'#b79ad6',svg:
+    `<path d="M24 58 L76 58 L69 90 L31 90 Z" fill="#d6a46f"/>
+     <path d="M37 60 L39 89 M50 60 L50 89 M63 60 L61 89" stroke="#c48f5a" stroke-width="3" stroke-linecap="round"/>
+     <path d="M18 62 Q14 46 30 43 Q31 26 50 24 Q69 26 70 43 Q86 46 82 62 Q50 68 18 62 Z" fill="#b79ad6"/>
+     <g stroke-width="3" stroke-linecap="round"><path d="M32 36 l3 -3" stroke="#fff6d6"/><path d="M64 34 l3 3" stroke="#9cc2e4"/><path d="M50 29 l4 0" stroke="#f2a9b8"/></g>
+     ${face(46,11,'#e9a1c0')}`},
+  {id:'melon',name:'メロンパン',emoji:'🍞',col:'#b7d68f',svg:
     `<circle cx="50" cy="52" r="37" fill="#b7d68f"/>
      <path d="M30 26 L76 72 M20 44 L58 82 M44 18 L82 56 M70 26 L24 72 M80 44 L42 82 M56 18 L18 56" stroke="#a5c77d" stroke-width="3" stroke-linecap="round"/>
      <ellipse cx="50" cy="58" rx="20" ry="14" fill="#b7d68f"/>
