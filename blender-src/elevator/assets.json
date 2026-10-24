@@ -1,0 +1,1 @@
+{"bldg":{"src":"out/bldg.png","fmt":"jpg","w":1080,"q":80},"car":{"src":"out/car.png","fmt":"webp","w":432,"q":88},"geo":{"src":"out/geo.json","fmt":"json"}}
