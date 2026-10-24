@@ -1,0 +1,1 @@
+{"bg":{"src":"out/bg.png","fmt":"jpg","w":1080,"q":82},"leaves":{"src":"out/leaves.png","fmt":"webp","w":512,"q":90},"broom":{"src":"out/broom.png","fmt":"webp","w":240,"q":88},"geo":{"src":"out/geo.json","fmt":"json"}}

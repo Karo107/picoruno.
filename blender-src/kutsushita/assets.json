@@ -1,0 +1,1 @@
+{"bg":{"src":"out/bg.png","fmt":"jpg","w":1080,"q":82},"sockS":{"src":"out/sock_s.png","fmt":"webp","q":90},"sockD":{"src":"out/sock_d.png","fmt":"png"},"geo":{"src":"out/geo.json","fmt":"json"}}

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3a2a1d">
+<title>テープのはし</title>
+<meta name="description" content="引っ越しの段ボールが5箱。ガムテープのロールをくるくる回して、どこかにある「はし」を爪で探そう。見つけたら一気にひっぱって、箱を閉じる。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="テープのはし">
+<meta property="og:description" content="ガムテープの「はし」、どこ？ 5箱閉じるまでのタイムアタック。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./tape.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c9a46b'/%3E%3Ccircle cx='16' cy='16' r='11' fill='%23e8b964' stroke='%23fff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23f3eadb'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：引っ越し部屋に立てたテープのロールを1枚の canvas に。タイトル・結果は重ねるカード。 */
+:root{
+  --room:#3a2a1d; --kraft:#c9a46b; --kraft-d:#9c7a45; --card:#f6eedf; --ink:#3b2c20; --sub:#86715c; --line:#e3d4bc;
+  --tape:#e2aa4f; --ok:#5f9a62; --black:#232020;
+  --pop:"Dela Gothic One","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--room);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.55);background:rgba(40,28,18,.55);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:18px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.sheet::before{content:"";position:absolute;left:50%;top:-10px;width:120px;height:26px;transform:translateX(-50%) rotate(-2deg);background:rgba(226,170,79,.78);border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:14px;cursor:pointer;
+  font-family:var(--pop);font-size:1.12rem;background:var(--black);color:#fff;box-shadow:0 4px 0 #000;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.btn:focus-visible{outline:3px solid var(--tape);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.tape{background:var(--tape);color:var(--ink);box-shadow:0 4px 0 var(--kraft-d)}
+.row{display:flex;gap:10px}
+#title{top:50%;transform:translate(-50%,-50%)}
+#title h1{font-family:var(--pop);font-weight:400;font-size:clamp(2rem,10vw,2.7rem);line-height:1.15;margin:6px 0 0;letter-spacing:.02em}
+#title .kicker{font-size:.8rem;color:var(--kraft-d);font-weight:700;letter-spacing:.2em}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 0 0 1.5px var(--line) inset}
+.how b{font-family:var(--pop);font-weight:400;font-size:.8rem;background:var(--tape);border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .rank{text-align:center}
+#result .rank small{display:block;font-size:.8rem;color:var(--sub)}
+#result .rank b{font-family:var(--pop);font-weight:400;font-size:1.6rem}
+#result .time{text-align:center;font-family:var(--pop);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .time small{font-size:.4em;color:var(--sub);font-family:var(--body);font-weight:700}
+.laps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.lap{background:#fff;border-radius:10px;padding:6px 2px;text-align:center;box-shadow:0 0 0 1.5px var(--line) inset;font-variant-numeric:tabular-nums}
+.lap small{display:block;font-size:.68rem;color:var(--sub)}
+.lap b{font-size:.98rem}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(35,32,32,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>テープのはし</h1>
+  <p>引っ越しの段ボールが5箱。でもガムテープの「はし」が、どこにあるのかわからない。ロールを回して、爪でこすって、見つけたら一気にひっぱろう。</p>
+  <div class="how">
+    <b>回す</b><span>上下にスワイプ（PCはホイールも）</span>
+    <b>探す</b><span>テープの上を横にこする。「カリッ」としたら近い</span>
+    <b>はがす</b><span>めくれたら下へひっぱる。速すぎるとちぎれる</span>
+  </div>
+  <button class="btn" id="start" type="button">箱づめをはじめる</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="rank"><small>5箱とじるまで</small><div class="time" id="rTime">0<small>秒</small></div></div>
+  <div class="rank"><small>あなたは</small><b id="rRank"></b></div>
+  <div class="laps" id="rLaps"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn tape" id="again" type="button">もう一度</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "テープのはし";
+const GAME_URL = "https://runococco.github.io/picoruno./tape.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const SRC = { scene: "__IMG_scene__", box0: "__IMG_box0__", box1: "__IMG_box1__" };
+const PROJ = __JSON_proj__;          // 表面の角度(5°ごと) → 画面上の [左, 中央, 右] の点
+let IMG = {};
+const BOXES = 5;
+const VIS = [0.62, 0.45, 0.32, 0.2, 0.12];   // はしの見えやすさ
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const wrap = d => ((d % 360) + 540) % 360 - 180;       // -180..180
+
+const S = { state: "title", t: 0, round: 0, theta: 0, omega: 0, edge: 0, laps: [], roundT: 0, tears: 0, totalTears: 0,
+  specks: [], parts: [], pull: 0, flap: 0, msg: null, boxAnim: 0, shake: 0, near: 0 };
+
+/* ---------- 投影 ---------- */
+function proj(phi) {               // phi: カメラ基準の表面角度（0=正面, +が上）
+  const a = ((phi % 360) + 360) % 360, i = Math.floor(a / 5), k = (a - i * 5) / 5;
+  const A = PROJ[i % 72], B = PROJ[(i + 1) % 72];
+  return [0, 1, 2].map(j => [lerp(A[j][0], B[j][0], k), lerp(A[j][1], B[j][1], k)]);
+}
+// 中央の列の画面 y から、正面側の表面角度を求める
+function phiAtY(y) {
+  let best = 0, bd = 1e9;
+  for (let p = -88; p <= 88; p += 1) { const d = Math.abs(proj(p)[1][1] - y); if (d < bd) { bd = d; best = p; } }
+  for (let p = best - 1; p <= best + 1; p += 0.1) { const d = Math.abs(proj(p)[1][1] - y); if (d < bd) { bd = d; best = p; } }
+  return bd < 30 ? best : null;
+}
+const BAND = (() => { const p = proj(0); return { x0: p[0][0], x1: p[2][0], top: proj(85)[1][1], bot: proj(-85)[1][1], cy: p[1][1] }; })();
+const RPX = (BAND.bot - BAND.top) / 2;   // 半径（画面px）
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, offX = 0, offY = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  fit = Math.min(vw / 600, vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+  // ロールが画面の中央より少し上に来るように
+  offX = vw / 2 / fit - 330; offY = vh / 2 / fit - 520;
+}
+window.addEventListener("resize", resize);
+function toWorld(e) { return { x: e.clientX / fit - offX, y: e.clientY / fit - offY }; }
+
+/* ---------- 表面のちり・気泡 ---------- */
+function makeSpecks() {
+  const r = KIT.rng((Math.random() * 1e9) | 0);
+  S.specks = Array.from({ length: 22 }, () => ({ a: r() * 360, u: 0.08 + r() * 0.84, s: 0.6 + r() * 1.6, k: r() < 0.65 ? "bub" : "dust" }));
+}
+
+/* ---------- 描画 ---------- */
+function render() {
+  const vw = cv.width / dpr / fit, vh = cv.height / dpr / fit;
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  const sh = S.shake;
+  cx.translate(offX + (Math.random() - 0.5) * sh, offY + (Math.random() - 0.5) * sh);
+  // 背景：Blenderの場面（x:-120〜840）。それより広い画面は、ぼかした拡大コピーで埋める
+  if (IMG.scene) {
+    const cxw = vw / 2 - offX, cyw = vh / 2 - offY;
+    const bs = Math.max((vw + 60) / 960, (vh + 60) / 1080);
+    if (bs > 1.001) { cx.globalAlpha = 0.85; cx.drawImage(IMG.scene, cxw - 480 * bs, cyw - 540 * bs, 960 * bs, 1080 * bs); cx.globalAlpha = 1;
+      cx.fillStyle = "rgba(30,20,12,.18)"; cx.fillRect(cxw - 480 * bs, cyw - 540 * bs, 960 * bs, 1080 * bs); }
+    cx.drawImage(IMG.scene, -120, 0, 960, 1080);
+  }
+  // 角度 → 正面基準
+  drawSpecks();
+  drawEdge();
+  drawPull();
+  drawBox();
+  for (const q of S.parts) { cx.globalAlpha = clamp(q.life, 0, 1) * q.al; cx.fillStyle = q.c; cx.beginPath(); cx.arc(q.x, q.y, q.r, 0, 6.283); cx.fill(); }
+  cx.globalAlpha = 1;
+  // ビネット
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = cv.width / dpr, h = cv.height / dpr;
+  const vg = cx.createRadialGradient(w / 2, h * 0.45, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
+  vg.addColorStop(0, "rgba(20,12,6,0)"); vg.addColorStop(1, "rgba(20,12,6,.5)");
+  cx.fillStyle = vg; cx.fillRect(0, 0, w, h);
+  if (S.state === "hunt" || S.state === "pull" || S.state === "done") drawHud(w, h);
+}
+function drawSpecks() {
+  for (const p of S.specks) {
+    const phi = wrap(p.a + S.theta);
+    const c = Math.cos(phi * Math.PI / 180);
+    if (c < 0.12) continue;
+    const pts = proj(phi);
+    const x = lerp(pts[0][0], pts[2][0], p.u), y = lerp(pts[0][1], pts[2][1], p.u) + (pts[1][1] - (pts[0][1] + pts[2][1]) / 2) * (1 - Math.pow(2 * p.u - 1, 2));
+    cx.globalAlpha = Math.min(1, c * 1.4) * (p.k === "bub" ? 0.55 : 0.4);
+    if (p.k === "bub") {
+      cx.strokeStyle = "rgba(255,250,235,.9)"; cx.lineWidth = 1.1;
+      cx.beginPath(); cx.ellipse(x, y, 3.2 * p.s, 3.2 * p.s * c, 0, 0, 6.283); cx.stroke();
+      cx.fillStyle = "rgba(255,255,255,.8)"; cx.beginPath(); cx.arc(x - p.s, y - p.s * c, 0.9, 0, 6.283); cx.fill();
+    } else {
+      cx.fillStyle = "rgba(60,40,20,.8)"; cx.beginPath(); cx.ellipse(x, y, 1.4 * p.s, 1.4 * p.s * c, 0.6, 0, 6.283); cx.fill();
+    }
+  }
+  cx.globalAlpha = 1;
+}
+function edgePath(phi, lift) {
+  const p = proj(phi);
+  cx.beginPath(); cx.moveTo(p[0][0], p[0][1] + lift); cx.quadraticCurveTo(2 * p[1][0] - (p[0][0] + p[2][0]) / 2, 2 * p[1][1] - (p[0][1] + p[2][1]) / 2 + lift, p[2][0], p[2][1] + lift);
+}
+function drawEdge() {
+  if (S.state === "pull" || S.state === "done") return;
+  const phi = wrap(S.edge + S.theta), c = Math.cos(phi * Math.PI / 180);
+  if (c < 0.05) return;
+  // 光の帯（上から45°あたり）に入るとキラッと見える
+  const glint = Math.exp(-Math.pow((phi - 40) / 14, 2)) + 0.5 * Math.exp(-Math.pow((phi + 10) / 18, 2));
+  const vis = (S.state === "title" ? 0.5 : VIS[S.round]) * (0.35 + glint) * Math.min(1, c * 2);
+  cx.lineCap = "round";
+  cx.strokeStyle = `rgba(70,40,10,${0.5 * vis})`; cx.lineWidth = 1.6; edgePath(phi, 1.4); cx.stroke();
+  cx.strokeStyle = `rgba(255,246,220,${vis})`; cx.lineWidth = 1.3; edgePath(phi, 0); cx.stroke();
+  // めくれかけ（見つけた直後）
+  if (S.flap > 0) {
+    const p = proj(phi);
+    cx.fillStyle = `rgba(240,190,100,${0.75 * S.flap})`;
+    cx.beginPath(); cx.moveTo(p[0][0], p[0][1]); cx.lineTo(p[2][0], p[2][1]);
+    cx.lineTo(p[2][0] + 6, p[2][1] + 22 * S.flap); cx.lineTo(p[0][0] - 6, p[0][1] + 22 * S.flap); cx.closePath(); cx.fill();
+  }
+}
+function drawPull() {
+  if (S.state !== "pull" && !(S.state === "done" && S.doneT < 0.25)) return;
+  // ロールの下の接点から指まで、テープの帯を描く
+  const p = proj(-90 + 2), x0 = p[0][0], x1 = p[2][0], y0 = (p[0][1] + p[2][1]) / 2 - 6;
+  const yEnd = y0 + S.pull, wob = S.pullX;
+  const g = cx.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, "rgba(200,140,60,.85)"); g.addColorStop(0.25, "rgba(245,200,120,.75)"); g.addColorStop(0.45, "rgba(255,240,200,.9)"); g.addColorStop(0.6, "rgba(235,180,95,.75)"); g.addColorStop(1, "rgba(190,130,55,.85)");
+  cx.fillStyle = g;
+  cx.beginPath();
+  cx.moveTo(x0, y0); cx.lineTo(x1, y0);
+  cx.quadraticCurveTo(x1 + wob * 0.5, (y0 + yEnd) / 2, x1 + wob, yEnd);
+  cx.lineTo(x0 + wob, yEnd + (S.torn ? 18 : 0));
+  cx.quadraticCurveTo(x0 + wob * 0.5, (y0 + yEnd) / 2, x0, y0);
+  cx.fill();
+  // ロールの上から接点まで（巻きの表面を回りこむ部分）
+  cx.strokeStyle = "rgba(255,240,205,.5)"; cx.lineWidth = 1.2;
+  cx.beginPath(); cx.moveTo(x0 + wob, yEnd); cx.lineTo(x1 + wob, yEnd); cx.stroke();
+  // 目盛り（ひっぱった長さ）
+  const need = 300, k = clamp(S.pull / need, 0, 1);
+  cx.fillStyle = "rgba(35,32,32,.6)"; roundRect(x1 + 26, y0, 14, need, 7); cx.fill();
+  cx.fillStyle = k >= 1 ? "#7fc47f" : "#f1c75b"; roundRect(x1 + 26, y0, 14, need * k, 7); cx.fill();
+}
+function drawBox() {
+  // 右下で待っている段ボール
+  const im = S.boxTaped ? IMG.box1 : IMG.box0;
+  if (!im || S.state === "title") return;
+  const a = S.boxAnim, sc = 1 + 0.12 * Math.sin(Math.min(1, a) * Math.PI) ;
+  const s = 230 * sc;
+  const x = 520 - s / 2 + (1 - ease(S.boxIn)) * 400, y = 850 - s / 2;
+  cx.drawImage(im, x, y, s, s);
+}
+function drawHud(w, h) {
+  const g = cx; g.save();
+  const sf = KIT.safe(), top = 12 + sf.top;
+  g.fillStyle = "rgba(35,28,22,.72)"; roundRectG(g, 12, top, Math.min(w - 80, 380), 54, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '400 22px "Dela Gothic One",sans-serif';
+  g.fillText(`${Math.min(S.round + 1, BOXES)}/${BOXES}箱`, 28, top + 28);
+  g.font = '700 22px "Zen Maru Gothic",sans-serif'; g.textAlign = "right";
+  g.fillText(`${(S.total + (S.state === "done" ? 0 : S.roundT)).toFixed(1)}秒`, Math.min(w - 80, 380) - 6, top + 28);
+  // 箱のアイコン
+  for (let i = 0; i < BOXES; i++) {
+    g.fillStyle = i < S.laps.length ? "#e2aa4f" : "rgba(255,255,255,.25)";
+    roundRectG(g, 110 + i * 26, top + 19, 20, 18, 4); g.fill();
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40;
+    g.fillStyle = "rgba(35,28,22,.8)"; roundRectG(g, w / 2 - tw / 2, h - 96 - sf.bottom, tw, 48, 24); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, w / 2, h - 72 - sf.bottom);
+  }
+  g.restore();
+}
+function roundRect(x, y, w, h, r) { roundRectG(cx, x, y, w, h, r); }
+function roundRectG(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, Math.max(0, w), Math.max(0, h), Math.min(r, Math.abs(h) / 2)); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+
+/* ---------- 更新 ---------- */
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+  update(dt); render();
+  requestAnimationFrame(frame);
+}
+let tickAcc = 0;
+function update(dt) {
+  S.t += dt; S.shake = Math.max(0, S.shake - dt * 40);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 400 * dt; q.life -= dt * q.dec; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  S.boxIn = Math.min(1, (S.boxIn || 0) + dt * 2.2);
+  if (S.boxAnim > 0) S.boxAnim += dt * 3;
+  if (S.state === "title") { S.theta += dt * 12; return; }
+  if (S.state === "hunt" || S.state === "pull") S.roundT += dt;
+  if (S.state === "hunt") {
+    if (!drag || drag.mode !== "rot") { S.theta += S.omega * dt; S.omega *= Math.pow(0.12, dt); if (Math.abs(S.omega) < 2) S.omega = 0; }
+    tickAcc += Math.abs(S.omega * dt);
+    if (tickAcc > 14) { tickAcc = 0; KIT.noise({ dur: 0.02, vol: 0.05, f: 900, q: 4, wet: 0 }); }
+    S.flap = Math.max(0, S.flap - dt);
+  }
+  if (S.state === "done") {
+    S.doneT += dt;
+    if (S.doneT > 1.1 && !S.nextQueued) { S.nextQueued = true; if (S.round + 1 < BOXES) startRound(S.round + 1); else finish(); }
+  }
+}
+
+/* ---------- 操作 ---------- */
+let drag = null;
+cv.addEventListener("pointerdown", e => {
+  if (S.state !== "hunt" && S.state !== "pull") return;
+  e.preventDefault(); KIT.ensure();
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  const p = toWorld(e);
+  drag = { id: e.pointerId, x0: p.x, y0: p.y, x: p.x, y: p.y, t: performance.now(), mode: S.state === "pull" ? "pull" : null, rub: 0, vy: 0 };
+  if (S.state === "hunt") S.omega = 0;
+});
+cv.addEventListener("pointermove", e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const p = toWorld(e), now = performance.now(), dtm = Math.max(1, now - drag.t) / 1000;
+  const dx = p.x - drag.x, dy = p.y - drag.y;
+  if (!drag.mode) {
+    const tx = p.x - drag.x0, ty = p.y - drag.y0;
+    if (Math.hypot(tx, ty) > 8) drag.mode = Math.abs(ty) > Math.abs(tx) * 1.1 ? "rot" : "rub";
+  }
+  if (S.state === "hunt" && drag.mode === "rot") {
+    const dth = -dy / RPX * 180 / Math.PI;     // 指といっしょに表面が動く
+    S.theta += dth; S.omega = lerp(S.omega, dth / dtm, 0.5);
+  } else if (S.state === "hunt" && drag.mode === "rub") {
+    rub(p, Math.hypot(dx, dy));
+  } else if (S.state === "pull") {
+    const sp = dy / Math.max(dtm, 0.008);
+    drag.vy = lerp(drag.vy, sp, 0.6);
+    if (dy > 0) {
+      S.pull += dy; S.pullX = clamp(S.pullX + dx * 0.4, -40, 40);
+      peelSfx(sp);
+      if (drag.vy > 2400 && S.pull > 40) tear();
+      else if (S.pull >= 300 && !S.ready) { S.ready = true; KIT.tone({ f: 1046, dur: 0.12, vol: 0.12, type: "triangle" }); say("はなすと貼れる！", 1.2); }
+    }
+  }
+  drag.x = p.x; drag.y = p.y; drag.t = now;
+});
+const endDrag = e => {
+  if (!drag || (e && drag.id !== e.pointerId)) return;
+  if (S.state === "pull") {
+    if (S.ready) complete();
+    else if (S.pull > 0) { say("もっとひっぱって！", 1.2); }
+  }
+  drag = null;
+};
+cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+cv.addEventListener("wheel", e => { if (S.state === "hunt") { e.preventDefault(); S.omega += -e.deltaY * 0.9; } }, { passive: false });
+
+let rubAcc = 0, lastNear = 0;
+function rub(p, dist) {
+  if (p.x < BAND.x0 - 30 || p.x > BAND.x1 + 30) return;
+  const phi = phiAtY(p.y); if (phi === null) return;
+  const edgePhi = wrap(S.edge + S.theta);
+  const diff = Math.abs(wrap(phi - edgePhi));
+  drag.rub += dist; rubAcc += dist;
+  if (diff < 2.6 && drag.rub > 36) return catchEdge();
+  if (rubAcc > 26) {
+    rubAcc = 0;
+    if (diff < 9) { // 爪が段差に引っかかる
+      KIT.noise({ dur: 0.03, vol: 0.22, f: 3400, q: 3, wet: 0 }); KIT.tone({ f: 2200, dur: 0.02, vol: 0.06, type: "square", wet: 0 }); KIT.vibrate(12);
+      if (S.t - lastNear > 1.5) { lastNear = S.t; say("カリッ…近い？", 1.0); }
+    } else KIT.noise({ dur: 0.06, vol: 0.06, f: 5000, q: 0.8, wet: 0 });
+  }
+  if (Math.random() < 0.3) S.parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 40, vy: -20, r: 1.2, life: 0.5, dec: 2, c: "rgba(255,248,230,.9)", al: 0.6 });
+}
+function catchEdge() {
+  S.state = "pull"; S.pull = 0; S.pullX = 0; S.ready = false; S.torn = false; drag.mode = "pull";
+  S.flap = 1;
+  // ペリッ
+  KIT.noise({ dur: 0.18, vol: 0.3, f: 4000, to: 1200, q: 1.5 });
+  KIT.tone({ f: 660, to: 1320, dur: 0.12, vol: 0.12, type: "triangle" });
+  KIT.vibrate(25);
+  say("見つけた！ 下へひっぱる", 1.4);
+  // はしが手前の下に来るまで回す（見た目のつじつま）
+  S.theta = -90 - S.edge;
+}
+let peelAt = 0;
+function peelSfx(sp) {
+  const now = KIT.ensure() ? performance.now() : 0;
+  if (now - peelAt < 45) return; peelAt = now;
+  const f = clamp(400 + sp * 0.6, 500, 3200);
+  KIT.noise({ dur: 0.07, vol: 0.18, f, q: 6, wet: 0 });
+  KIT.tone({ f: f * 0.5, dur: 0.05, vol: 0.03, type: "sawtooth", lp: 2000, wet: 0 });
+}
+function tear() {
+  S.tears++; S.totalTears++;
+  KIT.noise({ dur: 0.22, vol: 0.4, f: 2200, to: 600, q: 0.9 }); KIT.tone({ f: 300, to: 120, dur: 0.2, vol: 0.12, type: "sawtooth", lp: 900 });
+  KIT.vibrate([20, 30, 40]); S.shake = 8;
+  say("ビリッ… ちぎれた！ また探そう", 1.8);
+  const p = proj(-88);
+  for (let i = 0; i < 14; i++) S.parts.push({ x: lerp(p[0][0], p[2][0], Math.random()), y: p[0][1] + S.pull * Math.random(), vx: (Math.random() - 0.5) * 200, vy: -100 - Math.random() * 120, r: 2 + Math.random() * 2, life: 1, dec: 1.2, c: "rgba(235,180,95,.9)", al: 0.9 });
+  // ちぎれたはしは、さっきより少し見えにくい
+  S.state = "hunt"; S.edge = Math.random() * 360; S.flap = 0; drag && (drag.mode = null);
+}
+function complete() {
+  S.state = "done"; S.doneT = 0; S.nextQueued = false;
+  const lap = S.roundT; S.laps.push(lap); S.total += lap;
+  // ジャッ（カッターの刃で切る）→ 箱にぺたっ
+  KIT.noise({ dur: 0.12, vol: 0.35, f: 6000, to: 2500, q: 1 });
+  setTimeout(() => {
+    S.boxTaped = true; S.boxAnim = 0.01; S.shake = 6;
+    KIT.noise({ dur: 0.1, vol: 0.25, f: 500, type: "lowpass", q: 0.5 });
+    KIT.tone({ f: 140, to: 60, dur: 0.18, vol: 0.4 });
+    [0, 4, 7, 12].forEach((d, i) => KIT.inst.marimba(72 + d + (lap < 4 ? 2 : 0), 0.05 + i * 0.06, 0.2, 0.15));
+    const comments = lap < 3 ? "はやい！" : lap < 6 ? "いいね！" : lap < 12 ? "とじた！" : "やっと…！";
+    say(`${S.round + 1}箱目 ${lap.toFixed(1)}秒　${comments}`, 1.2);
+    for (let i = 0; i < 18; i++) S.parts.push({ x: 520 + (Math.random() - 0.5) * 140, y: 820, vx: (Math.random() - 0.5) * 300, vy: -200 - Math.random() * 200, r: 2 + Math.random() * 3, life: 1, dec: 1, c: ["#e2aa4f", "#fff3d6", "#c9a46b"][i % 3], al: 0.9 });
+  }, 160);
+}
+
+/* ---------- 進行 ---------- */
+function startRound(i) {
+  S.round = i; S.state = "hunt"; S.roundT = 0; S.tears = 0; S.flap = 0; S.pull = 0; S.boxTaped = false; S.boxAnim = 0; S.boxIn = 0;
+  // はしは、最初は見えない側にあることが多い
+  S.edge = Math.random() * 360; S.theta = 0; S.omega = 0;
+  makeSpecks();
+  KIT.noise({ dur: 0.25, vol: 0.12, f: 300, type: "lowpass" }); // 箱をずらす音
+  if (i === 0) say("上下で回す・横にこすって探す", 2.6);
+  else if (i === BOXES - 1) say("ラスト1箱！", 1.4);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.laps = []; S.total = 0; S.totalTears = 0; S.parts = [];
+  startMusic(false);
+  KIT.countPlay(GAME_TITLE);
+  startRound(0);
+}
+const RANKS = [[12, "テープの達人"], [20, "引っ越しのプロ"], [32, "手ぎわのいい人"], [50, "ふつうの人"], [80, "爪がみじかい人"], [1e9, "テープにきらわれている人"]];
+function finish() {
+  S.state = "result";
+  const rank = RANKS.find(r => S.total < r[0])[1];
+  S.rank = rank;
+  $("rTime").innerHTML = `${S.total.toFixed(1)}<small>秒</small>`;
+  $("rRank").textContent = rank;
+  $("rLaps").innerHTML = S.laps.map((l, i) => `<div class="lap"><small>${i + 1}箱目</small><b>${l.toFixed(1)}</b></div>`).join("");
+  const best = KIT.store.get("tape-best", 0);
+  const isBest = !best || S.total < best;
+  if (isBest) KIT.store.set("tape-best", +S.total.toFixed(1));
+  $("rNote").textContent = (isBest ? "自己ベスト更新！ " : `自己ベスト ${best}秒　`) + (S.totalTears ? `ちぎれた回数 ${S.totalTears}回` : "1回もちぎらなかった！");
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 500);
+  [0, 4, 7, 11, 14].forEach((d, i) => KIT.inst.bell(67 + d, 0.05 + i * 0.09, 0.4, 0.1));
+}
+function shareText() { return `テープのはし、5箱とじるのに ${S.total.toFixed(1)}秒\nわたしは「${S.rank}」でした\n#テープのはし`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  if (IMG.scene) g.drawImage(IMG.scene, 240, 330, 840, 882, 0, 0, 600, 630);
+  g.fillStyle = "#f6eedf"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "rgba(226,170,79,.85)"; g.save(); g.translate(600, 0); g.rotate(-0.04); g.fillRect(-20, 40, 640, 46); g.restore();
+  g.fillStyle = "#3b2c20"; g.font = '400 30px "Dela Gothic One",sans-serif'; g.textAlign = "left"; g.fillText("テープのはし", 640, 76);
+  g.fillStyle = "#86715c"; g.font = '700 26px "Zen Maru Gothic",sans-serif'; g.fillText("5箱とじるまで", 640, 170);
+  g.fillStyle = "#3b2c20"; g.font = '400 96px "Dela Gothic One",sans-serif'; g.fillText(S.total.toFixed(1), 640, 280);
+  const tw = g.measureText(S.total.toFixed(1)).width; g.font = '700 34px "Zen Maru Gothic",sans-serif'; g.fillText("秒", 650 + tw, 280);
+  g.fillStyle = "#86715c"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("わたしは", 640, 350);
+  g.fillStyle = "#3b2c20"; g.font = '400 44px "Dela Gothic One",sans-serif'; g.fillText(S.rank, 640, 406);
+  if (IMG.box1) S.laps.forEach((l, i) => { g.drawImage(IMG.box1, 630 + i * 108, 440, 110, 110); g.fillStyle = "#3b2c20"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.fillText(l.toFixed(1) + "秒", 685 + i * 108, 560); g.textAlign = "left"; });
+  g.fillStyle = "#86715c"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#テープのはし ・ picoruno.", 640, 604);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 84, key: 62, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], lead: "bell", chord: "epiano", beat: "none", seed: 33, leadVol: 0.07, density: 0.6 }
+    : { bpm: 116, key: 62, chords: [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]], lead: "pluck", chord: "marimba", beat: "shaker", seed: 12, leadVol: 0.09, chordVol: 0.09, swing: 0.12 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "tape.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon(); makeSpecks();
+  const best = KIT.store.get("tape-best", 0);
+  $("best").textContent = best ? `自己ベスト ${best}秒` : "5箱とじるまでのタイムアタック";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { proj, wrap, toScreen: (x, y) => ({ x: (x + offX) * fit, y: (y + offY) * fit }) };
+</script>
+</body>
+</html>

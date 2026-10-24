@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#0b1230">
+<title>流れ星に3回</title>
+<meta name="description" content="流れ星が消えるまでに、願いごとを3回。入力した願いごとをタイプして、5つの流れ星にとどけよう。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="流れ星に3回">
+<meta property="og:description" content="流れ星が消えるまでに、願いごとを3回タイプできる？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./nagareboshi.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1230'/%3E%3Cpath d='M6 8l14 10' stroke='%23fff' stroke-opacity='.5' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='22' cy='20' r='3' fill='%23fff6c8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：夜空いっぱいの canvas。上に願いごとの入力欄（スマホのキーボードに隠れないよう上側）。 */
+:root{
+  --night:#0b1230; --card:#f7f5ff; --ink:#272a4a; --sub:#77789a; --line:#e0def0;
+  --star:#fff1b8; --star-d:#c9a748; --violet:#6f6ad6; --violet-d:#4b46a8;
+  --pop:"Kaisei Decol","Zen Maru Gothic",serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:var(--night);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button,input{font-family:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.5);background:rgba(11,18,48,.5);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 60px rgba(0,0,0,.6);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-size:1.12rem;background:var(--violet);color:#fff;box-shadow:0 4px 0 var(--violet-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--violet-d)}
+.btn:focus-visible{outline:3px solid var(--star);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{top:50%;transform:translate(-50%,-50%)}
+#title .kicker{font-size:.8rem;color:var(--violet);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:700;font-size:clamp(2rem,10vw,2.6rem);line-height:1.15;margin:0;color:var(--ink)}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.wish{display:flex;flex-direction:column;gap:8px}
+.wish label{font-size:.85rem;color:var(--sub);font-weight:700}
+.wish input{border:0;border-radius:12px;padding:12px 14px;font-size:1.3rem;font-family:var(--pop);background:#fff;color:var(--ink);box-shadow:0 0 0 1.5px var(--line) inset;outline:0}
+.wish input:focus{box-shadow:0 0 0 2px var(--violet) inset}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:0;border-radius:999px;padding:5px 12px;background:#ece9fb;color:var(--violet-d);font-weight:700;font-size:.85rem;cursor:pointer}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+/* 入力欄（遊んでいるとき） */
+#typing{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 64px);z-index:15;width:min(420px,calc(100% - 24px));
+  display:flex;flex-direction:column;gap:6px;align-items:stretch}
+#typing .target{color:#fff;font-family:var(--pop);font-size:1.05rem;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+#typing .target b{color:var(--star)}
+#tin{border:0;border-radius:14px;padding:12px 16px;font-size:1.3rem;font-family:var(--pop);background:rgba(255,255,255,.92);color:var(--ink);outline:0;
+  box-shadow:0 0 0 2px rgba(255,241,184,.0),0 8px 24px rgba(0,0,0,.35);transition:box-shadow .2s}
+#tin.hit{box-shadow:0 0 0 3px var(--star),0 0 30px rgba(255,241,184,.8)}
+.slots{display:flex;justify-content:center;gap:10px;font-size:1.6rem;line-height:1}
+.slots span{color:rgba(255,255,255,.28);transition:color .15s,transform .15s}
+.slots span.on{color:var(--star);transform:scale(1.2);text-shadow:0 0 12px rgba(255,241,184,.9)}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .rank{text-align:center}
+#result .rank small{display:block;font-size:.8rem;color:var(--sub)}
+#result .rank b{font-family:var(--pop);font-size:1.5rem;color:var(--violet-d)}
+#result .big{text-align:center;font-family:var(--pop);font-size:2.6rem;line-height:1;color:var(--ink)}
+#result .big small{font-size:.4em;color:var(--sub)}
+.stars{display:flex;justify-content:center;gap:8px;font-size:1.5rem}
+.stars span{color:#d5d2ea}.stars span.on{color:var(--star-d)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(11,18,48,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn,#tin,.slots span{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="夜空"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>流れ星に3回</h1>
+  <p>流れ星が消えるまでに、願いごとを3回となえると叶う。……らしい。今夜は5つ流れます。打ちこむ速さで、願いをとどけよう。</p>
+  <div class="wish">
+    <label for="wish">願いごと（10文字まで）</label>
+    <input id="wish" maxlength="10" autocomplete="off" placeholder="しあわせ">
+    <div class="chips" id="chips"></div>
+  </div>
+  <button class="btn" id="start" type="button">夜空を見上げる</button>
+  <div class="best" id="best"></div>
+</section>
+
+<div id="typing" hidden>
+  <div class="target">「<b id="tWish"></b>」を3回</div>
+  <input id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="願いごとを入力">
+  <div class="slots" id="slots"><span>★</span><span>★</span><span>★</span></div>
+</div>
+
+<section class="sheet" id="result" hidden>
+  <div class="rank"><small>「<span id="rWish"></span>」がとどいた流れ星</small></div>
+  <div class="big" id="rBig">0<small> / 5</small></div>
+  <div class="stars" id="rStars"></div>
+  <div class="rank"><small>あなたの願い、叶う確率は</small><b id="rRank"></b></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一晩</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "流れ星に3回";
+const GAME_URL = "https://runococco.github.io/picoruno./nagareboshi.html";
+const $ = id => document.getElementById(id);
+const SRC = { land: "__IMG_land__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const PRESETS = ["しあわせ", "おかねもち", "ねこをかいたい", "せがのびる", "ごうかく", "やせたい", "たからくじ"];
+const NSTAR = 5;
+const PER_CHAR = [0.62, 0.48, 0.4, 0.33, 0.27];   // 1文字あたりの秒（3回ぶん）
+
+/* ---------- 文字の正規化（カタカナ→ひらがな、ローマ字→ひらがな） ---------- */
+const ROMA = { a: "あ", i: "い", u: "う", e: "え", o: "お", ka: "か", ki: "き", ku: "く", ke: "け", ko: "こ", sa: "さ", si: "し", shi: "し", su: "す", se: "せ", so: "そ",
+  ta: "た", ti: "ち", chi: "ち", tu: "つ", tsu: "つ", te: "て", to: "と", na: "な", ni: "に", nu: "ぬ", ne: "ね", no: "の", ha: "は", hi: "ひ", hu: "ふ", fu: "ふ", he: "へ", ho: "ほ",
+  ma: "ま", mi: "み", mu: "む", me: "め", mo: "も", ya: "や", yu: "ゆ", yo: "よ", ra: "ら", ri: "り", ru: "る", re: "れ", ro: "ろ", wa: "わ", wo: "を", nn: "ん", "n'": "ん",
+  ga: "が", gi: "ぎ", gu: "ぐ", ge: "げ", go: "ご", za: "ざ", zi: "じ", ji: "じ", zu: "ず", ze: "ぜ", zo: "ぞ", da: "だ", di: "ぢ", du: "づ", de: "で", do: "ど",
+  ba: "ば", bi: "び", bu: "ぶ", be: "べ", bo: "ぼ", pa: "ぱ", pi: "ぴ", pu: "ぷ", pe: "ぺ", po: "ぽ",
+  kya: "きゃ", kyu: "きゅ", kyo: "きょ", sha: "しゃ", shu: "しゅ", sho: "しょ", sya: "しゃ", syu: "しゅ", syo: "しょ", cha: "ちゃ", chu: "ちゅ", cho: "ちょ", tya: "ちゃ", tyu: "ちゅ", tyo: "ちょ",
+  nya: "にゃ", nyu: "にゅ", nyo: "にょ", hya: "ひゃ", hyu: "ひゅ", hyo: "ひょ", mya: "みゃ", myu: "みゅ", myo: "みょ", rya: "りゃ", ryu: "りゅ", ryo: "りょ",
+  gya: "ぎゃ", gyu: "ぎゅ", gyo: "ぎょ", ja: "じゃ", ju: "じゅ", jo: "じょ", jya: "じゃ", jyu: "じゅ", jyo: "じょ", bya: "びゃ", byu: "びゅ", byo: "びょ", pya: "ぴゃ", pyu: "ぴゅ", pyo: "ぴょ",
+  xa: "ぁ", xi: "ぃ", xu: "ぅ", xe: "ぇ", xo: "ぉ", xtu: "っ", ltu: "っ", xya: "ゃ", xyu: "ゅ", xyo: "ょ", "-": "ー" };
+function romaji(s) {
+  let out = "", i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (!/[a-z'\-]/.test(c)) { out += c; i++; continue; }
+    if (c === s[i + 1] && /[bcdfghjkmpqrstvwxyz]/.test(c)) { out += "っ"; i++; continue; }
+    let hit = false;
+    for (const n of [3, 2, 1]) { const k = s.substr(i, n); if (ROMA[k]) { out += ROMA[k]; i += n; hit = true; break; } }
+    if (!hit) { if (c === "n" && i + 1 < s.length && !/[aiueoy]/.test(s[i + 1])) { out += "ん"; i++; } else { out += c; i++; } }
+  }
+  return out;
+}
+function norm(s) {
+  s = String(s || "").normalize("NFKC").toLowerCase().replace(/[\s、。，．,.!！?？・「」『』]/g, "");
+  s = s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  return romaji(s);
+}
+
+/* ---------- 状態 ---------- */
+const S = { state: "title", t: 0, wish: "しあわせ", target: "", events: [], idx: 0, star: null, count: 0, results: [], parts: [], words: [], msg: null, plane: null, shake: 0 };
+
+/* ---------- canvas と夜空 ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let dpr = 1, vw = 0, vh = 0, sky = null, stars = [];
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+  buildSky();
+}
+window.addEventListener("resize", resize);
+function buildSky() {
+  // 背景の空（グラデーション＋天の川）は一度だけ描いておく
+  sky = document.createElement("canvas"); sky.width = cv.width; sky.height = cv.height;
+  const g = sky.getContext("2d"), w = sky.width, h = sky.height, r = KIT.rng(77);
+  const gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, "#050a22"); gr.addColorStop(0.55, "#101a48"); gr.addColorStop(0.78, "#2a2a63"); gr.addColorStop(0.9, "#5a3b5e"); gr.addColorStop(1, "#7a4a48");
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  // 天の川：ななめの帯にぼんやりした雲と細かい星
+  g.save(); g.translate(w * 0.5, h * 0.4); g.rotate(-0.95);
+  for (let i = 0; i < 160; i++) {
+    const x = (r() - 0.5) * Math.max(w, h) * 1.6, y = (r() - 0.5) * (r() * 0.22) * h, rad = (20 + r() * 90) * dpr;
+    const cg = g.createRadialGradient(x, y, 0, x, y, rad);
+    const tint = r() < 0.3 ? "200,170,255" : r() < 0.5 ? "255,220,200" : "180,200,255";
+    cg.addColorStop(0, `rgba(${tint},${0.05 + r() * 0.05})`); cg.addColorStop(1, `rgba(${tint},0)`);
+    g.fillStyle = cg; g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill();
+  }
+  for (let i = 0; i < 2600; i++) {
+    const x = (r() - 0.5) * Math.max(w, h) * 1.6, y = (r() + r() + r() - 1.5) * 0.09 * h;
+    g.fillStyle = `rgba(255,255,255,${0.15 + r() * 0.5})`; g.fillRect(x, y, dpr * (r() < 0.9 ? 0.8 : 1.4), dpr * (r() < 0.9 ? 0.8 : 1.4));
+  }
+  // 暗い筋
+  for (let i = 0; i < 30; i++) {
+    const x = (r() - 0.5) * Math.max(w, h) * 1.4, y = (r() - 0.5) * 0.05 * h, rad = (10 + r() * 40) * dpr;
+    const cg = g.createRadialGradient(x, y, 0, x, y, rad); cg.addColorStop(0, "rgba(5,8,25,.35)"); cg.addColorStop(1, "rgba(5,8,25,0)");
+    g.fillStyle = cg; g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill();
+  }
+  g.restore();
+  // 町のあかりのにじみ
+  const hg = g.createRadialGradient(w * 0.35, h * 0.82, 0, w * 0.35, h * 0.82, w * 0.8);
+  hg.addColorStop(0, "rgba(255,150,80,.28)"); hg.addColorStop(1, "rgba(255,150,80,0)");
+  g.fillStyle = hg; g.fillRect(0, 0, w, h);
+  stars = Array.from({ length: 260 }, () => ({ x: r() * vw, y: r() * vh * 0.82, s: r() < 0.08 ? 1.8 + r() : 0.6 + r() * 0.9, p: r() * 6.28, sp: 1 + r() * 3, c: r() < 0.15 ? "255,220,180" : r() < 0.3 ? "190,210,255" : "255,255,255" }));
+}
+
+function render() {
+  const g = cx;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  if (sky) g.drawImage(sky, 0, 0);
+  g.setTransform(dpr, 0, 0, dpr, (Math.random() - 0.5) * S.shake * dpr, (Math.random() - 0.5) * S.shake * dpr);
+  for (const s of stars) {
+    const a = 0.45 + 0.55 * Math.sin(S.t * s.sp + s.p) ** 2;
+    g.fillStyle = `rgba(${s.c},${a})`;
+    g.beginPath(); g.arc(s.x, s.y, s.s, 0, 6.283); g.fill();
+    if (s.s > 1.8) { g.strokeStyle = `rgba(${s.c},${a * 0.35})`; g.lineWidth = 0.7; g.beginPath(); g.moveTo(s.x - 6, s.y); g.lineTo(s.x + 6, s.y); g.moveTo(s.x, s.y - 6); g.lineTo(s.x, s.y + 6); g.stroke(); }
+  }
+  // 空にのぼった願いごと（星座のように）
+  for (const w of S.words) {
+    g.globalAlpha = clamp(w.life, 0, 1) * 0.9;
+    g.font = `700 ${w.size}px "Kaisei Decol",serif`; g.textAlign = "center"; g.textBaseline = "middle";
+    g.shadowColor = "rgba(255,241,184,.9)"; g.shadowBlur = 14; g.fillStyle = "#fff6d0"; g.fillText(w.text, w.x, w.y); g.shadowBlur = 0;
+  }
+  g.globalAlpha = 1;
+  drawStar(g); drawPlane(g);
+  for (const q of S.parts) { g.globalAlpha = clamp(q.life, 0, 1); g.fillStyle = q.c; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); }
+  g.globalAlpha = 1;
+  // 地上（Blender）：画面の下に合わせて横いっぱい
+  if (IMG.land) {
+    drawLand(g, vw, vh, 0.36);
+  }
+  if (S.state === "play") drawHud(g);
+}
+function drawStar(g) {
+  const s = S.star; if (!s) return;
+  const k = clamp((S.t - s.t0) / s.dur, 0, 1);
+  const hx = lerp(s.x0, s.x1, k), hy = lerp(s.y0, s.y1, k);
+  const fade = s.done ? clamp(1 - (S.t - s.doneAt) / 0.5, 0, 1) : Math.min(1, k * 8) * (k > 0.85 ? (1 - k) / 0.15 : 1);
+  const len = 220 + 60 * Math.sin(k * 3);
+  const ang = Math.atan2(s.y1 - s.y0, s.x1 - s.x0);
+  const tx = hx - Math.cos(ang) * len, ty = hy - Math.sin(ang) * len;
+  const gr = g.createLinearGradient(tx, ty, hx, hy);
+  gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.7, `rgba(200,220,255,${0.35 * fade})`); gr.addColorStop(1, `rgba(255,250,220,${0.95 * fade})`);
+  g.strokeStyle = gr; g.lineWidth = 3; g.lineCap = "round";
+  g.beginPath(); g.moveTo(tx, ty); g.lineTo(hx, hy); g.stroke();
+  g.lineWidth = 1; g.beginPath(); g.moveTo(tx + 10, ty + 2); g.lineTo(hx, hy); g.stroke();
+  const rg = g.createRadialGradient(hx, hy, 0, hx, hy, 26);
+  rg.addColorStop(0, `rgba(255,255,240,${fade})`); rg.addColorStop(0.25, `rgba(255,240,190,${0.6 * fade})`); rg.addColorStop(1, "rgba(255,240,190,0)");
+  g.fillStyle = rg; g.beginPath(); g.arc(hx, hy, 26, 0, 6.283); g.fill();
+  if (!s.done && Math.random() < 0.6) S.parts.push({ x: hx, y: hy, vx: (Math.random() - 0.5) * 20, vy: 20 + Math.random() * 30, r: 0.8 + Math.random(), life: 0.8, dec: 1.4, c: "rgba(255,240,200,.9)" });
+  s.hx = hx; s.hy = hy;
+}
+function drawPlane(g) {
+  const p = S.plane; if (!p) return;
+  const k = (S.t - p.t0) / p.dur; if (k > 1) return;
+  const x = lerp(p.x0, p.x1, k), y = lerp(p.y0, p.y1, k);
+  const blink = Math.sin(S.t * 9) > 0.6;
+  g.fillStyle = "rgba(255,255,255,.85)"; g.beginPath(); g.arc(x, y, 1.6, 0, 6.283); g.fill();
+  if (blink) { g.fillStyle = "rgba(255,70,60,.95)"; g.beginPath(); g.arc(x - 6, y + 1, 2.2, 0, 6.283); g.fill(); }
+  else { g.fillStyle = "rgba(90,255,120,.8)"; g.beginPath(); g.arc(x + 6, y + 1, 1.8, 0, 6.283); g.fill(); }
+}
+function drawHud(g) {
+  const sf = KIT.safe(), top = 12 + sf.top;
+  g.fillStyle = "rgba(11,18,48,.55)"; rr(g, 12, top, Math.min(vw - 80, 360), 50, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left"; g.font = '700 19px "Kaisei Decol",serif';
+  g.fillText(`流れ星 ${Math.min(S.idx + 1, NSTAR)} / ${NSTAR}`, 28, top + 26);
+  for (let i = 0; i < NSTAR; i++) {
+    const r = S.results[i];
+    g.fillStyle = r == null ? "rgba(255,255,255,.22)" : r >= 3 ? "#fff1b8" : "rgba(255,255,255,.55)";
+    g.font = '16px sans-serif'; g.fillText(r != null && r >= 3 ? "★" : "☆", Math.min(vw - 80, 360) - 110 + i * 20, top + 26);
+  }
+  // 流れ星の残り時間
+  const s = S.star;
+  if (s && !s.done) {
+    const k = clamp(1 - (S.t - s.t0) / s.dur, 0, 1), y = $("slots").getBoundingClientRect().bottom + 10;
+    g.fillStyle = "rgba(255,255,255,.18)"; rr(g, vw / 2 - 100, y, 200, 6, 3); g.fill();
+    g.fillStyle = k < 0.3 ? "#ff9a7a" : "#fff1b8"; rr(g, vw / 2 - 100, y, 200 * k, 6, 3); g.fill();
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 19px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = vh * 0.5;
+    g.fillStyle = "rgba(11,18,48,.75)"; rr(g, vw / 2 - tw / 2, y, tw, 46, 23); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 24);
+    g.globalAlpha = 1;
+  }
+}
+// 地面は高さを画面の一定割合までにおさえ、横が足りないぶんは左右反転してつなぐ
+function drawLand(g, W, H, maxH) {
+  const iw = IMG.land.width, ih = IMG.land.height, sc = Math.min(W / iw, (H * maxH) / ih);
+  const w = iw * sc, h = ih * sc, x0 = (W - w) / 2, y = H - h;
+  g.drawImage(IMG.land, x0, y, w, h);
+  for (let i = 1; x0 - (i - 1) * w > 0 || x0 + i * w < W; i++) {
+    g.save(); g.translate(x0 - (i - 1) * w, 0); g.scale(i % 2 ? -1 : 1, 1); g.drawImage(IMG.land, i % 2 ? 0 : -w, y, w, h); g.restore();
+    g.save(); g.translate(x0 + (i + 1) * w, 0); g.scale(i % 2 ? -1 : 1, 1); g.drawImage(IMG.land, i % 2 ? 0 : -w, y, w, h); g.restore();
+  }
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt; S.shake = Math.max(0, S.shake - dt * 30);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt * q.dec; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  for (const w of S.words) { w.y -= dt * 18; w.life -= dt * 0.12; }
+  S.words = S.words.filter(w => w.life > 0);
+  if (S.state !== "play") return;
+  const ev = S.events[S.evi];
+  if (S.plane && S.t - S.plane.t0 > S.plane.dur) S.plane = null;
+  if (!S.star && ev && S.t >= ev.at) {
+    S.evi++;
+    if (ev.kind === "plane") spawnPlane(); else spawnStar();
+  }
+  const s = S.star;
+  if (s && !s.done && S.t - s.t0 >= s.dur) { endStar(false); }
+  if (s && s.done && S.t - s.doneAt > 1.4) {
+    S.star = null;
+    if (S.idx >= NSTAR) finish();
+    else { S.events[S.evi] && (S.events[S.evi].at = S.t + S.events[S.evi].gap); }
+  }
+}
+function spawnStar() {
+  const len = [...S.target].length;
+  const dur = Math.max(1.6, len * 3 * PER_CHAR[S.idx]);
+  const fromLeft = Math.random() < 0.5;
+  const x0 = fromLeft ? vw * (0.05 + Math.random() * 0.3) : vw * (0.65 + Math.random() * 0.3);
+  const y0 = vh * (0.22 + Math.random() * 0.12);
+  const dx = (fromLeft ? 1 : -1) * vw * (0.35 + Math.random() * 0.25);
+  S.star = { t0: S.t, dur, x0, y0, x1: x0 + dx, y1: y0 + vh * (0.12 + Math.random() * 0.12), done: false };
+  S.count = 0; setSlots(0);
+  $("tin").value = ""; S.typedBase = "";
+  // キラーン
+  [0, 4, 7, 11, 14, 19].forEach((d, i) => KIT.inst.bell(79 + d, i * 0.04, 0.3, 0.06));
+  KIT.noise({ dur: 0.6, vol: 0.05, f: 6000, to: 9000, q: 2 });
+  focusInput();
+}
+function spawnPlane() {
+  const y = vh * (0.2 + Math.random() * 0.15);
+  S.plane = { t0: S.t, dur: 7, x0: -20, y0: y, x1: vw + 20, y1: y - 40 };
+  S.planeTyped = false;
+  // 飛行機が飛んでいるあいだに、本物の星が来る
+  const n = S.events[S.evi]; if (n) n.at = S.t + 3.2 + Math.random() * 1.5;
+}
+function endStar(ok) {
+  const s = S.star; if (!s || s.done) return;
+  s.done = true; s.doneAt = S.t;
+  S.results[S.idx] = S.count; S.idx++;
+  if (ok) {
+    say("願いがとどいた！", 1.4);
+    [0, 4, 7, 12, 16, 19].forEach((d, i) => KIT.inst.bell(72 + d, 0.02 + i * 0.07, 0.6, 0.12));
+    for (let i = 0; i < 50; i++) { const a = Math.random() * 6.28, v = 40 + Math.random() * 160; S.parts.push({ x: s.hx, y: s.hy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 1 + Math.random() * 1.8, life: 1.4, dec: 1, c: ["#fff1b8", "#ffffff", "#c9d8ff"][i % 3] }); }
+    S.words.push({ text: S.wish, x: clamp(s.hx, 80, vw - 80), y: clamp(s.hy, 120, vh * 0.5), size: 30, life: 3 });
+    KIT.vibrate([20, 40, 20]);
+  } else {
+    say(`まにあわなかった…（${S.count}/3）`, 1.4);
+    KIT.inst.bell(64, 0, 0.6, 0.06); KIT.inst.bell(59, 0.15, 0.8, 0.06);
+  }
+}
+function setSlots(n) { [...$("slots").children].forEach((s, i) => s.classList.toggle("on", i < n)); }
+function focusInput() { try { $("tin").focus({ preventScroll: true }); } catch (e) { $("tin").focus(); } }
+
+/* 入力 */
+let composing = false;
+const tin = $("tin");
+tin.addEventListener("compositionstart", () => composing = true);
+tin.addEventListener("compositionend", () => { composing = false; check(); });
+tin.addEventListener("input", e => { if (!e.isComposing && !composing) check(); else checkPreview(); });
+tin.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); check(true); } });
+function check(enter) {
+  if (S.state !== "play") return;
+  const v = norm(tin.value);
+  if (S.plane && !S.star && v.length > 0 && !S.planeTyped) { S.planeTyped = true; say("それは飛行機です", 1.6); KIT.tone({ f: 330, to: 220, dur: 0.25, vol: 0.08, type: "triangle" }); tin.value = ""; return; }
+  const s = S.star; if (!s || s.done) { if (v) tin.value = ""; return; }
+  // 1回ぶん打てたら数えて、入力欄を空にする
+  let n = 0, i = 0;
+  while ((i = v.indexOf(S.target, i)) !== -1) { n++; i += S.target.length; }
+  if (n > 0) {
+    tin.value = "";
+    for (let k = 0; k < n && S.count < 3; k++) {
+      S.count++; setSlots(S.count);
+      KIT.inst.bell(76 + [0, 4, 7][S.count - 1], 0, 0.3, 0.12);
+    }
+    tin.classList.add("hit"); setTimeout(() => tin.classList.remove("hit"), 180);
+    if (S.count >= 3) endStar(true);
+  } else if (enter && v.length) { tin.value = ""; KIT.tone({ f: 200, dur: 0.08, vol: 0.06, type: "square", lp: 800 }); }
+  else if (v.length && Math.random() < 0.6) KIT.tone({ f: 1400 + Math.random() * 400, dur: 0.03, vol: 0.03, type: "sine", wet: 0 });
+}
+function checkPreview() { if (Math.random() < 0.5) KIT.tone({ f: 1200 + Math.random() * 400, dur: 0.03, vol: 0.025, type: "sine", wet: 0 }); }
+cv.addEventListener("pointerdown", () => { if (S.state === "play") focusInput(); });
+
+function startGame() {
+  KIT.ensure();
+  const w = ($("wish").value || "").replace(/\s/g, "").slice(0, 10) || "しあわせ";
+  S.wish = w; S.target = norm(w);
+  if (!S.target) { S.wish = "しあわせ"; S.target = norm(S.wish); }
+  KIT.store.set("nb-wish", S.wish);
+  $("tWish").textContent = S.wish;
+  $("title").hidden = true; $("result").hidden = true; $("typing").hidden = false;
+  S.state = "play"; S.idx = 0; S.results = []; S.star = null; S.plane = null; S.evi = 0; S.words = [];
+  // 5つの流れ星と、1回だけ飛行機
+  const planeAt = 1 + Math.floor(Math.random() * 3);
+  S.events = [];
+  for (let i = 0; i < NSTAR; i++) { if (i === planeAt) S.events.push({ kind: "plane", gap: 1.5 }); S.events.push({ kind: "star", gap: 1.6 + Math.random() * 2.2 }); }
+  S.events[0].at = S.t + 2.2;
+  for (let i = 1; i < S.events.length; i++) S.events[i].at = 1e9;
+  setSlots(0);
+  focusInput();
+  say("流れ星を待とう…", 2);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+
+const RANKS = [[5, "100%（ほぼ確定）"], [4, "80%"], [3, "60%"], [2, "40%"], [1, "20%"], [0, "0%（自力でがんばろう）"]];
+function finish() {
+  S.state = "result";
+  $("typing").hidden = true; tin.blur();
+  const ok = S.results.filter(n => n >= 3).length;
+  S.ok = ok; S.rank = RANKS.find(r => ok >= r[0])[1];
+  $("rWish").textContent = S.wish;
+  $("rBig").innerHTML = `${ok}<small> / ${NSTAR}</small>`;
+  $("rStars").innerHTML = S.results.map(n => `<span class="${n >= 3 ? "on" : ""}">★</span>`).join("");
+  $("rRank").textContent = S.rank;
+  const words = S.results.reduce((a, n) => a + n, 0);
+  const best = KIT.store.get("nb-best", 0);
+  if (ok > best) KIT.store.set("nb-best", ok);
+  $("rNote").textContent = `となえた回数 ${words}回 ／ 自己ベスト ${Math.max(best, ok)}つ`;
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 500);
+}
+function shareText() { return `流れ星に3回、「${S.wish}」と願った結果\n${NSTAR}つ中${S.ok}つにとどきました${"★".repeat(S.ok)}${"☆".repeat(NSTAR - S.ok)}\n叶う確率 ${S.rank}\n#流れ星に3回`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  if (sky) g.drawImage(sky, 0, 0, sky.width, sky.height * 0.6, 0, 0, 1200, 630);
+  const r = KIT.rng(5);
+  for (let i = 0; i < 300; i++) { g.fillStyle = `rgba(255,255,255,${0.3 + r() * 0.7})`; g.beginPath(); g.arc(r() * 1200, r() * 520, r() < 0.1 ? 2 : 1, 0, 6.283); g.fill(); }
+  if (IMG.land) drawLand(g, 1200, 630, 0.42);
+  // 流れ星
+  const gr = g.createLinearGradient(160, 90, 520, 230); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(1, "rgba(255,250,220,.95)");
+  g.strokeStyle = gr; g.lineWidth = 4; g.lineCap = "round"; g.beginPath(); g.moveTo(160, 90); g.lineTo(520, 230); g.stroke();
+  const rg = g.createRadialGradient(520, 230, 0, 520, 230, 30); rg.addColorStop(0, "#fffbe8"); rg.addColorStop(1, "rgba(255,240,190,0)"); g.fillStyle = rg; g.beginPath(); g.arc(520, 230, 30, 0, 6.283); g.fill();
+  g.textAlign = "center"; g.fillStyle = "#fff6d0"; g.shadowColor = "rgba(255,241,184,.9)"; g.shadowBlur = 20;
+  g.font = '700 64px "Kaisei Decol",serif'; g.fillText(`「${S.wish}」`, 600, 330); g.shadowBlur = 0;
+  g.fillStyle = "#fff"; g.font = '700 34px "Kaisei Decol",serif'; g.fillText(`${NSTAR}つの流れ星のうち ${S.ok}つにとどいた`, 600, 400);
+  g.fillStyle = "#fff1b8"; g.font = '40px sans-serif'; g.fillText("★".repeat(S.ok) + "☆".repeat(NSTAR - S.ok), 600, 456);
+  g.fillStyle = "rgba(255,255,255,.85)"; g.font = '700 26px "Zen Maru Gothic",sans-serif'; g.fillText(`叶う確率 ${S.rank}　#流れ星に3回 ・ picoruno.`, 600, 600);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 60, key: 61, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 61, leadVol: 0.06, density: 0.5, chordVol: 0.07 }
+    : { bpm: 66, key: 61, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 18, leadVol: 0.05, density: 0.6, chordVol: 0.08, bassOn: false });
+}
+
+/* ---------- ボタン ---------- */
+$("chips").innerHTML = PRESETS.map(p => `<button type="button">${p}</button>`).join("");
+$("chips").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { $("wish").value = b.textContent; KIT.tone({ f: 1200, dur: 0.05, vol: 0.05, type: "sine" }); } });
+$("start").addEventListener("click", startGame);
+$("wish").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) startGame(); });
+$("again").addEventListener("click", () => { $("result").hidden = true; $("title").hidden = false; S.state = "title"; });
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "nagareboshi.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  $("wish").value = KIT.store.get("nb-wish", "");
+  const best = KIT.store.get("nb-best", 0);
+  $("best").textContent = best ? `自己ベスト ${best} / ${NSTAR}つ` : "5つの流れ星に、願いをとどけよう";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__N = { norm, romaji };
+</script>
+</body>
+</html>

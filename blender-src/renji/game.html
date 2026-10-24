@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#efe9e0">
+<title>レンジ何秒？</title>
+<meta name="description" content="冷やごはん、牛乳、肉まん、コンビニ弁当…。電子レンジのボタンで秒数を決めて、ちょうどいい温かさを当てよう。温めすぎると、ふきこぼれたり、はじけたり。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="レンジ何秒？">
+<meta property="og:description" content="電子レンジ、ちょうどいい秒数を当てられる？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./renji.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e9e2d6'/%3E%3Crect x='4' y='8' width='24' height='16' rx='2.5' fill='%23fff' stroke='%23857a6c' stroke-width='1.2'/%3E%3Crect x='6.5' y='10.5' width='13' height='11' rx='1' fill='%23ffcf7a'/%3E%3Crect x='21.5' y='11' width='4' height='2.5' fill='%2334433d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：台所の電子レンジ（Blender）。下のカウンターに大きなボタン。扉・庫内灯・食べものは重ねて描く。 */
+:root{
+  --ground:#efe9e0; --card:#fffcf6; --ink:#3a332c; --sub:#857a6c; --line:#e7dfd2;
+  --main:#3f8a66; --main-d:#2c6449; --warn:#c8553d; --ok:#3f8a66; --accent:#e0a33a;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.9);background:rgba(60,50,40,.4);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(60,45,30,.3);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #7fa4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f4efe6;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--accent);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.list{display:flex;flex-direction:column;gap:4px;font-size:.84rem;background:#f4efe6;border-radius:12px;padding:8px 12px}
+.list div{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.list span{color:var(--sub)}
+.list b{font-family:var(--pop);font-weight:800}
+.list b.good{color:var(--ok)}.list b.bad{color:var(--warn)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(50,40,30,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (min-aspect-ratio:5/4) and (min-width:820px){#result,#title{left:auto;right:max(24px,calc(50% - 600px));transform:none;width:380px;bottom:auto;top:50%;translate:0 -50%}}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>レンジ何秒？</h1>
+  <p>冷やごはん、牛乳、肉まん…。電子レンジで「ちょうどいい」秒数を当てよう。</p>
+  <div class="how">
+    <b>ボタン</b><span>1分・10秒で時間をきめて、スタート</span>
+    <b>採点</b><span>ちょうどいい温かさに近いほど高得点。5品で500点</span>
+    <b>注意</b><span>温めすぎると、ふきこぼれたり、はじけたり…</span>
+  </div>
+  <button class="btn" id="start" type="button">台所に立つ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">5品の合計</div>
+  <div class="big" id="rBig">0<small>点</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="list" id="rList"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一回あたためる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "レンジ何秒？";
+const GAME_URL = "https://runococco.github.io/picoruno./renji.html";
+const $ = id => document.getElementById(id);
+const W = 540, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg: "__IMG_bg__", lit: "__IMG_lit__", door: "__IMG_door__", food: "__IMG_food__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const FG = GEO.food, FS = GEO.foodScale;
+
+/* 食べもの。ideal：ちょうどいい秒数（その W で）、t0：はじめの温度、tg：ちょうどいい温度、over：これをこえると温めすぎ */
+const FOOD = {
+  rice: { name: "冷やごはん", sub: "茶碗1杯・冷蔵庫から", w: 600, ideal: 80, tol: 20, t0: 6, tg: 70, over: 190, row: 0,
+    hot: "ほかほか！ 炊きたてみたい", warm: "まんなかが、まだ冷たい", cold: "ひえひえのまま", burn: "かぴかぴ…ふちが固い" },
+  milk: { name: "牛乳", sub: "マグカップ1杯（200ml）", w: 600, ideal: 90, tol: 20, t0: 6, tg: 62, over: 130, row: 1,
+    hot: "ちょうど飲みごろ", warm: "ぬるい…", cold: "冷たい牛乳のまま", burn: "ふきこぼれた！ 膜もはった" },
+  nikuman: { name: "肉まん", sub: "1個・冷蔵（ラップあり）", w: 600, ideal: 40, tol: 10, t0: 6, tg: 72, over: 80, row: 2,
+    hot: "ふかふか、あつあつ", warm: "あんがまだ冷たい", cold: "皮がかたいまま", burn: "カチカチに…" },
+  bento: { name: "コンビニ弁当", sub: "のり弁くらい・ふたを外して", w: 500, ideal: 130, tol: 25, t0: 8, tg: 68, over: 270, row: 3,
+    hot: "お店で温めたみたい", warm: "ごはんの底が冷たい", cold: "冷えたまま", burn: "ソースがはねて、からあげが固い" },
+  pizza: { name: "冷凍ピザ", sub: "18cm・凍ったまま", w: 600, ideal: 150, tol: 30, t0: -15, tg: 75, over: 300, row: 4,
+    hot: "チーズがとろーり", warm: "まんなかが凍ってる", cold: "カチコチ", burn: "ふちがこげて、かたい" },
+  egg: { name: "ゆでたまご", sub: "殻つき・冷蔵庫から", w: 600, ideal: 0, tol: 0, t0: 6, tg: 6, over: 12, row: 5, trap: true,
+    hot: "", warm: "", cold: "", burn: "ばーん！ はじけた" }
+};
+const RANKS = [[450, "レンジ名人"], [380, "あたため上手"], [280, "ふつうの家庭"], [150, "ぬるい派"], [-1, "レンジがこわい"]];
+
+const S = { state: "title", t: 0, round: 0, order: [], f: null, set: 0, run: 0, doorK: 0, doorTo: 0, lamp: 0, rot: 0, slide: 0, steam: [], parts: [],
+  msg: null, shake: 0, flash: 0, over: false, popped: false, res: [], card: null, total: 0, press: null, boilT: 0 };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 520, lh - H, 0) }; }
+function visX() { const v = view(); return [Math.max(0, -v.ox), Math.min(W, W + v.ox)]; }
+function visY() { const v = view(); return [Math.max(0, -v.oy), Math.min(H, v.lh - v.oy)]; }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const jtime = s => s >= 60 ? `${Math.floor(s / 60)}分${s % 60 ? (s % 60) + "秒" : ""}` : `${s}秒`;
+
+/* ---------- ボタン（カウンターの上） ---------- */
+function keys() {
+  const [xa, xb] = visX(), [ya, yb] = visY();
+  const x0 = Math.max(xa + 14, 34), x1 = Math.min(xb - 14, W - 34), w = x1 - x0;
+  const top = Math.min(GEO.mw[0][1] + 40, yb - 280), gap = 12, bw = (w - gap * 2) / 3, bh = 70;
+  return [
+    { id: "m10", label: "10分", sub: "", x: x0, y: top, w: bw, h: bh, add: 600 },
+    { id: "m1", label: "1分", sub: "", x: x0 + bw + gap, y: top, w: bw, h: bh, add: 60 },
+    { id: "s10", label: "10秒", sub: "", x: x0 + (bw + gap) * 2, y: top, w: bw, h: bh, add: 10 },
+    { id: "clr", label: "とりけし", x: x0, y: top + bh + gap, w: bw, h: bh },
+    { id: "go", label: "スタート", x: x0 + bw + gap, y: top + bh + gap, w: bw * 2 + gap, h: bh, main: true },
+    { id: "skip", label: "温めないで出す", x: x0 + w / 2 - 110, y: top + (bh + gap) * 2 + 2, w: 220, h: 44, small: true }
+  ];
+}
+function drawKeys(g) {
+  const on = S.state === "set";
+  for (const k of keys()) {
+    const pr = S.press && S.press.id === k.id && S.t - S.press.at < 0.12;
+    const dy = pr ? 4 : 0;
+    g.save(); g.globalAlpha = on ? 1 : 0.55;
+    if (k.small) {
+      g.fillStyle = "rgba(255,252,246,.82)"; rr(g, k.x, k.y + dy, k.w, k.h, 22); g.fill();
+      g.strokeStyle = "rgba(120,100,80,.35)"; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = "#6c6152"; g.font = '700 17px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(k.label, k.x + k.w / 2, k.y + k.h / 2 + dy + 1);
+      g.restore(); continue;
+    }
+    g.fillStyle = k.main ? "#2c6449" : "#b9b1a5"; rr(g, k.x, k.y + 6, k.w, k.h, 18); g.fill();
+    const gr = g.createLinearGradient(0, k.y + dy, 0, k.y + k.h + dy);
+    if (k.main) { gr.addColorStop(0, "#5cae86"); gr.addColorStop(1, "#3f8a66"); } else { gr.addColorStop(0, "#fffdf9"); gr.addColorStop(1, "#eee8de"); }
+    g.fillStyle = gr; rr(g, k.x, k.y + dy, k.w, k.h, 18); g.fill();
+    g.fillStyle = k.main ? "#fff" : "#3a332c"; g.font = `800 ${k.main ? 28 : 24}px "M PLUS Rounded 1c",sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(k.label, k.x + k.w / 2, k.y + k.h / 2 + dy + 1);
+    g.restore();
+  }
+}
+
+/* ---------- 描画 ---------- */
+function foodFrame() { const n = FG.n; return S.over ? n : ((Math.round(S.rot / (TAU / n)) % n) + n) % n; }
+function drawFood(g, x, y, k, alpha = 1) {
+  // x,y：食べもの枠の左上（画面座標）、k：倍率
+  if (!IMG.food || !S.f) return;
+  const fr = foodFrame(), row = S.f.row;
+  g.save(); g.globalAlpha = alpha;
+  g.drawImage(IMG.food, fr * FG.cw, row * FG.ch, FG.cw, FG.ch, x, y, FG.cw / FS * k, FG.ch / FS * k);
+  g.restore();
+}
+function foodPos() { return { x: FG.rect[0] + FG.off[0] / FS, y: FG.rect[1] + FG.off[1] / FS, w: FG.cw / FS, h: FG.ch / FS }; }
+function drawLcd(g) {
+  const a = GEO.lcd[0], b = GEO.lcd[1];
+  const w = b[0] - a[0], h = b[1] - a[1];
+  g.save();
+  g.fillStyle = "rgba(10,22,18,.9)"; rr(g, a[0] + 1, a[1] + 1, w - 2, h - 2, 3); g.fill();
+  let txt = "";
+  if (S.state === "set") txt = S.set ? mmss(S.set) : "0:00";
+  else if (S.state === "heat") txt = mmss(Math.max(0, S.set - S.run));
+  else if (S.state === "done" || S.state === "show") txt = "End";
+  else txt = clockText();
+  g.fillStyle = "#a6f2c4"; g.shadowColor = "rgba(120,255,180,.8)"; g.shadowBlur = 6;
+  g.font = `700 ${Math.round(h * 0.82)}px "Courier New",monospace`; g.textAlign = "right"; g.textBaseline = "middle";
+  g.fillText(txt, b[0] - 7, a[1] + h / 2 + 1);
+  g.restore();
+}
+function clockText() { const d = new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`; }
+function drawDoor(g) {
+  if (!IMG.door || S.doorK <= 0.01) return;
+  const d = GEO.door, hx = GEO.hinge[0];
+  g.save();
+  g.translate(hx, 0); g.scale(S.doorK, 1); g.translate(-hx, 0);
+  g.drawImage(IMG.door, d[0], d[1], d[2] - d[0], d[3] - d[1]);
+  if (S.doorK < 0.98) { g.fillStyle = `rgba(40,30,20,${(1 - S.doorK) * 0.35})`; g.fillRect(d[0], d[1], d[2] - d[0], d[3] - d[1]); }
+  g.restore();
+}
+function drawGlow(g) {
+  if (S.lamp <= 0) return;
+  const q = GEO.cavity, x0 = q[3][0], y0 = q[3][1], x1 = q[1][0], y1 = q[1][1];
+  g.save(); g.globalAlpha = S.lamp;
+  if (IMG.lit) { const r = GEO.lit; g.drawImage(IMG.lit, r[0], r[1], r[2] - r[0], r[3] - r[1]); }
+  g.globalCompositeOperation = "soft-light";
+  const gr = g.createRadialGradient(x0 + 40, y0 + 10, 10, x0 + 60, y0 + 40, x1 - x0);
+  gr.addColorStop(0, "rgba(255,190,90,1)"); gr.addColorStop(1, "rgba(255,150,60,.5)");
+  g.fillStyle = gr; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+  g.restore();
+}
+function drawGlowOver(g) {
+  // 扉ごしの、あたたかい光
+  if (S.lamp <= 0 || S.doorK < 0.5) return;
+  const q = GEO.cavity, x0 = q[3][0], y0 = q[3][1], x1 = q[1][0], y1 = q[1][1];
+  g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = S.lamp * 0.32;
+  const gr = g.createRadialGradient((x0 + x1) / 2, (y0 + y1) / 2, 10, (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) * 0.6);
+  gr.addColorStop(0, "rgba(255,170,70,1)"); gr.addColorStop(1, "rgba(255,120,40,0)");
+  g.fillStyle = gr; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+  g.restore();
+}
+function drawOrder(g) {
+  if (!S.f) return;
+  const [xa, xb] = visX(), [ya] = visY();
+  const x = Math.max(xa + 12, 12), w = Math.min(xb - 12, W - 12) - x - 58, y = ya + 14, h = 120;
+  g.save();
+  g.fillStyle = "rgba(255,252,246,.94)"; rr(g, x, y, w, h, 18); g.fill();
+  g.strokeStyle = "rgba(120,100,80,.18)"; g.lineWidth = 1.5; g.stroke();
+  g.textAlign = "left"; g.textBaseline = "middle";
+  g.fillStyle = "#857a6c"; g.font = '700 16px "Zen Maru Gothic",sans-serif';
+  g.fillText(`${S.round + 1} / 5 品め`, x + 18, y + 24);
+  g.textAlign = "right"; g.fillStyle = "#3f8a66"; g.font = '800 17px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${S.total}点`, x + w - 18, y + 24);
+  g.textAlign = "left"; g.fillStyle = "#3a332c"; g.font = '800 34px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(S.f.name, x + 18, y + 64);
+  const nw = g.measureText(S.f.name).width;
+  g.fillStyle = "#c8553d"; g.font = '800 20px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${S.f.w}W`, x + 30 + nw, y + 67);
+  g.fillStyle = "#857a6c"; g.font = '700 17px "Zen Maru Gothic",sans-serif';
+  g.fillText(S.f.sub, x + 18, y + 100);
+  g.restore();
+}
+function drawCard(g) {
+  const c = S.card;
+  if (!c) return;
+  const k = keys(), top = k[0].y - 16, bot = k[5].y + k[5].h + 6;
+  const [xa, xb] = visX();
+  const x = Math.max(xa + 12, 12), w = Math.min(xb - 12, W - 12) - x, h = bot - top;
+  const a = clamp((S.t - c.at) / 0.25, 0, 1);
+  g.save(); g.globalAlpha = a;
+  g.translate(0, (1 - a) * 30);
+  g.fillStyle = "rgba(255,252,246,.97)"; rr(g, x, top, w, h, 22); g.fill();
+  g.strokeStyle = "rgba(120,100,80,.2)"; g.lineWidth = 1.5; g.stroke();
+  // 食べものを大きく
+  const fp = foodPos(), zoom = 1.75;
+  const fx = x + w * 0.3 - fp.w * zoom / 2, fy = top + h * 0.55 - fp.h * zoom / 2;
+  g.save(); rr(g, x + 6, top + 6, w * 0.6, h - 12, 18); g.clip();
+  // 皿のかげ
+  g.fillStyle = "rgba(60,45,30,.14)"; g.beginPath(); g.ellipse(x + w * 0.3, fy + fp.h * zoom * 0.78, fp.w * zoom * 0.3, 16, 0, 0, TAU); g.fill();
+  drawFood(g, fx, fy, zoom);
+  for (const p of S.steam) if (p.card) {
+    g.globalAlpha = a * clamp(p.life / p.max, 0, 1) * 0.5 * (1 - clamp(p.life / p.max - 0.7, 0, 1) * 3);
+    const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill();
+  }
+  g.restore();
+  // 右：温度・ことば・点数
+  const rx = x + w * 0.62, rw = w * 0.36;
+  g.globalAlpha = a; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillStyle = "#857a6c"; g.font = '700 15px "Zen Maru Gothic",sans-serif';
+  g.fillText(c.set ? `${jtime(c.set)} 温めた` : "温めなかった", rx + rw / 2, top + 30);
+  g.fillStyle = c.tempCol; g.font = '800 44px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${c.temp}°`, rx + rw / 2, top + 76);
+  g.fillStyle = "#3a332c"; g.font = '800 19px "M PLUS Rounded 1c",sans-serif';
+  wrap(g, c.word, rx + rw / 2, top + 120, rw, 24);
+  g.fillStyle = c.pts >= 80 ? "#3f8a66" : c.pts >= 40 ? "#b5822a" : "#c8553d"; g.font = '800 34px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`+${c.pts}点`, rx + rw / 2, top + h - 64);
+  g.fillStyle = "#857a6c"; g.font = '700 14px "Zen Maru Gothic",sans-serif';
+  g.fillText(c.hint, rx + rw / 2, top + h - 30);
+  if (S.t - c.at > 1.2) { g.fillStyle = "rgba(58,51,44,.55)"; g.font = '700 14px "Zen Maru Gothic",sans-serif'; g.fillText("タップで次へ ›", x + w * 0.3, top + h - 18); }
+  g.restore();
+}
+function wrap(g, text, x, y, w, lh) {
+  let line = "", yy = y; const out = [];
+  for (const ch of text) { if (g.measureText(line + ch).width > w && line) { out.push(line); line = ch; } else line += ch; }
+  out.push(line);
+  out.forEach((l, i) => g.fillText(l, x, yy + (i - (out.length - 1) / 2) * lh));
+}
+function drawSteam(g) {
+  for (const p of S.steam) if (!p.card) {
+    const k = clamp(p.life / p.max, 0, 1);
+    g.globalAlpha = k * 0.35 * Math.min(1, (1 - k) * 4);
+    const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill();
+  }
+  g.globalAlpha = 1;
+  for (const p of S.parts) { g.globalAlpha = clamp(p.life / p.max, 0, 1); g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, p.r, 0, TAU); g.fill(); }
+  g.globalAlpha = 1;
+}
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (S.shake > 0) cx.translate((Math.random() - 0.5) * S.shake * 14, (Math.random() - 0.5) * S.shake * 10);
+  if (IMG.bg) {
+    if (v.lw > W + 1 || v.lh > H + 1) { cx.save(); cx.filter = "blur(18px)"; cx.drawImage(IMG.bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore(); cx.fillStyle = "rgba(240,233,222,.25)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh); }
+    cx.drawImage(IMG.bg, 0, 0, W, H);
+  }
+  drawGlow(cx);
+  if (S.f) {
+    const fp = foodPos();
+    // ターンテーブルの上の、やわらかいかげ
+    cx.save(); cx.globalAlpha = 0.18 * S.slide; cx.fillStyle = "#2a2018";
+    cx.beginPath(); cx.ellipse(GEO.tt[0], GEO.tt[1] + 4, 62, 13, 0, 0, TAU); cx.fill(); cx.restore();
+    drawFood(cx, fp.x, fp.y + (1 - S.slide) * 26, 1, S.slide);
+  }
+  drawDoor(cx);
+  drawGlowOver(cx);
+  drawLcd(cx);
+  if (S.flash > 0) { cx.fillStyle = `rgba(255,240,200,${S.flash})`; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh); }
+  if (S.state !== "title" && S.state !== "result") { drawOrder(cx); drawKeys(cx); }
+  drawSteam(cx);
+  drawCard(cx);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawMsg();
+}
+function drawMsg() {
+  const g = cx;
+  if (!S.msg || S.t - S.msg.at > S.msg.dur) return;
+  const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+  const v = view(), y = (GEO.mw[1][1] - 54 + v.oy) * fit;
+  g.save(); g.globalAlpha = al; g.font = '800 19px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+  const tw = g.measureText(S.msg.text).width + 44;
+  g.fillStyle = S.msg.warn ? "rgba(200,85,61,.95)" : "rgba(58,51,44,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 44, 22); g.fill();
+  g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 23);
+  g.restore();
+}
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 入力 ---------- */
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+cv.addEventListener("pointerdown", e => {
+  const p = toWorld(e);
+  if (S.state === "show") { if (S.t - S.card.at > 0.6) nextRound(); return; }
+  if (S.state !== "set") return;
+  for (const k of keys()) if (p.x >= k.x && p.x <= k.x + k.w && p.y >= k.y - 4 && p.y <= k.y + k.h + 8) { press(k); return; }
+});
+window.addEventListener("keydown", e => {
+  if (S.state === "show" && (e.key === "Enter" || e.key === " ")) { nextRound(); return; }
+  if (S.state !== "set") return;
+  const map = { "1": "m1", "0": "s10", "Enter": "go", "Backspace": "clr" };
+  const id = map[e.key]; if (!id) return;
+  const k = keys().find(k => k.id === id); if (k) press(k);
+});
+function press(k) {
+  S.press = { id: k.id, at: S.t };
+  if (k.add) { if (S.set + k.add > 5940) { beep(true); return; } S.set += k.add; beep(); }
+  else if (k.id === "clr") { S.set = 0; beep(); beep(false, 0.09); }
+  else if (k.id === "go") { if (!S.set) { beep(true); say("時間を入れてね", 1.2); return; } beep(); startHeat(); }
+  else if (k.id === "skip") { sndClick(); finishRound(); }
+}
+
+/* ---------- 音 ---------- */
+function beep(bad = false, t = 0) { KIT.tone({ f: bad ? 520 : 2100, dur: bad ? 0.16 : 0.07, vol: 0.08, type: "square", lp: 3500, wet: 0.02, t }); }
+function sndClick() { KIT.noise({ dur: 0.04, vol: 0.12, f: 2600, q: 2, wet: 0.05 }); }
+function sndDoor(close) {
+  KIT.noise({ dur: 0.08, vol: 0.25, f: close ? 500 : 1400, q: 1.2, wet: 0.08 });
+  KIT.tone({ f: close ? 140 : 220, to: close ? 70 : 160, dur: 0.12, vol: 0.18, type: "sine", wet: 0.05 });
+  KIT.noise({ t: 0.03, dur: 0.03, vol: 0.12, f: 4200, q: 3, wet: 0.05 });
+}
+let hum = null;
+function humStart() {
+  const ctx = KIT.ensure(); if (!ctx || hum) return;
+  const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = 100;
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 380;
+  const n = ctx.createBufferSource(); n.buffer = KIT.noiseBuffer(); n.loop = true;
+  const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 700; bp.Q.value = 0.6;
+  const g = ctx.createGain(); g.gain.value = 0; const gn = ctx.createGain(); gn.gain.value = 0.35;
+  o.connect(lp); lp.connect(g); n.connect(bp); bp.connect(gn); gn.connect(g); g.connect(KIT.bus());
+  o.start(); n.start();
+  g.gain.setTargetAtTime(0.09, ctx.currentTime, 0.08);
+  hum = { o, n, g };
+}
+function humStop() { if (!hum) return; const ctx = KIT.ensure(), h = hum; hum = null; h.g.gain.setTargetAtTime(0, ctx.currentTime, 0.06); setTimeout(() => { try { h.o.stop(); h.n.stop(); } catch (e) {} }, 500); }
+function sndChin() { for (const [f, v] of [[2093, 0.12], [4186, 0.04], [2637, 0.05]]) KIT.tone({ f, dur: 1.6, vol: v, type: "sine", wet: 0.35, a: 0.002 }); }
+function sndPop() {
+  KIT.tone({ f: 160, to: 40, dur: 0.4, vol: 0.45, type: "sine", wet: 0.2 });
+  KIT.noise({ dur: 0.5, vol: 0.5, f: 1500, to: 300, q: 0.5, wet: 0.3 });
+  KIT.noise({ t: 0.05, dur: 0.25, vol: 0.2, f: 5000, q: 1, wet: 0.2 });
+}
+function sndBubble() { for (let i = 0; i < 6; i++) KIT.tone({ f: 300 + Math.random() * 500, to: 700 + Math.random() * 500, t: i * 0.07 + Math.random() * 0.05, dur: 0.06, vol: 0.05, type: "sine", wet: 0.1 }); }
+function sndResult(p) {
+  if (p >= 80) [0, 4, 7, 12].forEach((d, i) => KIT.inst.marimba(72 + d, i * 0.08, 0.3, 0.12));
+  else if (p >= 40) [0, 4, 7].forEach((d, i) => KIT.inst.marimba(67 + d, i * 0.1, 0.3, 0.1));
+  else [7, 3, 0].forEach((d, i) => KIT.inst.marimba(60 + d, i * 0.14, 0.4, 0.1));
+}
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function temp(f, s) {
+  if (f.trap) return Math.round(f.t0 + s * 1.5);
+  const k = s / f.ideal;
+  return Math.round(Math.min(98, f.t0 + (f.tg - f.t0) * (k < 1 ? k : 1 + (k - 1) * 1.2)));
+}
+function update(dt) {
+  S.t += dt;
+  S.doorK = lerp(S.doorK, S.doorTo, 1 - Math.exp(-dt * 16));
+  if (S.shake > 0) S.shake = Math.max(0, S.shake - dt * 2.5);
+  if (S.flash > 0) S.flash = Math.max(0, S.flash - dt * 2.5);
+  S.slide = clamp(S.slide + dt * 3, 0, S.f ? 1 : 0);
+  for (const p of S.steam) { p.x += p.vx * dt + Math.sin(S.t * 2 + p.ph) * 8 * dt; p.y += p.vy * dt; p.r += dt * 14; p.life -= dt; }
+  S.steam = S.steam.filter(p => p.life > 0);
+  for (const p of S.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.life -= dt; }
+  S.parts = S.parts.filter(p => p.life > 0);
+  if (S.state === "heat") {
+    S.lamp = Math.min(1, S.lamp + dt * 4);
+    // 表示は早送り：長くても 3 秒ほどで終わる
+    const rate = Math.max(S.set / 2.8, 12);
+    S.run = Math.min(S.set, S.run + dt * rate);
+    S.rot += dt * 1.6;
+    const f = S.f;
+    if (f.trap && !S.popped && S.run > 9) { S.popped = true; S.over = true; sndPop(); S.shake = 1.2; S.flash = 0.6; KIT.vibrate([40, 30, 60]); say("ばーん！！", 1.4, true); burst(); }
+    if (!f.trap && !S.over && S.run >= f.over) { S.over = true; if (S.f === FOOD.milk) { sndBubble(); say("ふきこぼれてる！", 1.2, true); } }
+    if (S.over && S.f === FOOD.milk && Math.random() < dt * 4) sndBubble();
+    if (S.run >= S.set) { S.state = "done"; S.doneAt = S.t; humStop(); sndChin(); KIT.vibrate(15); }
+  } else if (S.state === "done") {
+    S.lamp = Math.max(0, S.lamp - dt * 3);
+    if (S.t - S.doneAt > 0.9 && S.doorTo !== 0) { S.doorTo = 0; sndDoor(false); }
+    if (S.t - S.doneAt > 1.3) finishRound();
+  } else S.lamp = Math.max(0, S.lamp - dt * 3);
+  // 湯気
+  if (S.state === "show" && S.card) {
+    const tp = S.card.temp, n = clamp((tp - 35) / 40, 0, 1.3);
+    const fp = foodPos();
+    if (Math.random() < dt * 22 * n) {
+      const k = keys(), top = k[0].y - 16, [xa, xb] = visX(), x = Math.max(xa + 12, 12), w = Math.min(xb - 12, W - 12) - x;
+      const h = (k[5].y + k[5].h + 6) - top;
+      S.steam.push({ card: true, x: x + w * 0.3 + (Math.random() - 0.5) * 70, y: top + h * 0.5 - 10, vx: (Math.random() - 0.5) * 10, vy: -40 - Math.random() * 30, r: 10 + Math.random() * 10, life: 1.6, max: 1.6, ph: Math.random() * 6 });
+    }
+    if (Math.random() < dt * 10 * n) S.steam.push({ x: GEO.tt[0] + (Math.random() - 0.5) * 50, y: GEO.tt[1] - 30, vx: (Math.random() - 0.5) * 8, vy: -30 - Math.random() * 20, r: 8 + Math.random() * 8, life: 2, max: 2, ph: Math.random() * 6 });
+  }
+}
+function burst() {
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * TAU, sp = 200 + Math.random() * 400;
+    S.parts.push({ x: GEO.tt[0], y: GEO.tt[1] - 20, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 150, r: 2 + Math.random() * 4, life: 0.6 + Math.random() * 0.4, max: 1, c: Math.random() < 0.3 ? "#ffb32e" : "#fffbef" });
+  }
+}
+function startHeat() {
+  S.state = "heat"; S.run = 0; S.over = false; S.popped = false;
+  S.doorTo = 1; sndDoor(true);
+  setTimeout(humStart, 160);
+}
+function finishRound() {
+  const f = S.f;
+  const used = S.state === "set" ? 0 : S.set;
+  let pts, word, tp = temp(f, used), col;
+  if (f.trap) {
+    if (!used) { pts = 100; word = "正解！ 殻つき卵はチン禁止"; tp = f.t0; }
+    else { pts = 0; word = f.burn; }
+  } else {
+    const d = Math.abs(used - f.ideal);
+    if (d <= f.tol) pts = Math.round(100 - d / Math.max(1, f.tol) * 12);
+    else pts = Math.max(0, Math.round(88 - (d - f.tol) / (f.ideal * 0.6) * 88));
+    if (!used) pts = 0;
+    word = S.over ? f.burn : d <= f.tol ? f.hot : used < f.ideal ? (tp < 25 ? f.cold : f.warm) : "ちょっと熱すぎ。ふーふーして";
+  }
+  col = tp >= 80 ? "#c8553d" : tp >= 50 ? "#e08a2c" : tp >= 30 ? "#b5822a" : "#4b7fb3";
+  const hint = f.trap ? "目安：温めない（爆発します）" : `目安：${f.w}Wで${jtime(f.ideal)}くらい`;
+  S.card = { at: S.t, temp: tp, word, pts, set: used, tempCol: col, hint };
+  S.res.push({ name: f.name, set: used, pts, ideal: f.ideal, trap: !!f.trap });
+  S.total += pts;
+  S.state = "show"; S.lamp = 0; S.doorTo = 0;
+  sndResult(pts);
+}
+function nextRound() {
+  S.card = null; S.steam = [];
+  S.round++;
+  if (S.round >= S.order.length) { finish(); return; }
+  startRound();
+}
+function startRound() {
+  S.f = FOOD[S.order[S.round]]; S.set = 0; S.run = 0; S.over = false; S.popped = false; S.slide = 0; S.rot = Math.random() * TAU;
+  S.state = "set"; if (S.doorK > 0.5) sndDoor(false); S.doorTo = 0;
+  say(`「${S.f.name}」を温めよう`, 1.6);
+}
+function makeOrder() {
+  const base = ["rice", "milk", "nikuman", "bento", "pizza"].sort(() => Math.random() - 0.5);
+  if (Math.random() < 0.6) { base.pop(); base.splice(2 + Math.floor(Math.random() * 3), 0, "egg"); }
+  return base;
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.round = 0; S.res = []; S.total = 0; S.order = makeOrder(); S.card = null;
+  startRound();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+function finish() {
+  S.state = "result"; S.f = null;
+  const total = S.total, rank = RANKS.find(r => total >= r[0])[1];
+  S.final = { total, rank };
+  $("rBig").innerHTML = `${total}<small>点</small>`;
+  $("rRank").textContent = rank;
+  $("rList").innerHTML = S.res.map(r => `<div><span>${r.name}　${r.set ? jtime(r.set) : "温めない"}${r.trap ? "" : `（目安 ${jtime(r.ideal)}）`}</span><b class="${r.pts >= 80 ? "good" : r.pts < 40 ? "bad" : ""}">${r.pts}点</b></div>`).join("");
+  const best = KIT.store.get("renji-best", null);
+  if (best === null || total > best) KIT.store.set("renji-best", total);
+  $("rNote").textContent = best === null || total > best ? "自己ベスト更新！" : `自己ベスト ${best}点`;
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 700);
+}
+function shareText() { return `レンジ何秒？で${S.final.total}点（5品）\nわたしは「${S.final.rank}」\n#レンジ何秒`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  const sc = 600 / 470;
+  g.translate(300, 300); g.scale(sc, sc); g.translate(-(GEO.mw[0][0] + GEO.mw[1][0]) / 2, -(GEO.mw[0][1] + GEO.mw[1][1]) / 2 + 20);
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 0, W, H);
+  if (IMG.door) { const d = GEO.door; g.drawImage(IMG.door, d[0], d[1], d[2] - d[0], d[3] - d[1]); }
+  g.restore();
+  g.fillStyle = "#fffcf6"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#3f8a66"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#3a332c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("レンジ何秒？", 650, 92);
+  g.fillStyle = "#857a6c"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("ちょうどいい秒数、5品の合計", 650, 160);
+  g.fillStyle = "#2c6449"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = String(S.final.total); g.fillText(t, 650, 262);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("点", 660 + tw, 262);
+  g.fillStyle = "#3a332c"; g.font = '800 38px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.final.rank, 650, 330);
+  g.font = '700 22px "Zen Maru Gothic",sans-serif';
+  S.res.forEach((r, i) => {
+    g.fillStyle = "#857a6c"; g.fillText(`${r.name}　${r.set ? jtime(r.set) : "温めない"}`, 650, 384 + i * 34);
+    g.fillStyle = r.pts >= 80 ? "#3f8a66" : r.pts < 40 ? "#c8553d" : "#b5822a"; g.textAlign = "right"; g.fillText(`${r.pts}点`, 1150, 384 + i * 34); g.textAlign = "left";
+  });
+  g.fillStyle = "#857a6c"; g.fillText("#レンジ何秒 ・ picoruno.", 650, 590);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 70, key: 62, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "epiano", chord: "pad", beat: "none", seed: 31, leadVol: 0.05, chordVol: 0.04, density: 0.35 }
+    : { bpm: 96, key: 62, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], lead: "marimba", chord: "epiano", beat: "lofi", seed: 44, leadVol: 0.06, chordVol: 0.05, density: 0.45, swing: 0.25 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "renji.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("renji-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best}点` : "5品、ちょうどいい秒数を当てよう";
+  IMG = await KIT.loadImages(SRC);
+  S.doorK = S.doorTo = 1;
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { keys, press, FOOD, foodPos, temp };
+</script>
+</body>
+</html>

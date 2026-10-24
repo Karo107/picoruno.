@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#dfe8f3">
+<title>雪玉ころがし</title>
+<meta name="description" content="雪の坂で雪玉をころがして、大きく育てよう。ふわふわの新雪で大きく、木や岩にぶつかると欠ける。胴体と頭、2つ作って雪だるまの高さを競う。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="雪玉ころがし">
+<meta property="og:description" content="坂をころがして、どこまで大きな雪だるまが作れるか。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./yukidama.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23cfdcec'/%3E%3Ccircle cx='16' cy='21' r='8' fill='%23fff'/%3E%3Ccircle cx='16' cy='10.5' r='5.5' fill='%23fff'/%3E%3Crect x='12' y='3' width='8' height='4' rx='1' fill='%23d4513f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：真上から見た雪の坂（Blender）。雪玉は下へころがり、景色が上へ流れる。ゴールの庭で雪だるまに組み立てる。 */
+:root{
+  --ground:#dfe8f3; --card:#fbfaf7; --ink:#2b3140; --sub:#768095; --line:#e2e5ea;
+  --main:#d4513f; --main-d:#a33828; --ok:#3f7f5a; --cool:#4b6fa8;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.9);background:rgba(40,55,85,.42);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(30,45,80,.35);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #7fa4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#eef2f7;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--cool);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#eef2f7;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.good b{color:var(--ok)}
+.stat.bad b{color:var(--main)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(30,40,70,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (min-aspect-ratio:5/4) and (min-width:820px){#result{left:auto;right:max(24px,calc(50% - 560px));transform:none;width:380px;bottom:auto;top:50%;translate:0 -50%}}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>雪玉ころがし</h1>
+  <p>雪の坂で雪玉をころがして、大きな雪だるまを作ろう。胴体と頭、ひとつずつ。</p>
+  <div class="how">
+    <b>ドラッグ</b><span>左右に動かして、ころがる向きを変える</span>
+    <b>新雪</b><span>ふわふわの雪の上は、ぐんぐん大きくなる</span>
+    <b>注意</b><span>木や岩にぶつかると欠ける。土や氷の上では育たない</span>
+    <b>頭</b><span>頭は胴体より小さく。大きすぎると、ころん</span>
+  </div>
+  <button class="btn" id="start" type="button">坂の上へ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">できた雪だるまの高さ</div>
+  <div class="big" id="rBig">0<small>cm</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一回つくる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "雪玉ころがし";
+const GAME_URL = "https://runococco.github.io/picoruno./yukidama.html";
+const $ = id => document.getElementById(id);
+const W = 540, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { slope: "__IMG_slope__", ball: "__IMG_ball__", obj: "__IMG_obj__", yard: "__IMG_yard__", parts: "__IMG_parts__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const PX = 1.5;                 // 坂の 1cm ＝ 1.5（画面の単位）
+const TILE = 1080;              // 坂の絵のたて（720cm）
+const L = 8600;                 // 1本のコースの長さ
+const D0 = 18;                  // はじめの雪玉（直径cm）
+/* 障害物とごほうび。r は当たりの半径(cm) */
+const KIND = {
+  tree: { cell: 0, r: 46, hard: 0.72, label: "木" },
+  rock: { cell: 1, r: 34, hard: 0.64, label: "岩" },
+  bush: { cell: 2, r: 38, hard: 0.86, label: "しげみ" },
+  dirt: { cell: 3, r: 66, flat: true },
+  powder: { cell: 4, r: 70, flat: true },
+  ice: { cell: 5, r: 84, flat: true }
+};
+
+const S = { state: "title", t: 0, run: 0, dist: 0, x: W / 2, vx: 0, tx: W / 2, d: D0, roll: 0, speed: 0, objs: [], deco: [], trail: [], parts: [], flakes: [],
+  msg: null, shake: 0, sizes: [], hits: 0, powderT: 0, on: null, goalT: 0, fade: 0, build: null, res: null, hurt: 0, maxD: 0, keys: { l: 0, r: 0 } };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 540, lh - H, 0) }; }
+function visX() { const v = view(); return [Math.max(0, -v.ox), Math.min(W, W + v.ox)]; }
+function ballY() { const v = view(); return -v.oy + Math.min(300, v.lh * 0.3); }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+const R = () => S.d / 2 * PX;   // 雪玉の半径（画面）
+
+/* ---------- コースづくり ---------- */
+function makeCourse(run) {
+  const o = [], rnd = Math.random;
+  let y = 700;
+  const w = run === 0 ? { tree: 3, rock: 1.4, bush: 1.4, dirt: 1.3, powder: 2.4, ice: 0.9 } : { tree: 3.4, rock: 1.8, bush: 1.2, dirt: 1.5, powder: 2.0, ice: 1.2 };
+  const pick = () => { let s = 0; for (const k in w) s += w[k]; let r = rnd() * s; for (const k in w) { if ((r -= w[k]) < 0) return k; } return "tree"; };
+  while (y < L - 500) {
+    const prog = y / L, n = rnd() < 0.35 + prog * 0.4 ? 2 : 1;
+    const xs = [];
+    for (let i = 0; i < n; i++) {
+      let k = pick(), x = 0, ok = false;
+      for (let tries = 0; tries < 12 && !ok; tries++) {
+        x = lerp(70, W - 70, rnd());
+        ok = xs.every(q => Math.abs(q - x) > 190);
+      }
+      if (!ok) continue;
+      xs.push(x);
+      o.push({ k, x, y: y + rnd() * 60, hit: false, rot: rnd() < 0.5 });
+    }
+    y += lerp(300, 200, prog) + rnd() * 160;
+  }
+  o.sort((a, b) => a.y - b.y);
+  return o;
+}
+function makeDeco() {
+  // 坂のそと（PC の広い画面）に木をならべる
+  const d = [];
+  for (let y = -400; y < L + 1600; y += 120 + Math.random() * 140) {
+    d.push({ x: -60 - Math.random() * 380, y, s: lerp(0.8, 1.2, Math.random()) });
+    d.push({ x: W + 60 + Math.random() * 380, y: y + 60, s: lerp(0.8, 1.2, Math.random()) });
+  }
+  return d;
+}
+
+/* ---------- 描画 ---------- */
+function drawSlope(g, v, dist) {
+  if (!IMG.slope) return;
+  const off = ((dist % TILE) + TILE) % TILE;
+  let ys = -off; while (ys > -v.oy) ys -= TILE;
+  for (let x = -Math.ceil(v.ox / W) * W; x < W + v.ox + 1; x += W) {
+    const flip = Math.abs(Math.round(x / W)) % 2 === 1;
+    for (let y = ys; y < v.lh - v.oy; y += TILE) {
+      if (flip) { g.save(); g.translate(x + W, y); g.scale(-1, 1); g.drawImage(IMG.slope, 0, 0, W, TILE + 1); g.restore(); }
+      else g.drawImage(IMG.slope, x, y, W, TILE + 1);
+    }
+  }
+  // コースの外は少し暗く（ここから先はころがれない）
+  if (v.ox > 0) {
+    g.fillStyle = "rgba(70,90,130,.10)";
+    g.fillRect(-v.ox, -v.oy, v.ox, v.lh); g.fillRect(W, -v.oy, v.ox, v.lh);
+  }
+}
+function drawObj(g, o, sy) {
+  if (!IMG.obj) return;
+  const k = KIND[o.k], ppc = GEO.oPxPerCm, cs = GEO.ocell * ppc;
+  const sx = (k.cell % 3) * cs, syy = Math.floor(k.cell / 3) * cs;
+  const size = GEO.ocell * PX, off = (GEO.ocell / 2 - 25) * PX;
+  g.save();
+  if (o.rot) { g.translate(o.x, sy); g.scale(k.flat ? -1 : 1, 1); g.translate(-o.x, -sy); }
+  const sc = o.s || (o.k === "tree" ? 0.85 : 1);
+  g.drawImage(IMG.obj, sx, syy, cs, cs, o.x - off * sc, sy - off * sc, size * sc, size * sc);
+  g.restore();
+}
+function sparkle(g, o, sy) {
+  // 新雪のきらきら（ここで大きくなる、の目じるし）
+  g.save();
+  const gr = g.createRadialGradient(o.x, sy, 10, o.x, sy, 110);
+  gr.addColorStop(0, "rgba(255,255,255,.55)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.arc(o.x, sy, 110, 0, TAU); g.fill();
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.39 + o.x, d = 18 + (i * 37 % 80), px = o.x + Math.cos(a) * d, py = sy + Math.sin(a) * d * 0.8;
+    const tw = Math.max(0, Math.sin(S.t * 3 + i * 1.7)), r = 2 + tw * 6;
+    g.globalAlpha = 0.3 + tw * 0.7; g.fillStyle = "#fff";
+    g.beginPath(); g.moveTo(px - r, py); g.lineTo(px, py - r * 0.2); g.lineTo(px + r, py); g.lineTo(px, py + r * 0.2); g.fill();
+    g.beginPath(); g.moveTo(px, py - r); g.lineTo(px + r * 0.2, py); g.lineTo(px, py + r); g.lineTo(px - r * 0.2, py); g.fill();
+  }
+  g.restore();
+}
+function drawBall(g, x, y) {
+  const r = R(), img = IMG.ball;
+  // かげ（右下へ）
+  g.save();
+  g.fillStyle = "rgba(60,80,130,.22)";
+  g.beginPath(); g.ellipse(x + r * 0.42, y + r * 0.5, r * 1.05, r * 0.92, 0.6, 0, TAU); g.fill();
+  g.restore();
+  if (!img) { g.fillStyle = "#fff"; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); return; }
+  const cell = GEO.ballCell, f = ((Math.floor(S.roll / (TAU / 12)) % 12) + 12) % 12;
+  const size = r * 2 * GEO.ballCm / (GEO.ballR * 2);
+  g.save();
+  if (S.hurt > 0) { const k = S.hurt; g.translate(x, y); g.scale(1 + k * 0.08, 1 - k * 0.08); g.translate(-x, -y); }
+  g.drawImage(img, f * cell, 0, cell, cell, x - size / 2, y - size / 2, size, size);
+  g.restore();
+}
+function drawTrail(g, by) {
+  const tr = S.trail;
+  if (tr.length < 2) return;
+  g.save(); g.lineCap = "round"; g.lineJoin = "round";
+  // 太さが近い点ごとにまとめて1本の線に（重なりで濃くならないように）
+  for (const pass of [0, 1]) {
+    g.strokeStyle = pass ? "rgba(255,255,255,.25)" : "rgba(120,145,195,.22)";
+    let i = 1;
+    while (i < tr.length) {
+      const w0 = tr[i].w;
+      g.lineWidth = pass ? w0 * 0.35 : w0 * 0.9;
+      const dx = pass ? -w0 * 0.12 : 0;
+      g.beginPath(); g.moveTo(tr[i - 1].x + dx, by + (tr[i - 1].y - S.dist));
+      while (i < tr.length && Math.abs(tr[i].w - w0) < 3) { g.lineTo(tr[i].x + dx, by + (tr[i].y - S.dist)); i++; }
+      g.stroke();
+    }
+  }
+  g.restore();
+}
+function drawParts(g, by) {
+  for (const p of S.parts) {
+    const y = p.world ? by + (p.y - S.dist) : p.y;
+    g.globalAlpha = clamp(p.life / p.max, 0, 1) * (p.a || 1);
+    g.fillStyle = p.c || "#fff";
+    g.beginPath(); g.arc(p.x, y, p.r, 0, TAU); g.fill();
+  }
+  g.globalAlpha = 1;
+}
+function drawFlakes(g, v) {
+  g.fillStyle = "rgba(255,255,255,.85)";
+  for (const f of S.flakes) { g.globalAlpha = f.a; g.beginPath(); g.arc(f.x * v.lw - v.ox, f.y * v.lh - v.oy, f.r, 0, TAU); g.fill(); }
+  g.globalAlpha = 1;
+}
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (S.shake > 0) cx.translate((Math.random() - 0.5) * S.shake * 10, (Math.random() - 0.5) * S.shake * 10);
+  if (S.state === "yard" || S.state === "result") drawYard(cx, v);
+  else {
+    const by = ballY();
+    drawSlope(cx, v, S.dist);
+    // 平らなもの（土・新雪・氷）→ わだち → 岩としげみ → 雪玉 → 木
+    const vis = o => { const sy = by + (o.y - S.dist); return sy > -v.oy - 260 && sy < v.lh - v.oy + 260; };
+    for (const o of S.objs) if (KIND[o.k].flat && vis(o)) { drawObj(cx, o, by + (o.y - S.dist)); if (o.k === "powder") sparkle(cx, o, by + (o.y - S.dist)); }
+    drawTrail(cx, by);
+    for (const o of S.objs) if (!KIND[o.k].flat && o.k !== "tree" && vis(o)) drawObj(cx, o, by + (o.y - S.dist));
+    if (S.state !== "title") drawGoal(cx, by + (L - S.dist));
+    if (S.state !== "title") drawBall(cx, S.x, by);
+    for (const o of S.objs) if (o.k === "tree" && vis(o)) drawObj(cx, o, by + (o.y - S.dist));
+    for (const o of S.deco) { const sy = by + (o.y - S.dist); if (sy > -v.oy - 300 && sy < v.lh - v.oy + 300 && o.x > -v.ox - 200 && o.x < W + v.ox + 200) drawObj(cx, { k: "tree", x: o.x, s: o.s }, sy); }
+    drawParts(cx, by);
+  }
+  drawFlakes(cx, v);
+  if (S.fade > 0) { cx.fillStyle = `rgba(250,252,255,${S.fade})`; cx.fillRect(-v.ox - 20, -v.oy - 20, v.lw + 40, v.lh + 40); }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play" || S.state === "goal") drawHud();
+  else if (S.state === "yard") drawMsg(KIT.safe().top + 20);
+}
+function drawGoal(g, y) {
+  if (y < -100 || y > H + 400) return;
+  // ゴールの赤白ロープと旗
+  g.save();
+  const n = 18;
+  for (let i = 0; i < n; i++) {
+    g.fillStyle = i % 2 ? "#fff" : "#d4513f";
+    g.fillRect(-200 + i * (W + 400) / n, y - 5, (W + 400) / n + 1, 10);
+  }
+  g.fillStyle = "rgba(60,80,130,.18)"; g.fillRect(-200, y + 6, W + 400, 6);
+  for (const x of [26, W - 26]) {
+    g.fillStyle = "#6b4a2f"; g.fillRect(x - 4, y - 70, 8, 76);
+    g.fillStyle = "#d4513f"; g.beginPath(); g.moveTo(x + 4, y - 70); g.lineTo(x + (x < W / 2 ? 54 : -46), y - 56); g.lineTo(x + 4, y - 42); g.fill();
+  }
+  g.fillStyle = "#2b3140"; g.font = '800 30px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("ゴール", W / 2, y - 34);
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  const w = Math.min(vw - 24 - 56, 300), x = 12;
+  g.fillStyle = "rgba(30,42,72,.72)"; rr(g, x, top, w, 70, 16); g.fill();
+  g.textBaseline = "middle"; g.textAlign = "left";
+  g.fillStyle = "#bcd0ee"; g.font = '700 13px "Zen Maru Gothic",sans-serif';
+  g.fillText(S.run === 0 ? "1つめ：胴体をつくる" : "2つめ：頭をつくる", x + 14, top + 16);
+  g.fillStyle = "#fff"; g.font = '800 30px "M PLUS Rounded 1c",sans-serif';
+  const dt = `${Math.round(S.d)}`;
+  g.fillText(dt, x + 14, top + 44);
+  const tw = g.measureText(dt).width;
+  g.font = '800 15px "M PLUS Rounded 1c",sans-serif'; g.fillText("cm", x + 18 + tw, top + 50);
+  // のこりの道のり
+  const bx = x + 96, bw = w - 110, byy = top + 46;
+  g.fillStyle = "rgba(255,255,255,.2)"; rr(g, bx, byy - 4, bw, 8, 4); g.fill();
+  g.fillStyle = "#fff"; rr(g, bx, byy - 4, bw * clamp(S.dist / L, 0, 1), 8, 4); g.fill();
+  g.fillStyle = "#ff9d8c"; g.beginPath(); g.arc(bx + bw, byy, 5, 0, TAU); g.fill();
+  if (S.run === 1) {
+    const body = S.sizes[0];
+    g.font = '700 12px "Zen Maru Gothic",sans-serif'; g.fillStyle = S.d > body ? "#ffb2a6" : "#bcd0ee";
+    g.textAlign = "right"; g.fillText(S.d > body ? `胴体(${Math.round(body)}cm)より大きい！` : `胴体 ${Math.round(body)}cm より小さく`, x + w - 12, top + 16);
+  }
+  g.restore();
+  drawMsg(top + 84);
+}
+function drawMsg(y) {
+  const g = cx;
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.save(); g.globalAlpha = al; g.font = '700 17px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+    const tw = g.measureText(S.msg.text).width + 40;
+    g.fillStyle = S.msg.warn ? "rgba(190,70,55,.92)" : "rgba(30,42,72,.85)"; rr(g, vw / 2 - tw / 2, y, tw, 40, 20); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 21);
+    g.restore();
+  }
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 庭：雪だるまを組み立てる ---------- */
+const PRT = GEO.parts, YG = GEO.yard;
+function part(g, name, ax, ay, k, opts = {}) {
+  // name の小物を、そのアンカーが (ax, ay) にくるよう k 倍で描く
+  const p = PRT[name], sc = GEO.partsScale;
+  if (!IMG.parts || !p) return;
+  g.save();
+  g.translate(ax, ay);
+  if (opts.rot) g.rotate(opts.rot);
+  if (opts.flip) g.scale(-1, 1);
+  g.drawImage(IMG.parts, p.sx * sc, 0, p.sw * sc, p.sh * sc, (p.x - p.ax) * k, (p.y - p.ay) * k, p.sw * k, p.sh * k);
+  g.restore();
+}
+function snowman(g, gx, gy, P, body, head, tAnim, toppled) {
+  // P: 1cm の大きさ。body/head: 直径cm。tAnim: 組み立ての進み(秒)
+  const ref = GEO.ref, kk = P / YG.pxcm, kb = body / 2 / ref.bodyR * kk, kh = head / 2 / ref.bodyR * kk, kp = head / 2 / ref.headR * kk;
+  const ease = t => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+  const bodyC = { x: gx, y: gy - body / 2 * P * 0.96 };
+  const headZ = body * 0.9 + head / 2 * 0.92;
+  // 胴体
+  const tb = ease(tAnim / 0.5);
+  g.save(); g.globalAlpha = clamp(tAnim / 0.15, 0, 1);
+  // 足もとのかげ
+  g.fillStyle = "rgba(40,50,90,.28)"; g.beginPath(); g.ellipse(gx, gy, body / 2 * P * 1.15, body / 2 * P * 0.22, 0, 0, TAU); g.fill();
+  part(g, "ball", bodyC.x, bodyC.y - (1 - tb) * 60, kb);
+  g.restore();
+  if (tAnim < 0.6) return;
+  // 頭（落ちてきてのる。大きすぎると、ころん）
+  const th = clamp((tAnim - 0.6) / 0.45, 0, 1);
+  let hx = gx, hy = gy - headZ * P, rot = 0;
+  if (toppled) {
+    const k = clamp((tAnim - 1.1) / 0.8, 0, 1), e = k * k;
+    hx = gx + e * (body / 2 + head / 2 + 6) * P; hy = lerp(gy - headZ * P, gy - head / 2 * P * 0.96, e); rot = e * 2.2;
+    if (k > 0) { g.fillStyle = "rgba(40,50,90,.22)"; g.beginPath(); g.ellipse(hx, gy, head / 2 * P * 1.1 * e, head / 2 * P * 0.2 * e, 0, 0, TAU); g.fill(); }
+  }
+  hy -= (1 - ease(th)) * 260;
+  g.save(); g.globalAlpha = clamp(th * 3, 0, 1);
+  g.translate(hx, hy); g.rotate(rot); g.translate(-hx, -hy);
+  part(g, "ball", hx, hy, kh);
+  // 顔と帽子：頭がのってから順に
+  const pop = (t0) => clamp((tAnim - t0) / 0.18, 0, 1);
+  const hr = head / 2 * P;
+  if (pop(1.15) > 0) { const s = pop(1.15); for (const sx of [-1, 1]) part(g, "coal", hx + sx * hr * 0.3, hy - hr * 0.2, kp * 0.85 * s); }
+  if (pop(1.3) > 0) part(g, "nose", hx + hr * 0.05, hy + hr * 0.08, kp * pop(1.3));
+  if (pop(1.5) > 0) { const s = pop(1.5); part(g, "bucket", hx + hr * 0.04, hy - hr * 0.82 - (1 - s) * 40, kp); }
+  g.restore();
+  // 胴体の小物：枝の腕とボタン
+  if (pop(1.7) > 0) {
+    const s = pop(1.7), br = body / 2 * P;
+    part(g, "arm", bodyC.x + br * 0.86, bodyC.y - br * 0.18, kb * s);
+    part(g, "arm", bodyC.x - br * 0.86, bodyC.y - br * 0.18, kb * s, { flip: true });
+  }
+  if (pop(1.9) > 0) { const s = pop(1.9), br = body / 2 * P; for (let i = 0; i < 3; i++) part(g, "coal", bodyC.x, bodyC.y - br * 0.55 + i * br * 0.4, kb * 1.5 * s); }
+}
+let yardShift = 0;
+function drawYard(g, v) {
+  // 結果の紙で雪だるまがかくれないよう、庭ごと上へずらす
+  let want = 0;
+  if (S.state === "result" && $("result").getBoundingClientRect().left < vw / 2 + 120) { const top = $("result").getBoundingClientRect().top / fit - v.oy; want = Math.min(0, top - 20 - YG.ground[1]); want = Math.max(want, -(YG.ground[1] - 120 + v.oy) ); }
+  yardShift = lerp(yardShift, want, 0.08);
+  g.translate(0, yardShift);
+  if (IMG.yard) {
+    // 画面が広いときは、ぼかした庭でうめる
+    if (v.lw > W + 1 || v.lh > H + 1) { g.save(); g.filter = "blur(16px)"; g.drawImage(IMG.yard, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); g.restore(); }
+    g.drawImage(IMG.yard, 0, 0, W, H);
+  }
+  const b = S.build;
+  if (!b) return;
+  const P = fitP(b.body, b.head, b.toppled);
+  snowman(g, YG.ground[0], YG.ground[1], P, b.body, b.head, S.t - b.t0, b.toppled);
+  // 高さの目もり
+  if (S.t - b.t0 > 2.2) {
+    const al = clamp((S.t - b.t0 - 2.2) / 0.4, 0, 1), top = YG.ground[1] - b.h * P, x = YG.ground[0] + Math.max(b.body, b.toppled ? 0 : b.head) / 2 * P + 30;
+    g.save(); g.globalAlpha = al;
+    g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(x, YG.ground[1]); g.lineTo(x, top); g.moveTo(x - 10, top); g.lineTo(x + 10, top); g.moveTo(x - 10, YG.ground[1]); g.lineTo(x + 10, YG.ground[1]); g.stroke();
+    g.fillStyle = "#fff"; g.font = '800 26px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "left"; g.textBaseline = "middle";
+    g.shadowColor = "rgba(20,30,60,.6)"; g.shadowBlur = 8;
+    g.fillText(`${Math.round(b.h)}cm`, x + 14, (top + YG.ground[1]) / 2);
+    g.restore();
+  }
+}
+// 大きな雪だるまでも画面に入るように、1cm の大きさをおさえる
+function fitP(body, head, toppled) {
+  const h = toppled ? Math.max(body, head) : body * 0.9 + head * 0.92;
+  const w = toppled ? body + head * 2 : Math.max(body * 1.9, head);
+  return Math.min(YG.pxcm, (YG.ground[1] - 230) / Math.max(1, h), 460 / Math.max(1, w));
+}
+
+/* ---------- 入力 ---------- */
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+let drag = null;
+cv.addEventListener("pointerdown", e => {
+  if (S.state !== "play") return;
+  drag = { id: e.pointerId, x0: toWorld(e).x, tx0: S.tx };
+  try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+});
+cv.addEventListener("pointermove", e => {
+  if (!drag || drag.id !== e.pointerId || S.state !== "play") return;
+  // 指の動いたぶんだけ、ねらう位置を動かす（指で雪玉がかくれないように）
+  const [a, b] = visX();
+  S.tx = clamp(drag.tx0 + (toWorld(e).x - drag.x0) * 1.25, a + R(), b - R());
+});
+const endDrag = e => { if (drag && drag.id === e.pointerId) drag = null; };
+cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+window.addEventListener("keydown", e => { if (e.key === "ArrowLeft" || e.key === "a") S.keys.l = 1; if (e.key === "ArrowRight" || e.key === "d") S.keys.r = 1; });
+window.addEventListener("keyup", e => { if (e.key === "ArrowLeft" || e.key === "a") S.keys.l = 0; if (e.key === "ArrowRight" || e.key === "d") S.keys.r = 0; });
+
+/* ---------- 音 ---------- */
+let roll = null;
+function rollStart() {
+  const ctx = KIT.ensure(); if (!ctx || roll) return;
+  const src = ctx.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 700; lp.Q.value = 0.7;
+  const bp = ctx.createBiquadFilter(); bp.type = "peaking"; bp.frequency.value = 2400; bp.gain.value = 6;
+  const g = ctx.createGain(); g.gain.value = 0;
+  src.connect(lp); lp.connect(bp); bp.connect(g); g.connect(KIT.bus()); src.start();
+  roll = { src, lp, g };
+}
+function rollSet(vol, f) { if (!roll) return; const t = KIT.ensure().currentTime; roll.g.gain.setTargetAtTime(vol, t, 0.08); roll.lp.frequency.setTargetAtTime(f, t, 0.1); }
+function rollStop() { if (!roll) return; const t = KIT.ensure().currentTime; roll.g.gain.setTargetAtTime(0, t, 0.15); const r = roll; roll = null; setTimeout(() => { try { r.src.stop(); } catch (e) {} }, 800); }
+function sndHit(kind) {
+  const big = kind === "rock";
+  KIT.tone({ f: big ? 120 : 90, to: 45, dur: 0.3, vol: 0.32, type: "sine", wet: 0.1 });
+  KIT.noise({ dur: 0.35, vol: 0.28, f: big ? 900 : 500, q: 0.8, wet: 0.15 });
+  if (big) KIT.tone({ f: 340, to: 200, dur: 0.12, vol: 0.12, type: "triangle", lp: 1200, wet: 0.1 });
+  // 雪がばさっと落ちる
+  KIT.noise({ t: 0.08, dur: 0.6, vol: 0.12, f: 5200, to: 1800, q: 0.6, wet: 0.3 });
+  if (kind === "tree") KIT.noise({ t: 0.25, dur: 0.5, vol: 0.08, f: 3000, q: 1.2, wet: 0.4 });
+}
+function sndPowder() {
+  KIT.noise({ dur: 0.35, vol: 0.12, f: 2500, to: 5200, q: 0.7, wet: 0.35 });
+  [0, 4, 7].forEach((d, i) => KIT.tone({ f: KIT.mtof(84 + d), t: i * 0.05, dur: 0.35, vol: 0.035, type: "sine", wet: 0.5 }));
+}
+function sndIce() { KIT.tone({ f: 2200, to: 3000, dur: 0.25, vol: 0.04, type: "sine", wet: 0.5 }); KIT.tone({ f: 3300, to: 2600, t: 0.05, dur: 0.3, vol: 0.03, type: "sine", wet: 0.5 }); }
+function sndDirt() { KIT.noise({ dur: 0.25, vol: 0.14, f: 800, q: 1.5, wet: 0.05 }); }
+function sndGoal() { [0, 4, 7, 12, 16].forEach((d, i) => KIT.inst.bell(72 + d, i * 0.09, 0.5, 0.09)); }
+function sndPlop(f = 1) { KIT.tone({ f: 160 * f, to: 70 * f, dur: 0.18, vol: 0.25, type: "sine", wet: 0.1 }); KIT.noise({ dur: 0.18, vol: 0.12, f: 1500, q: 0.7, wet: 0.1 }); }
+function sndPop(m) { KIT.tone({ f: KIT.mtof(m), dur: 0.12, vol: 0.08, type: "triangle", wet: 0.3 }); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function puff(x, y, n, opts = {}) {
+  for (let i = 0; i < n; i++) {
+    const a = opts.dir !== undefined ? opts.dir + (Math.random() - 0.5) * (opts.spread || 1.2) : Math.random() * TAU, sp = (opts.sp || 120) * (0.4 + Math.random());
+    S.parts.push({ x: x + (Math.random() - 0.5) * (opts.w || 10), y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: (opts.r || 4) * (0.5 + Math.random()), life: opts.life || 0.7, max: opts.life || 0.7, world: true, c: opts.c, a: opts.a, drag: opts.drag || 2.5 });
+  }
+}
+function update(dt) {
+  S.t += dt;
+  // ふる雪
+  if (S.flakes.length < 70) S.flakes.push({ x: Math.random(), y: -0.02, vx: (Math.random() - 0.5) * 0.02, vy: 0.04 + Math.random() * 0.05, r: 1 + Math.random() * 2.2, a: 0.4 + Math.random() * 0.5 });
+  for (const f of S.flakes) { f.x += (f.vx + Math.sin(S.t + f.r * 5) * 0.01) * dt; f.y += f.vy * dt * (S.state === "play" ? 0.4 : 1); }
+  S.flakes = S.flakes.filter(f => f.y < 1.03);
+  for (const p of S.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 1 - p.drag * dt; p.vy *= 1 - p.drag * dt; p.life -= dt; }
+  S.parts = S.parts.filter(p => p.life > 0);
+  if (S.shake > 0) S.shake = Math.max(0, S.shake - dt * 3);
+  if (S.hurt > 0) S.hurt = Math.max(0, S.hurt - dt * 3);
+  if (S.state === "title") { S.dist += dt * 60; return; }
+  if (S.state === "play") { if (S.fade > 0) S.fade = Math.max(0, S.fade - dt * 2); play(dt); }
+  else if (S.state === "goal") {
+    S.speed *= 1 - dt * 2.2; S.dist += S.speed * dt; S.roll += S.speed * dt / PX / (S.d / 2);
+    rollSet(0.25 * clamp(S.speed / 400, 0, 1), 500);
+    if (S.t - S.goalT > 1.8) {
+      S.fade = clamp((S.t - S.goalT - 1.8) / 0.4, 0, 1);
+      if (S.fade >= 1) nextRun();
+    }
+  } else if (S.state === "yard") {
+    if (S.fade > 0) S.fade = Math.max(0, S.fade - dt * 1.5);
+    const b = S.build, ta = S.t - b.t0;
+    for (const [t0, fn] of b.cues) if (!fn.done && ta >= t0) { fn.done = true; fn(); }
+    if (ta > 3.4) finish();
+  }
+}
+function play(dt) {
+  const prog = S.dist / L;
+  const on = S.on;
+  // 速さ：だんだん速く。氷の上はさらに
+  const target = lerp(300, 470, prog) * (on === "ice" ? 1.15 : on === "dirt" ? 0.8 : 1);
+  S.speed = lerp(S.speed, target, 1 - Math.exp(-dt * 1.6));
+  const ds = S.speed * dt;
+  S.dist += ds;
+  // よこの動き：大きいほど重くて、ゆっくり曲がる。氷の上はすべる
+  if (S.keys.l || S.keys.r) { const [a, b] = visX(); S.tx = clamp(S.tx + (S.keys.r - S.keys.l) * 420 * dt, a + R(), b - R()); }
+  const k = (on === "ice" ? 4 : 30) / (1 + S.d / 45);
+  S.vx += ((S.tx - S.x) * k - S.vx * Math.sqrt(k) * 1.6) * dt;
+  S.x += S.vx * dt;
+  const [xa, xb] = visX();
+  if (S.x < xa + R()) { S.x = xa + R(); S.vx = Math.abs(S.vx) * 0.3; }
+  if (S.x > xb - R()) { S.x = xb - R(); S.vx = -Math.abs(S.vx) * 0.3; }
+  S.roll += ds / PX / (S.d / 2);
+  // どこの上にいるか
+  const by = ballY();
+  let now = null;
+  for (const o of S.objs) {
+    const dy = o.y - S.dist;
+    if (dy < -260 || dy > 260) continue;
+    const kd = KIND[o.k], dd = Math.hypot(o.x - S.x, dy) / PX;
+    if (kd.flat) { if (dd < kd.r * 0.92) now = o.k; continue; }
+    if (!o.hit && dd < kd.r + S.d / 2 * 0.82) hit(o, kd);
+  }
+  if (now !== S.on) {
+    if (now === "powder") { sndPowder(); say("ふわふわ新雪！", 1.0); }
+    if (now === "ice") { sndIce(); say("つるつる…育たない", 1.0, true); }
+    if (now === "dirt") { sndDirt(); say("土が出てる！ 欠ける", 1.0, true); }
+    S.on = now;
+  }
+  // 大きさ：ころがった道のりで育つ（大きいほど、育ちはゆっくり）
+  const cm = ds / PX;
+  if (now === "powder") S.d += cm * 4.5 / S.d;
+  else if (now === "dirt") { S.d -= cm * 0.03; if (Math.random() < dt * 20) puff(S.x, S.dist - R() * 0.6, 1, { dir: -Math.PI / 2, sp: 90, r: 3, c: "#7a5a3a", life: 0.5 }); }
+  else if (now !== "ice") S.d += cm * 1.15 / S.d;
+  S.d = Math.max(8, S.d);
+  S.maxD = Math.max(S.maxD, S.d);
+  // わだちと雪けむり
+  const last = S.trail[S.trail.length - 1];
+  if (!last || S.dist - last.y > 14) S.trail.push({ x: S.x, y: S.dist, w: R() * 2 * (now === "ice" ? 0.25 : 0.8) });
+  while (S.trail.length && by + (S.trail[0].y - S.dist) < -view().oy - 120) S.trail.shift();
+  if (now === "powder" && Math.random() < dt * 30) puff(S.x + (Math.random() - 0.5) * R() * 1.6, S.dist + R() * 0.6, 1, { dir: Math.PI / 2, sp: 70, r: 5, life: 0.8, a: 0.9 });
+  if (Math.random() < dt * 8) puff(S.x + (Math.random() - 0.5) * R(), S.dist + R() * 0.8, 1, { dir: Math.PI / 2 + (Math.random() - 0.5), sp: 40, r: 2.5, life: 0.5, a: 0.7 });
+  rollSet(lerp(0.12, 0.3, clamp(S.d / 90, 0, 1)) * (now === "ice" ? 0.25 : 1), now === "powder" ? 1100 : lerp(900, 380, clamp(S.d / 100, 0, 1)));
+  if (S.dist >= L) goal();
+}
+function hit(o, kd) {
+  o.hit = true; S.hits++;
+  const before = S.d;
+  S.d = Math.max(8, S.d * kd.hard);
+  S.vx = (S.x < o.x ? -1 : 1) * (220 + S.d * 2); S.tx = clamp(S.x + Math.sign(S.vx) * 90, ...visX());
+  S.speed *= 0.55; S.shake = 0.7; S.hurt = 1;
+  puff(S.x, S.dist, 26, { sp: 220, r: 5 + before * 0.04, life: 0.8, w: R() });
+  sndHit(o.k); KIT.vibrate(30);
+  say(`${kd.label}にごつん！ ${Math.round(before)}→${Math.round(S.d)}cm`, 1.4, true);
+}
+function goal() {
+  S.state = "goal"; S.goalT = S.t; S.sizes[S.run] = S.d;
+  sndGoal();
+  say(S.run === 0 ? `胴体 ${Math.round(S.d)}cm できた！` : `頭 ${Math.round(S.d)}cm できた！`, 1.8);
+}
+function nextRun() {
+  if (S.run === 0) { S.run = 1; startRun(); }
+  else toYard();
+}
+function startRun() {
+  S.state = "play"; S.dist = 0; S.speed = 120; S.d = D0; S.maxD = D0; S.on = null; S.trail = []; S.parts = [];
+  const [a, b] = visX(); S.x = S.tx = (a + b) / 2; S.vx = 0;
+  S.objs = makeCourse(S.run); S.deco = makeDeco();
+  S.fade = S.run ? 1 : 0;
+  rollStart();
+  say(S.run === 0 ? "まずは胴体。大きく育てよう" : `次は頭。胴体(${Math.round(S.sizes[0])}cm)より小さく`, 2.2);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.run = 0; S.sizes = []; S.hits = 0; S.build = null;
+  startRun();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+function toYard() {
+  rollStop();
+  const body = S.sizes[0], head = S.sizes[1];
+  const toppled = head > body;
+  const h = toppled ? Math.max(body, head) : body * 0.9 + head * 0.92;
+  S.build = { body, head, toppled, h, t0: S.t, cues: [] };
+  const c = S.build.cues;
+  c.push([0.05, () => sndPlop(1)]);
+  c.push([0.95, () => sndPlop(1.3)]);
+  if (toppled) c.push([1.2, () => { KIT.tone({ f: 300, to: 120, dur: 0.6, vol: 0.12, type: "triangle", wet: 0.2 }); say("頭が大きすぎて、ころん…", 2.4, true); }]);
+  c.push([1.15, () => sndPop(79)]); c.push([1.3, () => sndPop(83)]); c.push([1.5, () => sndPop(86)]); c.push([1.7, () => sndPop(88)]); c.push([1.9, () => sndPop(91)]);
+  c.push([2.2, () => { if (!toppled) { [0, 4, 7, 11, 14].forEach((d, i) => KIT.inst.bell(76 + d, i * 0.07, 0.6, 0.08)); } }]);
+  S.state = "yard"; S.fade = 1;
+  KIT.music.stop();
+}
+const RANKS = [[60, "ミニだるま"], [100, "ひざ丈だるま"], [140, "こどもの背たけ"], [175, "おとなの背たけ"], [1e9, "伝説の雪だるま"]];
+function finish() {
+  S.state = "result";
+  const b = S.build, h = Math.round(b.h);
+  const rank = b.toppled ? "頭でっかち" : RANKS.find(r => h < r[0])[1];
+  S.res = { h, rank, body: Math.round(b.body), head: Math.round(b.head), toppled: b.toppled, hits: S.hits };
+  $("rBig").innerHTML = `${h}<small>cm</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = `<div class="stat"><small>胴体</small><b>${S.res.body}cm</b></div>`
+    + `<div class="stat ${b.toppled ? "bad" : "good"}"><small>頭</small><b>${S.res.head}cm</b></div>`
+    + `<div class="stat"><small>ぶつかった</small><b>${S.hits}回</b></div>`;
+  const best = KIT.store.get("yukidama-best", null);
+  if (best === null || h > best) KIT.store.set("yukidama-best", h);
+  $("rNote").textContent = (b.toppled ? "頭は胴体より小さくすると、立ちます。　" : "") + (best === null || h > best ? "自己ベスト更新！" : `自己ベスト ${best}cm`);
+  $("result").hidden = false;
+  setTimeout(() => startMusic(true), 400);
+}
+function shareText() { const r = S.res; return `雪玉ころがしで、高さ${r.h}cmの雪だるまができた（胴体${r.body}cm・頭${r.head}cm）\nわたしは「${r.rank}」\n#雪玉ころがし`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  const b = S.build, P = fitP(b.body, b.head, b.toppled);
+  const sc = 600 / W * 0.95;
+  g.fillStyle = "#2a3150"; g.fillRect(0, 0, 600, 630);
+  g.translate(300, 630); g.scale(sc, sc); g.translate(-YG.ground[0], -(YG.ground[1] + 60));
+  if (IMG.yard) g.drawImage(IMG.yard, 0, 0, W, H);
+  snowman(g, YG.ground[0], YG.ground[1], P, b.body, b.head, 9, b.toppled);
+  g.restore();
+  g.fillStyle = "#fbfaf7"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#d4513f"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#2b3140"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("雪玉ころがし", 650, 92);
+  g.fillStyle = "#768095"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("できた雪だるまの高さ", 650, 170);
+  g.fillStyle = "#a33828"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = String(S.res.h); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("cm", 660 + tw, 274);
+  g.fillStyle = "#2b3140"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#768095"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`胴体 ${S.res.body}cm ・ 頭 ${S.res.head}cm`, 650, 400);
+  g.fillText("#雪玉ころがし ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 66, key: 65, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 12, leadVol: 0.05, chordVol: 0.04, density: 0.35 }
+    : { bpm: 118, key: 65, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7], [5, 9, 12], [2, 5, 9], [7, 11, 14]], lead: "bell", chord: "pluck", beat: "shaker", seed: 58, leadVol: 0.05, chordVol: 0.06, density: 0.5, swing: 0.15 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "yukidama.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) rollSet(0, 400); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("yukidama-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best}cm` : "胴体と頭をのせた高さで採点";
+  IMG = await KIT.loadImages(SRC);
+  // タイトルの後ろ：ゆっくり流れる坂
+  S.objs = makeCourse(0); S.deco = makeDeco();
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { visX, ballY, KIND, makeCourse, snowman, fitP };
+</script>
+</body>
+</html>

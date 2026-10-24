@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1d2e">
+<title>結露のまど</title>
+<meta name="description" content="冬の夜、くもった窓。指でなぞると、外の街の灯りが見える。お題の形を、どれだけきれいになぞれるか。描いた窓はそのままシェアできる。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="結露のまど">
+<meta property="og:description" content="くもった窓を指でなぞると、夜の街が見える。お題をきれいになぞれるか。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./ketsuro.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c9a27a'/%3E%3Crect x='5' y='5' width='22' height='22' rx='2' fill='%23a6aab8' stroke='%235a3b33' stroke-width='1.2'/%3E%3Cpath d='M16 22s-6-3.6-6-7.5a3 3 0 0 1 6-1 3 3 0 0 1 6 1C22 18.4 16 22 16 22z' fill='%231a1d40'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：冬の夜の窓（Blender でくもった窓・すきとおった窓の2枚）。なぞったところだけ、すきとおった絵を見せる。 */
+:root{
+  --night:#1a1d2e; --card:#fbf8f4; --ink:#33303d; --sub:#7d7889; --line:#e6e0d8;
+  --wood:#c08a5a; --wood-d:#8e6038; --blue:#5b7fd0; --warn:#c8574a; --ok:#4f8f6a;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--night);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(26,29,46,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--wood);color:#fff;box-shadow:0 4px 0 var(--wood-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--wood-d)}
+.btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.done{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 6px 18px rgba(0,0,0,.35)}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--wood-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f3ede6;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--wood);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#act{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));z-index:15;width:min(240px,calc(100% - 40px))}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--wood-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f3ede6;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(26,29,46,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>結露のまど</h1>
+  <p>冬の夜。あたたかい部屋の窓が、まっ白にくもっている。指でなぞると、外の街の灯りが見える。</p>
+  <div class="how">
+    <b>なぞる</b><span>窓にうっすら見えるお題の線を、指でなぞる</span>
+    <b>採点</b><span>線をどれだけなぞれたか、はみださなかったか</span>
+    <b>3まい</b><span>1まい15秒。終わったら、はーっと息でくもらせて次へ</span>
+  </div>
+  <button class="btn" id="start" type="button">窓の前に立つ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<button class="btn done" id="act" type="button" hidden>できた！</button>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">3まいの平均</div>
+  <div class="big" id="rBig">0<small>点</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一度くもらせる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "結露のまど";
+const GAME_URL = "https://runococco.github.io/picoruno./ketsuro.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080, RES = 1.5;     // うら画面（マスク）は 1.5 倍で持つ
+const GEO = __JSON_geo__;
+const SRC = { clear: "__IMG_clear__", fog: "__IMG_fog__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+
+const GL = { x0: GEO.glass[0][0] + 4, y0: GEO.glass[0][1] + 4, x1: GEO.glass[1][0] - 4, y1: GEO.glass[1][1] - 4 };
+const BOX = { cx: 360, cy: 450, s: 210 };    // お題の大きさ（半分）
+const PEN = 30;                              // 指のはば
+const ROUND_T = 15, ROUNDS = 3;
+
+/* ---------- お題（-1..1 の線。いくつかの筆に分かれる） ---------- */
+function arc(cx, cy, r, a0, a1, n = 40, ry = r) { const p = []; for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * ry]); } return p; }
+const SHAPES = [
+  { name: "ハート", strokes: [Array.from({ length: 81 }, (_, i) => { const t = i / 80 * TAU; return [16 * Math.sin(t) ** 3 / 17, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 - 0.05]; })] },
+  { name: "星", strokes: [Array.from({ length: 11 }, (_, i) => { const a = -Math.PI / 2 + i / 10 * TAU, r = i % 2 ? 0.42 : 1; return [Math.cos(a) * r, Math.sin(a) * r + 0.08]; })] },
+  { name: "かさ", strokes: [[...arc(0, 0, 0.95, Math.PI, TAU, 40, 0.75), ...arc(0.633, 0, 0.317, 0, Math.PI, 12, 0.16), ...arc(0, 0, 0.317, 0, Math.PI, 12, 0.16), ...arc(-0.633, 0, 0.317, 0, Math.PI, 12, 0.16)], [[0, -0.75], [0, 0.78], ...arc(-0.18, 0.78, 0.18, 0, Math.PI, 12)]] },
+  { name: "にこにこ", strokes: [arc(0, 0, 0.9, 0, TAU, 60), [[-0.32, -0.3], [-0.32, -0.12]], [[0.32, -0.3], [0.32, -0.12]], arc(0, 0.08, 0.5, 0.25, Math.PI - 0.25, 20)] },
+  { name: "ねこ", strokes: [[...arc(0, 0.15, 0.85, -0.55, Math.PI + 0.55, 50, 0.7).reverse(), [-0.72, -0.85], [-0.38, -0.5], [0.38, -0.5], [0.72, -0.85], [0.72, -0.25]]] },
+  { name: "おうち", strokes: [[[-0.7, -0.05], [0, -0.75], [0.7, -0.05], [0.55, -0.05], [0.55, 0.8], [-0.55, 0.8], [-0.55, -0.05], [-0.7, -0.05]], [[-0.15, 0.8], [-0.15, 0.35], [0.15, 0.35], [0.15, 0.8]]] },
+  { name: "さかな", strokes: [[...arc(-0.1, 0, 0.7, -Math.PI * 0.82, Math.PI * 0.82, 50, 0.45), [0.95, -0.4], [0.95, 0.4], [0.5, -0.0]].map(p => p)], },
+  { name: "ゆきだるま", strokes: [arc(0, -0.45, 0.38, 0, TAU, 40), arc(0, 0.38, 0.52, -1.05, Math.PI + 1.05, 44)] }
+];
+// ねこ・さかなの線の閉じ方を整える
+SHAPES[4].strokes[0].push(SHAPES[4].strokes[0][0]);
+SHAPES[6].strokes[0] = [...arc(-0.15, 0, 0.7, -Math.PI * 0.8, Math.PI * 0.8, 50, 0.45), [0.95, -0.42], [0.95, 0.42], [arc(-0.15, 0, 0.7, -Math.PI * 0.8, -Math.PI * 0.8, 1, 0.45)[0][0], arc(-0.15, 0, 0.7, -Math.PI * 0.8, -Math.PI * 0.8, 1, 0.45)[0][1]]];
+
+const toScr = p => [BOX.cx + p[0] * BOX.s, BOX.cy + p[1] * BOX.s];
+function resample(strokes, step) {   // 線を等間隔の点に
+  const out = [];
+  for (const st of strokes) {
+    const P = st.map(toScr);
+    out.push(P[0]);
+    let carry = 0;
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      let s = step - carry;
+      while (s <= d) { out.push([lerp(a[0], b[0], s / d), lerp(a[1], b[1], s / d)]); s += step; }
+      carry = d - (s - step);
+    }
+  }
+  return out;
+}
+
+const S = { state: "title", t: 0, round: 0, order: [], left: ROUND_T, shape: null, target: [], drawn: [], scores: [], msg: null, drips: [], snow: [], refog: 0, res: null, best: null };
+
+/* ---------- canvas とうら画面 ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+const MASK = mk(W * RES, H * RES), mx = MASK.getContext("2d");      // ふいたところ（白）
+const BEAD = mk(W * RES, H * RES), bx = BEAD.getContext("2d");      // ふちの水玉
+const CLR = mk(W * RES, H * RES), clx = CLR.getContext("2d");       // すきとおった窓＋雪 → マスクで切りぬく
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.48 - BOX.cy, lh - H, 0) }; }
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.fog && v.lw > W + 1) {
+    cx.save(); cx.filter = "blur(18px)"; cx.drawImage(IMG.fog, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(20,18,28,.35)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  drawScene(cx, S.t);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play") drawHud();
+}
+function drawScene(g, t) {
+  if (!IMG.fog) return;
+  g.drawImage(IMG.fog, 0, 0, W, H);
+  // くもりの白さ（部屋のあかりが水滴にあたって、少し白っぽい）
+  g.save(); g.beginPath(); g.rect(GL.x0, GL.y0, GL.x1 - GL.x0, GL.y1 - GL.y0); g.clip();
+  const gr = g.createLinearGradient(0, GL.y0, 0, GL.y1);
+  gr.addColorStop(0, "rgba(215,220,232,.16)"); gr.addColorStop(1, "rgba(235,220,205,.24)");
+  g.fillStyle = gr; g.fillRect(GL.x0, GL.y0, GL.x1 - GL.x0, GL.y1 - GL.y0);
+  // お題のうすい線（だれかが前にかいた跡のように）
+  if (S.shape && (S.state === "play" || S.state === "judge")) {
+    g.strokeStyle = `rgba(255,255,255,${S.state === "play" ? 0.32 : 0.15})`; g.lineWidth = 3; g.setLineDash([2, 9]); g.lineCap = "round"; g.lineJoin = "round";
+    for (const st of S.shape.strokes) { g.beginPath(); st.map(toScr).forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+    g.setLineDash([]);
+  }
+  // すきとおったところ
+  clx.globalCompositeOperation = "source-over"; clx.setTransform(RES, 0, 0, RES, 0, 0);
+  clx.clearRect(0, 0, W, H);
+  if (IMG.clear) clx.drawImage(IMG.clear, 0, 0, W, H);
+  // 外の雪（ふいたところからだけ見える）
+  clx.fillStyle = "rgba(255,255,255,.85)";
+  for (const f of S.snow) { clx.globalAlpha = f.a; clx.beginPath(); clx.arc(f.x, f.y, f.r, 0, TAU); clx.fill(); }
+  clx.globalAlpha = 1;
+  clx.setTransform(1, 0, 0, 1, 0, 0); clx.globalCompositeOperation = "destination-in"; clx.drawImage(MASK, 0, 0);
+  clx.globalCompositeOperation = "source-over";
+  g.drawImage(CLR, 0, 0, W, H);
+  g.drawImage(BEAD, 0, 0, W, H);
+  // しずく（流れおちる水玉）
+  for (const d of S.drips) {
+    const r = d.r;
+    g.fillStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.arc(d.x, d.y, r, 0, TAU); g.fill();
+    g.fillStyle = "rgba(20,25,45,.35)"; g.beginPath(); g.arc(d.x, d.y + r * 0.35, r * 0.7, 0, Math.PI); g.fill();
+    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.arc(d.x - r * 0.3, d.y - r * 0.35, r * 0.3, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(26,29,46,.66)"; rr(g, 12, top, w, 62, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 19px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${S.round + 1}まいめ「${S.shape ? S.shape.name : ""}」`, 28, top + 24);
+  g.textAlign = "right"; g.fillStyle = S.left < 4 ? "#ffb4a2" : "#fff";
+  g.fillText(`${Math.ceil(S.left)}秒`, 12 + w - 14, top + 24);
+  g.fillStyle = "rgba(255,255,255,.2)"; rr(g, 28, top + 44, w - 32, 7, 4); g.fill();
+  g.fillStyle = "#cfe0ff"; rr(g, 28, top + 44, (w - 32) * clamp(S.left / ROUND_T, 0, 1), 7, 4); g.fill();
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 74;
+    g.fillStyle = S.msg.warn ? "rgba(180,70,60,.92)" : "rgba(26,29,46,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- ふく ---------- */
+function wipe(a, b) {
+  for (const c of [mx]) {
+    c.save(); c.setTransform(RES, 0, 0, RES, 0, 0);
+    c.beginPath(); c.rect(GL.x0, GL.y0, GL.x1 - GL.x0, GL.y1 - GL.y0); c.clip();
+    c.strokeStyle = "#fff"; c.lineCap = "round"; c.lineJoin = "round";
+    c.shadowColor = "#fff"; c.shadowBlur = 10 * RES;
+    c.lineWidth = PEN; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+    c.restore();
+  }
+  // ふちに水玉がたまる
+  const d = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / d, ny = (b.x - a.x) / d;
+  bx.save(); bx.setTransform(RES, 0, 0, RES, 0, 0);
+  for (let i = 0; i < d / 6; i++) {
+    const k = Math.random(), side = Math.random() < 0.5 ? -1 : 1, off = PEN / 2 + 1 + Math.random() * 3;
+    const x = lerp(a.x, b.x, k) + nx * off * side, y = lerp(a.y, b.y, k) + ny * off * side, r = 0.8 + Math.random() * 1.8;
+    if (x < GL.x0 || x > GL.x1 || y < GL.y0 || y > GL.y1) continue;
+    bx.fillStyle = "rgba(255,255,255,.75)"; bx.beginPath(); bx.arc(x, y, r, 0, TAU); bx.fill();
+    bx.fillStyle = "rgba(30,30,50,.3)"; bx.beginPath(); bx.arc(x, y + r * 0.4, r * 0.6, 0, Math.PI); bx.fill();
+  }
+  bx.restore();
+  // 太い線の下からは、ときどきしずくが流れる
+  if (Math.random() < d / 220) S.drips.push({ x: lerp(a.x, b.x, Math.random()) + (Math.random() - 0.5) * PEN * 0.5, y: Math.max(a.y, b.y) + PEN * 0.45, r: 2.2 + Math.random() * 1.6, v: 0, wait: 0.6 + Math.random() * 1.2, life: 2 + Math.random() * 3 });
+}
+let lastP = null;
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+cv.addEventListener("pointerdown", e => { if (S.state !== "play") return; lastP = toWorld(e); S.drawn.push([lastP.x, lastP.y]); wipe(lastP, { x: lastP.x + 0.1, y: lastP.y }); try { cv.setPointerCapture(e.pointerId); } catch (er) {} squeak(0.6); });
+cv.addEventListener("pointermove", e => {
+  if (!lastP || S.state !== "play") return;
+  const p = toWorld(e), d = Math.hypot(p.x - lastP.x, p.y - lastP.y);
+  if (d < 2) return;
+  wipe(lastP, p);
+  for (let k = 4; k < d; k += 4) S.drawn.push([lerp(lastP.x, p.x, k / d), lerp(lastP.y, p.y, k / d)]);
+  S.drawn.push([p.x, p.y]);
+  S.speed = lerp(S.speed || 0, d, 0.5);
+  lastP = p;
+});
+const up = () => { lastP = null; };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+
+/* ---------- 音 ---------- */
+let sq = null;
+function soundInit() {
+  const ac = KIT.ensure(); if (!ac || sq) return;
+  const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2200; bp.Q.value = 14;
+  const g = ac.createGain(); g.gain.value = 0;
+  src.connect(bp); bp.connect(g); g.connect(KIT.bus()); src.start();
+  const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = 1400;
+  const og = ac.createGain(); og.gain.value = 0; o.connect(og); og.connect(KIT.bus()); o.start();
+  sq = { bp, g, o, og };
+}
+function squeak(k) { if (!sq) return; const now = KIT.ensure().currentTime; sq.og.gain.setTargetAtTime(0.012 * k, now, 0.01); }
+function soundUpdate() {
+  if (!sq) return;
+  const now = KIT.ensure().currentTime, sp = lastP ? clamp((S.speed || 0) / 14, 0, 1) : 0;
+  sq.g.gain.setTargetAtTime(sp * 0.08, now, 0.03);
+  sq.bp.frequency.setTargetAtTime(1800 + sp * 1200 + Math.sin(S.t * 30) * 150, now, 0.02);
+  sq.o.frequency.setTargetAtTime(1100 + sp * 900 + Math.sin(S.t * 23) * 200, now, 0.02);
+  sq.og.gain.setTargetAtTime(lastP ? sp * 0.014 * (Math.random() < 0.3 ? 1.6 : 0.6) : 0, now, 0.03);
+  S.speed = lerp(S.speed || 0, 0, 0.1);
+}
+function breath() {   // はーっ
+  const t0 = KIT.ensure().currentTime;
+  KIT.noise({ t: t0, dur: 1.4, vol: 0.1, f: 700, to: 450, q: 0.6, type: "lowpass", wet: 0.1, a: 0.25 });
+  KIT.noise({ t: t0, dur: 1.2, vol: 0.03, f: 2400, q: 1, wet: 0.05, a: 0.3 });
+}
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  // 雪
+  for (const f of S.snow) { f.y += f.v * dt; f.x += Math.sin(S.t * f.w + f.p) * 12 * dt; if (f.y > H + 5) { f.y = -5; f.x = Math.random() * W; } }
+  // しずく：少し待って、つーっと流れる（通ったあとはすきとおる）
+  for (const d of S.drips) {
+    if (d.wait > 0) { d.wait -= dt; continue; }
+    d.v = lerp(d.v, 40 + Math.random() * 80, 0.1); const ny = d.y + d.v * dt;
+    mx.save(); mx.setTransform(RES, 0, 0, RES, 0, 0); mx.strokeStyle = "rgba(255,255,255,.8)"; mx.lineWidth = d.r * 1.3; mx.lineCap = "round";
+    mx.beginPath(); mx.moveTo(d.x, d.y); d.x += (Math.random() - 0.5) * 1.2; mx.lineTo(d.x, ny); mx.stroke(); mx.restore();
+    d.y = ny; d.life -= dt;
+  }
+  S.drips = S.drips.filter(d => d.life > 0 && d.y < GL.y1 - 4);
+  // 時間がたつと、またくもる（ゆっくり）。次の窓へは息で一気に
+  // （8bitのアルファは小さい値だと減らないので、ゆっくりの方はまとめて引く）
+  let fade = 0;
+  if (S.refog > 0) { fade = dt * 1.6; S.refog -= dt; if (S.refog <= 0) { mx.clearRect(0, 0, MASK.width, MASK.height); bx.clearRect(0, 0, BEAD.width, BEAD.height); } }
+  else if ((S.fogAcc = (S.fogAcc || 0) + dt) >= 2) { fade = S.fogAcc * 0.012; S.fogAcc = 0; }
+  if (fade > 0) for (const c of [mx, bx]) { c.save(); c.globalCompositeOperation = "destination-out"; c.fillStyle = `rgba(0,0,0,${fade})`; c.fillRect(0, 0, MASK.width, MASK.height); c.restore(); }
+  if (S.state === "wait" && (S.waitT -= dt) <= 0 && S.refog <= 0) {
+    S.state = "play"; $("act").hidden = false;
+    say(`お題「${S.shape.name}」`, 1.6);
+  }
+  if (S.state === "play") {
+    S.left = Math.max(0, S.left - dt);
+    if (S.left <= 0) judge();
+  }
+  soundUpdate();
+}
+function judge() {
+  if (S.state !== "play") return;
+  S.state = "judge"; lastP = null; $("act").hidden = true;
+  const T = S.target, D = S.drawn, R1 = 20, R2 = 26;
+  const near = (p, Q, R) => { for (const q of Q) if ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 < R * R) return true; return false; };
+  const cov = T.length ? T.filter(p => near(p, D, R1)).length / T.length : 0;
+  const pre = D.length ? D.filter(p => near(p, T, R2)).length / D.length : 0;
+  // ていねいさ：かいた点からお題の線までの平均きょり
+  let sd = 0; for (const p of D) { let m = 1e9; for (const q of T) m = Math.min(m, (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2); sd += Math.sqrt(m); }
+  const neat = D.length ? clamp(1.2 - sd / D.length / 25, 0, 1) : 0;
+  const pt = Math.round(100 * Math.pow(cov, 1.2) * Math.pow(pre, 0.7) * neat);
+  S.scores.push({ name: S.shape.name, pt, cov, pre, neat });
+  if (!S.best || pt >= S.best.pt) S.best = { pt, snap: snapshot() };
+  const w = pt >= 90 ? "きれい！" : pt >= 70 ? "いい線" : pt >= 45 ? "まあまあ" : "うーん…";
+  say(`${w} ${pt}点（なぞれた ${Math.round(cov * 100)}%・はみだし ${Math.round((1 - pre) * 100)}%）`, 2.2, pt < 45);
+  KIT.inst.bell(pt >= 70 ? 84 : 79, KIT.ensure().currentTime, 0.4, 0.08);
+  setTimeout(() => { S.round++; if (S.round >= ROUNDS) finish(); else nextRound(); }, 2400);
+}
+function snapshot() {   // シェア用に、いまの窓を残す
+  const c = mk(W, H), g = c.getContext("2d"); const st = S.state; S.state = "snap"; drawScene(g, S.t); S.state = st; return c;
+}
+function nextRound() {
+  S.refog = 1.0; breath();
+  S.drips = [];
+  S.shape = SHAPES[S.order[S.round]];
+  S.target = resample(S.shape.strokes, 6); S.drawn = [];
+  S.left = ROUND_T;
+  // 息でくもらせ終わってから始める（setTimeoutだと重い端末で、かき始めた線まで消える）
+  S.waitT = S.round === 0 ? 0.3 : 1.1;
+  S.state = "wait";
+}
+function startGame() {
+  KIT.ensure(); soundInit();
+  $("title").hidden = true; $("result").hidden = true;
+  const idx = SHAPES.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  S.order = idx.slice(0, ROUNDS); S.round = 0; S.scores = []; S.best = null;
+  mx.clearRect(0, 0, MASK.width, MASK.height); bx.clearRect(0, 0, BEAD.width, BEAD.height);
+  nextRound();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+$("act").addEventListener("click", () => judge());
+const RANKS = [[90, "窓の画家"], [75, "なぞり上手"], [55, "冬の落書き"], [35, "くもりの向こう"], [-1, "ただの手のあと"]];
+function finish() {
+  S.state = "result";
+  const avg = Math.round(S.scores.reduce((a, s) => a + s.pt, 0) / S.scores.length);
+  const rank = RANKS.find(r => avg >= r[0])[1];
+  S.res = { avg, rank };
+  $("rBig").innerHTML = `${avg}<small>点</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = S.scores.map(s => `<div class="stat"><small>${s.name}</small><b>${s.pt}点</b></div>`).join("");
+  const best = KIT.store.get("ketsuro-best", null);
+  if (best === null || avg > best) KIT.store.set("ketsuro-best", avg);
+  $("rNote").textContent = best === null || avg > best ? "自己ベスト更新！" : `自己ベスト ${best}点`;
+  $("result").hidden = false;
+  [0, 4, 7, 12].slice(0, avg >= 75 ? 4 : avg >= 45 ? 3 : 2).forEach((d, i) => KIT.inst.bell(76 + d, KIT.ensure().currentTime + i * 0.15, 0.5, 0.08));
+  KIT.music.stop(); setTimeout(() => startMusic(true), 900);
+}
+function shareText() { const r = S.res; return `結露のまど、3まいの平均 ${r.avg}点（${S.scores.map(s => s.name + s.pt).join("・")}）\nわたしは「${r.rank}」\n#結露のまど`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.fillStyle = "#1a1d2e"; g.fillRect(0, 0, 600, 630);
+  const snap = S.best ? S.best.snap : snapshot();
+  const sc = 630 / (BOX.s * 2 + 120);
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  g.translate(300, 315); g.scale(sc, sc); g.translate(-BOX.cx, -BOX.cy);
+  g.drawImage(snap, 0, 0); g.restore();
+  g.fillStyle = "#fbf8f4"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#c08a5a"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#33303d"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("結露のまど", 650, 92);
+  g.fillStyle = "#7d7889"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("くもった窓に、3まいなぞった", 650, 170);
+  g.fillStyle = "#8e6038"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = String(S.res.avg); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("点", 660 + tw, 274);
+  g.fillStyle = "#33303d"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#7d7889"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(S.scores.map(s => `${s.name} ${s.pt}`).join("　"), 650, 400);
+  g.fillText("#結露のまど ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 64, key: 65, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 21, leadVol: 0.05, chordVol: 0.05, density: 0.4 }
+    : { bpm: 78, key: 65, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 44, leadVol: 0.05, chordVol: 0.05, density: 0.45 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "ketsuro.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  for (let i = 0; i < 90; i++) S.snow.push({ x: Math.random() * W, y: Math.random() * H, v: 30 + Math.random() * 50, r: 1 + Math.random() * 2.4, a: 0.4 + Math.random() * 0.5, w: 0.5 + Math.random(), p: Math.random() * 6 });
+  const best = KIT.store.get("ketsuro-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best}点` : "お題をなぞれた割合と、はみださなさで採点";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { SHAPES, toScr, judge };
+</script>
+</body>
+</html>

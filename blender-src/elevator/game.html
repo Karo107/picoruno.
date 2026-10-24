@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1020">
+<title>ぴったりエレベーター</title>
+<meta name="description" content="夜のビルのエレベーター。呼ばれた階に、ブレーキひとつでぴったり止める。だんだん速くなる。段差は何cm？">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ぴったりエレベーター">
+<meta property="og:description" content="ブレーキはいちどきり。呼ばれた階に、段差0cmで止められるか。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./elevator.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1020'/%3E%3Crect x='8' y='5' width='16' height='22' rx='2' fill='%23c9ccd2' stroke='%235a3b33' stroke-width='1.2'/%3E%3Cpath d='M16 5v22' stroke='%235a3b33' stroke-width='1.2'/%3E%3Cpath d='M12 12l2-3 2 3M18 20l2 3 2-3' fill='none' stroke='%23e8a33c' stroke-width='1.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：夜のビルの断面（Blender）。かごをスクロールで追い、表示盤・段差メーターはゲームの中で描く。 */
+:root{
+  --night:#0d1020; --card:#fbfaf7; --ink:#2f3140; --sub:#787a88; --line:#e3e2dc;
+  --amber:#e8a33c; --amber-d:#b97a1e; --warn:#d65a4a; --ok:#4f9a6a;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--night);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(13,16,32,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--amber);color:#fff;box-shadow:0 4px 0 var(--amber-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--amber-d)}
+.btn:focus-visible{outline:3px solid #8fb4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--amber-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(1.9rem,9vw,2.6rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f4f2ec;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--amber);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+/* 操作ボタン：エレベーターの丸いボタン */
+#act{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));z-index:15;width:104px;height:104px;border-radius:50%;
+  border:6px solid #c9ccd2;background:radial-gradient(circle at 40% 35%,#4a4d58,#25272f);color:#ffd28a;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.05rem;box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 0 0 2px #111;touch-action:none}
+#act.on{color:#fff;background:radial-gradient(circle at 40% 35%,#ffcf7a,#e8a33c);box-shadow:0 0 24px rgba(232,163,60,.8),inset 0 0 0 2px #7a4d10}
+#act:focus-visible{outline:3px solid #8fb4ff;outline-offset:4px}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--amber-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f4f2ec;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.ng b{color:var(--warn)}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(13,16,32,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>ぴったりエレベーター</h1>
+  <p>夜のビル。呼ばれた階に、ブレーキひとつでぴったり止めよう。呼ばれるたびに、エレベーターは速くなる。</p>
+  <div class="how">
+    <b>出発</b><span>まるいボタンを押すと動きだす</span>
+    <b>止める</b><span>もう一度押すとブレーキ。ブレーキは一回きり、止まるまでききつづける</span>
+    <b>コツ</b><span>速いほど、止まるまでに長くすべる。早めに押そう</span>
+  </div>
+  <button class="btn" id="start" type="button">管理室に入る</button>
+  <div class="best" id="best"></div>
+</section>
+
+<button id="act" type="button" hidden>出発</button>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">6回の段差の平均</div>
+  <div class="big" id="rBig">0<small>cm</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一晩</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "ぴったりエレベーター";
+const GAME_URL = "https://runococco.github.io/picoruno./elevator.html";
+const $ = id => document.getElementById(id);
+const W = 720;
+const GEO = __JSON_geo__;
+const SRC = { bldg: "__IMG_bldg__", car: "__IMG_car__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+
+/* ビル（render.py と同じ。1 = 1cm） */
+const K = W / GEO.w;                      // 絵の px → 画面
+const BH = GEO.h * K;                     // ビルの絵の高さ（画面）
+const NF = GEO.nf, FH = GEO.fh;
+const PXCM = GEO.scale * K;               // 1cm が画面で何px
+const yOf = z => GEO.floors[0] * K - (z - 0) * PXCM;   // 1Fの床から z cm 上の画面 y
+const TOP = (NF - 1) * FH;
+const CAR_W = (GEO.carW || 240) * PXCM, CAR_H = (GEO.carH || 300) * PXCM, CAR_FLOOR = 25 / 300;   // かごの絵：下から 25cm が床の上面
+const ACC = 260, BRAKE = 210;             // 加速・ブレーキ cm/s²
+const VMAX = [170, 230, 290, 350, 420, 500];
+const CALLS = VMAX.length;
+
+const S = { state: "title", t: 0, p: 0, v: 0, dir: 1, from: 0, to: 0, i: 0, phase: "wait", errs: [], msg: null, camY: 0, door: 0, shake: 0, passed: 0, res: null };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / 1150), vh / 700);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - S.camY, lh - BH, 0) }; }
+
+/* 横の夜景（広い画面のすきま） */
+const CITY = [];
+(function () { const r = KIT.rng(3); for (let i = 0; i < 260; i++) CITY.push({ x: r(), y: r(), w: 3 + r() * 6, h: 3 + r() * 5, c: r() < 0.6 ? "#ffd48a" : r() < 0.5 ? "#bcd4ff" : "#ff9a6a", a: 0.25 + r() * 0.6 }); })();
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.fillStyle = "#0d1020"; cx.fillRect(0, 0, v.lw, v.lh);
+  cx.translate(v.ox, v.oy + (S.shake ? Math.sin(S.t * 70) * S.shake * 4 : 0));
+  if (v.lw > W + 1) drawCity(cx, v);
+  drawScene(cx, S.t);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play") drawHud();
+}
+function drawCity(g, v) {
+  g.save();
+  const gr = g.createLinearGradient(0, -v.oy, 0, -v.oy + v.lh); gr.addColorStop(0, "#0b0f22"); gr.addColorStop(1, "#1b1730");
+  g.fillStyle = gr; g.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  for (const c of CITY) {
+    const side = c.x < 0.5 ? -1 : 1, x = side < 0 ? -v.ox + c.x * 2 * v.ox * 0.95 : W + (c.x - 0.5) * 2 * v.ox * 0.95;
+    const y = c.y * BH;
+    g.globalAlpha = c.a * (0.85 + 0.15 * Math.sin(S.t * 0.7 + c.x * 50)); g.fillStyle = c.c; g.fillRect(x, y, c.w, c.h);
+  }
+  g.globalAlpha = 1; g.restore();
+}
+function drawScene(g, t) {
+  if (IMG.bldg) g.drawImage(IMG.bldg, 0, 0, W, BH);
+  // ケーブル
+  const carTop = yOf(S.p + 34) - CAR_H * (1 - CAR_FLOOR);
+  g.strokeStyle = "rgba(20,20,24,.9)"; g.lineWidth = 1.6;
+  for (const dx of [-6, 6]) { g.beginPath(); g.moveTo(W / 2 + dx, yOf(TOP + FH + 40)); g.lineTo(W / 2 + dx, carTop + 4); g.stroke(); }
+  // かご
+  if (IMG.car) {
+    const y = yOf(S.p + 34) - CAR_H * (1 - CAR_FLOOR);
+    g.drawImage(IMG.car, W / 2 - CAR_W / 2, y, CAR_W, CAR_H);
+    // 扉：閉まっているときは左右からステンレスの扉
+    const d = 1 - S.door, dw = (CAR_W - 60 * PXCM) / 2 * d;
+    if (dw > 0.5) {
+      const top = y + 30 * PXCM, h = CAR_H - 30 * PXCM - CAR_H * CAR_FLOOR + 10 * PXCM, l = W / 2 - (CAR_W - 60 * PXCM) / 2;
+      const gr = g.createLinearGradient(l, 0, l + CAR_W, 0);
+      gr.addColorStop(0, "#9ea3ab"); gr.addColorStop(0.5, "#d9dce1"); gr.addColorStop(1, "#8d9299");
+      g.fillStyle = gr; g.fillRect(l, top, dw, h); g.fillRect(W / 2 + (CAR_W - 60 * PXCM) / 2 - dw, top, dw, h);
+      g.strokeStyle = "rgba(40,40,50,.6)"; g.lineWidth = 1; g.strokeRect(l, top, dw, h); g.strokeRect(W / 2 + (CAR_W - 60 * PXCM) / 2 - dw, top, dw, h);
+    }
+  }
+  // 呼ばれている階のランプ
+  if (S.state === "play") {
+    const y = yOf(S.to * FH + 34);
+    const al = 0.55 + 0.45 * Math.sin(t * 6);
+    g.save(); g.globalAlpha = al;
+    g.fillStyle = "#ffc457"; g.shadowColor = "#ffb030"; g.shadowBlur = 18;
+    g.beginPath(); g.moveTo(W / 2 + CAR_W / 2 + 18, y - 4); g.lineTo(W / 2 + CAR_W / 2 + 34, y - 14); g.lineTo(W / 2 + CAR_W / 2 + 34, y + 6); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(W / 2 - CAR_W / 2 - 18, y - 4); g.lineTo(W / 2 - CAR_W / 2 - 34, y - 14); g.lineTo(W / 2 - CAR_W / 2 - 34, y + 6); g.closePath(); g.fill();
+    g.restore();
+    // 床の線（ぴったりの目安）
+    g.strokeStyle = "rgba(255,196,87,.5)"; g.setLineDash([6, 6]); g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(W / 2 - CAR_W / 2 - 40, y); g.lineTo(W / 2 + CAR_W / 2 + 40, y); g.stroke(); g.setLineDash([]);
+  }
+}
+/* 表示盤（階数）と段差メーター */
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  // 階数表示：エレベーターの表示盤ふう
+  const w = 220, x = 12;
+  g.fillStyle = "rgba(10,10,14,.82)"; rr(g, x, top, w, 70, 14); g.fill();
+  g.strokeStyle = "rgba(201,204,210,.6)"; g.lineWidth = 2; rr(g, x, top, w, 70, 14); g.stroke();
+  const fl = clamp(Math.round(S.p / FH), 0, NF - 1) + 1;
+  g.fillStyle = "#ffb347"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.textBaseline = "middle"; g.textAlign = "center";
+  g.fillText(String(fl), x + 72, top + 37);
+  // 向きの矢印
+  if (Math.abs(S.v) > 5) { g.beginPath(); const ay = top + 35, s = S.dir; g.moveTo(x + 26, ay + 8 * s); g.lineTo(x + 36, ay - 8 * s); g.lineTo(x + 46, ay + 8 * s); g.closePath(); g.fill(); }
+  g.fillStyle = "#fff"; g.font = '700 13px "Zen Maru Gothic",sans-serif'; g.textAlign = "left";
+  g.fillText(`呼び出し ${S.i + 1}/${CALLS}`, x + 112, top + 22);
+  g.font = '800 22px "M PLUS Rounded 1c",sans-serif'; g.fillStyle = "#ffd28a";
+  g.fillText(`${S.to + 1}階へ`, x + 112, top + 48);
+  // 速さ
+  g.fillStyle = "rgba(255,255,255,.75)"; g.font = '700 12px "Zen Maru Gothic",sans-serif'; g.textAlign = "right";
+  g.fillText(`${(Math.abs(S.v) / 100 * 60).toFixed(0)} m/分`, x + w - 10, top + 62);
+  // 段差メーター（止まったあと）
+  if (S.phase === "stopped" || S.phase === "door") {
+    const err = S.errs[S.errs.length - 1], mw = 150, mh = 96, mx = vw - mw - 12, my = top + 54;
+    g.fillStyle = "rgba(251,250,247,.95)"; rr(g, mx, my, mw, mh, 14); g.fill();
+    // 乗り場の床と、かごの床
+    const off = clamp(err * 3, -34, 34);
+    g.fillStyle = "#8c6f55"; g.fillRect(mx + 10, my + 52, mw / 2 - 10, 10);
+    g.fillStyle = "#9ea3ab"; g.fillRect(mx + mw / 2, my + 52 - off, mw / 2 - 10, 10);
+    g.strokeStyle = "#2f3140"; g.lineWidth = 1; g.strokeRect(mx + 10, my + 52, mw / 2 - 10, 10); g.strokeRect(mx + mw / 2, my + 52 - off, mw / 2 - 10, 10);
+    g.fillStyle = "#787a88"; g.font = '700 11px "Zen Maru Gothic",sans-serif'; g.textAlign = "left"; g.fillText("乗り場", mx + 12, my + 76); g.textAlign = "right"; g.fillText("かご", mx + mw - 12, my + 76);
+    g.textAlign = "center"; g.fillStyle = Math.abs(err) < 2 ? "#4f9a6a" : Math.abs(err) < 10 ? "#2f3140" : "#d65a4a";
+    g.font = '800 18px "M PLUS Rounded 1c",sans-serif'; g.fillText(`段差 ${Math.abs(err).toFixed(1)}cm`, mx + mw / 2, my + 22);
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 160;
+    g.fillStyle = S.msg.warn ? "rgba(190,70,60,.92)" : "rgba(13,16,32,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 音 ---------- */
+let motor = null;
+function motorInit() {
+  const ac = KIT.ensure(); if (!ac || motor) return;
+  const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = 40;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 220;
+  const g = ac.createGain(); g.gain.value = 0;
+  o.connect(lp); lp.connect(g); g.connect(KIT.bus()); o.start();
+  const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 600; bp.Q.value = 0.7;
+  const ng = ac.createGain(); ng.gain.value = 0;
+  src.connect(bp); bp.connect(ng); ng.connect(KIT.bus()); src.start();
+  const sq = ac.createBufferSource(); sq.buffer = KIT.noiseBuffer(); sq.loop = true;
+  const sb = ac.createBiquadFilter(); sb.type = "bandpass"; sb.frequency.value = 3200; sb.Q.value = 9;
+  const sg = ac.createGain(); sg.gain.value = 0;
+  sq.connect(sb); sb.connect(sg); sg.connect(KIT.bus()); sq.start();
+  motor = { o, g, ng, bp, sg, sb };
+}
+function motorUpdate() {
+  if (!motor) return;
+  const ac = KIT.ensure(), now = ac.currentTime, s = Math.abs(S.v) / 500;
+  motor.o.frequency.setTargetAtTime(38 + s * 60, now, 0.08);
+  motor.g.gain.setTargetAtTime(S.state === "play" ? 0.015 + s * 0.05 : 0, now, 0.1);
+  motor.ng.gain.setTargetAtTime(S.state === "play" ? s * 0.05 : 0, now, 0.1);
+  motor.bp.frequency.setTargetAtTime(400 + s * 900, now, 0.1);
+  motor.sg.gain.setTargetAtTime(S.phase === "brake" ? 0.012 + s * 0.03 : 0, now, 0.05);
+  motor.sb.frequency.setTargetAtTime(2600 + s * 1500, now, 0.1);
+}
+function chime(ok) {   // 到着のチャイム（ポーン）
+  const f = ok ? [76, 72] : [72, 69];
+  f.forEach((m, i) => { KIT.tone({ f: KIT.mtof(m), t: KIT.ensure().currentTime + i * 0.32, dur: 1.2, vol: 0.09, type: "sine", wet: 0.3 }); KIT.tone({ f: KIT.mtof(m) * 3, t: KIT.ensure().currentTime + i * 0.32, dur: 0.4, vol: 0.02, type: "sine", wet: 0.3 }); });
+}
+function tick() { KIT.tone({ f: 1800, dur: 0.025, vol: 0.025, type: "square", lp: 3000, wet: 0 }); }
+
+/* ---------- 入力：ボタン・画面タップ・スペース ---------- */
+function press() {
+  if (S.state !== "play") return;
+  KIT.ensure(); motorInit();
+  if (S.phase === "wait") go();
+  else if (S.phase === "run") brake();
+}
+$("act").addEventListener("pointerdown", e => { e.preventDefault(); press(); });
+cv.addEventListener("pointerdown", () => press());
+window.addEventListener("keydown", e => { if (e.code === "Space" || e.code === "Enter") { if (S.state === "play") { e.preventDefault(); press(); } } });
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  if (S.state === "play") {
+    const n = 4, h = dt / n;
+    for (let k = 0; k < n; k++) {
+      if (S.phase === "run") S.v = Math.min(VMAX[S.i], Math.abs(S.v) + ACC * h) * S.dir;
+      else if (S.phase === "brake") { const sp = Math.max(0, Math.abs(S.v) - BRAKE * h); S.v = sp * S.dir; if (sp === 0) { stop(); break; } }
+      S.p += S.v * h;
+      if (S.p < 0 || S.p > TOP) { S.p = clamp(S.p, 0, TOP); emergency(); break; }
+    }
+    // 通りすぎた階で小さな音
+    const fl = Math.floor(S.p / FH + 0.5);
+    if (fl !== S.passed) { S.passed = fl; if (S.phase === "run" || S.phase === "brake") tick(); }
+  }
+  S.door = lerp(S.door, S.phase === "door" ? 1 : 0, 1 - Math.pow(0.02, dt));
+  S.shake = Math.max(0, S.shake - dt * 2);
+  // カメラはかごを追う（少しおくれて）
+  const target = yOf(S.p + 34) - CAR_H * 0.35;
+  S.camY = lerp(S.camY, target, 1 - Math.pow(0.004, dt));
+  motorUpdate();
+}
+function go() {
+  S.phase = "run"; S.dir = S.to > S.from ? 1 : -1;
+  $("act").textContent = "ブレーキ"; $("act").classList.add("on");
+  KIT.tone({ f: 660, dur: 0.06, vol: 0.05, type: "triangle", wet: 0.1 });
+}
+function brake() {
+  S.phase = "brake"; $("act").classList.remove("on"); $("act").textContent = "…";
+  KIT.noise({ dur: 0.2, vol: 0.05, f: 2800, q: 6, wet: 0.05 });
+  KIT.vibrate(15);
+}
+function stop() {
+  const err = S.p - S.to * FH;
+  S.errs.push(err); S.phase = "stopped";
+  const a = Math.abs(err);
+  if (a < 1) say("ぴったり！", 1.6); else if (a < 5) say("おしい！", 1.4); else if (a < 30) say(err > 0 ? "行きすぎ" : "手前で止まった", 1.4, a > 15); else say(err > 0 ? "通りすぎた！" : "ぜんぜん足りない！", 1.6, true);
+  chime(a < 5);
+  setTimeout(() => { S.phase = "door"; KIT.noise({ dur: 0.6, vol: 0.03, f: 900, q: 0.8, wet: 0.1 }); }, 450);
+  setTimeout(next, 2300);
+}
+function emergency() {
+  S.v = 0; S.shake = 1; S.phase = "stopped";
+  const err = S.p - S.to * FH;
+  S.errs.push(Math.sign(err || 1) * Math.max(150, Math.abs(err)));
+  say("非常停止！", 1.8, true);
+  KIT.noise({ dur: 0.4, vol: 0.12, f: 300, q: 0.8, type: "lowpass", wet: 0.1 }); KIT.vibrate([60, 40, 60]);
+  setTimeout(next, 2300);
+}
+function next() {
+  if (S.state !== "play") return;
+  S.i++;
+  if (S.i >= CALLS) { finish(); return; }
+  call();
+}
+function call() {
+  S.from = Math.round(S.p / FH); S.p = S.from * FH + (S.p - S.from * FH);   // ずれたまま次へ
+  let to;
+  do { to = Math.floor(Math.random() * NF); } while (Math.abs(to - S.from) < 3);
+  S.to = to; S.v = 0; S.phase = "wait";
+  $("act").textContent = "出発"; $("act").classList.remove("on"); $("act").hidden = false;
+  say(`${to + 1}階でお呼びです`, 1.6);
+  KIT.tone({ f: KIT.mtof(84), dur: 0.15, vol: 0.04, type: "sine", wet: 0.2 });
+}
+function startGame() {
+  KIT.ensure(); motorInit();
+  $("title").hidden = true; $("result").hidden = true;
+  S.state = "play"; S.i = 0; S.errs = []; S.p = 0; S.v = 0; S.passed = 0; S.camY = yOf(34) - CAR_H * 0.35;
+  call();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[1, "ぴったり職人"], [3, "ベテラン運転士"], [8, "ふつうのエレベーター"], [20, "ちょっと段差"], [50, "つまずく人続出"], [1e9, "階段のほうが早い"]];
+function finish() {
+  S.state = "result"; S.phase = "door"; $("act").hidden = true;
+  const abs = S.errs.map(Math.abs), avg = abs.reduce((a, b) => a + b, 0) / abs.length;
+  const perfect = abs.filter(a => a < 1).length, worst = Math.max(...abs);
+  const rank = RANKS.find(r => avg < r[0])[1];
+  S.res = { avg, perfect, worst, rank };
+  $("rBig").innerHTML = `${avg.toFixed(1)}<small>cm</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = `<div class="stat${perfect ? " good" : ""}"><small>ぴったり（1cm未満）</small><b>${perfect}回</b></div>`
+    + `<div class="stat${worst > 30 ? " ng" : ""}"><small>いちばんずれた</small><b>${worst.toFixed(0)}cm</b></div>`
+    + `<div class="stat"><small>最高速度</small><b>${(VMAX[CALLS - 1] / 100 * 60).toFixed(0)}m/分</b></div>`;
+  const best = KIT.store.get("elevator-best", null);
+  if (best === null || avg < best) KIT.store.set("elevator-best", avg);
+  $("rNote").textContent = best === null || avg < best ? "自己ベスト更新！" : `自己ベスト ${best.toFixed(1)}cm`;
+  $("result").hidden = false;
+  chime(avg < 8);
+  KIT.music.stop(); setTimeout(() => startMusic(true), 900);
+}
+function shareText() { const r = S.res; return `ぴったりエレベーター、6回の段差の平均 ${r.avg.toFixed(1)}cm（ぴったり ${r.perfect}回）\nわたしは「${r.rank}」\n#ぴったりエレベーター`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  g.fillStyle = "#0d1020"; g.fillRect(0, 0, 600, 630);
+  const sc = 630 / 560;
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  g.translate(300, 315); g.scale(sc, sc); g.translate(-W / 2, -(yOf(S.p + 34) - CAR_H * 0.4));
+  drawScene(g, S.t); g.restore();
+  g.fillStyle = "#fbfaf7"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#e8a33c"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#2f3140"; g.font = '800 38px "M PLUS Rounded 1c",sans-serif'; g.fillText("ぴったりエレベーター", 650, 92);
+  g.fillStyle = "#787a88"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("6回の段差の平均", 650, 170);
+  g.fillStyle = "#b97a1e"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = S.res.avg.toFixed(1); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("cm", 660 + tw, 274);
+  g.fillStyle = "#2f3140"; g.font = '800 38px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  // 6回の段差（棒）
+  S.errs.forEach((e, i) => {
+    const x = 660 + i * 76, base = 470, hgt = clamp(e, -60, 60);
+    g.fillStyle = "#e3e2dc"; g.fillRect(x - 4, base - 1, 56, 2);
+    g.fillStyle = Math.abs(e) < 1 ? "#4f9a6a" : Math.abs(e) < 10 ? "#e8a33c" : "#d65a4a";
+    g.fillRect(x + 8, Math.min(base, base - hgt), 32, Math.max(3, Math.abs(hgt)));
+    g.fillStyle = "#787a88"; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.fillText(`${Math.abs(e).toFixed(1)}`, x + 24, 560);
+    g.textAlign = "left";
+  });
+  g.fillStyle = "#787a88"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#ぴったりエレベーター ・ picoruno.", 650, 605);
+  return c;
+}
+function startMusic(calm) {
+  // エレベーターの中の音楽：やわらかいボサノバふう
+  KIT.music.start(calm
+    ? { bpm: 76, key: 62, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "epiano", chord: "pad", beat: "none", seed: 9, leadVol: 0.06, chordVol: 0.05, density: 0.45 }
+    : { bpm: 104, key: 62, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "marimba", chord: "epiano", beat: "shaker", seed: 64, leadVol: 0.06, chordVol: 0.05, density: 0.55, swing: 0.15 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "elevator.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", e => { e.stopPropagation(); KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("elevator-best", null);
+  $("best").textContent = best !== null ? `自己ベスト 平均 ${best.toFixed(1)}cm` : "6回の段差の平均を、cm単位で採点";
+  S.camY = yOf(34) - 150;
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { yOf, FH, VMAX, BRAKE, press };
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "bg":    {"src": "out/bg.png",    "fmt": "jpg",  "w": 1080, "q": 80},
+  "paper": {"src": "out/paper.png", "fmt": "webp", "w": 1080, "q": 82, "gain": 1.07},
+  "hanko": {"src": "out/hanko.png", "fmt": "webp", "w": 420,  "q": 90},
+  "hero":  {"src": "out/hero.png",  "fmt": "jpg",  "w": 900,  "q": 82}
+}

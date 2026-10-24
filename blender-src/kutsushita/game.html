@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b08a62">
+<title>くつしたペア</title>
+<meta name="description" content="日曜の朝、とりこんだ洗濯物の山から、同じくつしたを2つずつそろえる。しましまの数、かかとの色、長さ。微妙にちがう柄に注意。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="くつしたペア">
+<meta property="og:description" content="同じくつした、どれとどれ？ 洗濯かご3杯ぶんをペアにする。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./kutsushita.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f3e6d2'/%3E%3Cpath d='M11 4h8v13l6 4a4 4 0 0 1-3 7h-5a6 6 0 0 1-6-6z' fill='%235f86a8' stroke='%234a3a2c' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M11 8h8M11 12h8' stroke='%23f3e6d2' stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：真上から見た朝のフローリング（Blender）。くつしたの陰影も Blender で描き、色と柄はゲームの中でかける。 */
+:root{
+  --ground:#b08a62; --card:#fffaf2; --ink:#4a3a2c; --sub:#8a7a69; --line:#ecdfcb;
+  --main:#5f86a8; --main-d:#43637f; --warn:#c0492f; --ok:#5d8f4e;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(60,45,30,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(40,30,20,.4);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #e6b33c;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f3ead9;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--main);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f3ead9;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.ng b{color:var(--warn)}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(60,45,30,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>くつしたペア</h1>
+  <p>日曜の朝。とりこんだ洗濯物の山から、同じくつしたを2つずつそろえよう。洗濯かごは3杯。</p>
+  <div class="how">
+    <b>ペア</b><span>同じくつしたを2つ、順にタップ。下のトレイにたたまれる</span>
+    <b>よける</b><span>重なっているくつしたは、ドラッグでどかせる</span>
+    <b>注意</b><span>しましまの数・かかとの色・長さ。まちがえると +3秒。片方だけのくつしたも…</span>
+  </div>
+  <button class="btn" id="start" type="button">洗濯かごをあける</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">3杯ぶん、ぜんぶペアにした時間</div>
+  <div class="big" id="rBig">0<small>秒</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一度たたむ</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "くつしたペア";
+const GAME_URL = "https://runococco.github.io/picoruno./kutsushita.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg: "__IMG_bg__", sockS: "__IMG_sockS__", sockD: "__IMG_sockD__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const ease = k => 1 - Math.pow(1 - k, 3);
+
+let CW = GEO.cell * GEO.ppc * 0.85;              // 1つの絵の大きさ（画面）。細い画面では小さめ（dump で決める）
+const TRAY = { x: GEO.tray[0], y: GEO.tray[1], w: GEO.trayW, h: GEO.trayH };
+const BASKET = { x: GEO.basket[0], y: GEO.basket[1] };
+const AREA = { x0: 70, x1: W - 70, y0: 150, y1: TRAY.y - TRAY.h / 2 - 70 };
+/* スマホのたて画面では左右が切れるので、見えているはばの中に置く */
+function visX() { const v = view(); return [Math.max(0, -v.ox), Math.min(W, W + v.ox)]; }
+function setArea() {
+  const [a, b] = visX(), w = b - a;
+  CW = GEO.cell * GEO.ppc * (w < 560 ? 0.7 : w < 650 ? 0.78 : 0.85);
+  AREA.x0 = a + CW * 0.3; AREA.x1 = b - CW * 0.3;
+}
+const ROUNDS = [{ pairs: 5, lone: 0, fam: 0 }, { pairs: 7, lone: 1, fam: 2 }, { pairs: 9, lone: 1, fam: 3 }];
+const PENALTY = 3;
+
+const S = { allPairs: [], state: "title", t: 0, round: 0, time: 0, miss: 0, socks: [], sel: null, pairs: [], msg: null, fx: [], parts: [], res: null, lock: 0, roundTimes: [] };
+
+/* ---------- くつしたの柄 ---------- */
+const COL = {
+  ネイビー: [46, 62, 104], グレー: [150, 150, 152], チャコール: [72, 72, 76], クリーム: [236, 224, 198], しろ: [246, 245, 240],
+  からし: [214, 164, 58], ピンク: [228, 160, 164], セージ: [146, 172, 136], れんが: [178, 84, 64], 水色: [150, 188, 216], くろ: [40, 40, 44], ちゃ: [138, 98, 68]
+};
+const CN = Object.keys(COL);
+const DIFF_TEXT = { shape: "長さがちがう", base: "色がちがう", stripe: "しましまがあるかないか", sn: "しましまの数がちがう", sc: "しましまの色がちがう", dots: "水玉があるかないか", heel: "かかとの色がちがう", toe: "つま先の色がちがう", cuff: "はき口の色がちがう" };
+const keyOf = v => JSON.stringify([v.shape, v.base, v.stripe, v.dots, v.heel, v.toe, v.cuff]);
+function diffOf(a, b) {
+  if (a.shape !== b.shape) return "shape";
+  if (a.base !== b.base) return "base";
+  if (!!a.stripe !== !!b.stripe) return "stripe";
+  if (a.stripe && a.stripe.n !== b.stripe.n) return "sn";
+  if (a.stripe && a.stripe.c !== b.stripe.c) return "sc";
+  if (!!a.dots !== !!b.dots || (a.dots && a.dots !== b.dots)) return "dots";
+  if (a.heel !== b.heel) return "heel";
+  if (a.toe !== b.toe) return "toe";
+  if (a.cuff !== b.cuff) return "cuff";
+  return null;
+}
+function randVariant(r, base) {
+  const pick = a => a[Math.floor(r() * a.length)];
+  const others = CN.filter(c => c !== base);
+  const v = { shape: Math.floor(r() * 3), base, stripe: null, dots: null, heel: null, toe: null, cuff: null };
+  const kind = r();
+  if (kind < 0.45) v.stripe = { c: pick(others), n: 2 + Math.floor(r() * 3) };
+  else if (kind < 0.62) v.dots = pick(others);
+  if (r() < 0.5) { v.heel = pick(others); if (r() < 0.8) v.toe = v.heel; }
+  if (r() < 0.35) v.cuff = pick(others);
+  return v;
+}
+/* 1か所だけ変えた「きょうだい」 */
+function mutate(r, v) {
+  const pick = a => a[Math.floor(r() * a.length)];
+  const w = JSON.parse(JSON.stringify(v));
+  const others = CN.filter(c => c !== v.base);
+  const ops = ["shape", "heel", "cuff", "sn", "dots", "stripe"];
+  const op = pick(ops);
+  if (op === "shape") w.shape = (w.shape + 1 + Math.floor(r() * 2)) % 3;
+  else if (op === "heel") { w.heel = w.heel ? null : pick(others); w.toe = w.heel; }
+  else if (op === "cuff") w.cuff = w.cuff ? null : pick(others);
+  else if (op === "sn" && w.stripe) w.stripe.n += w.stripe.n > 2 && r() < 0.5 ? -1 : 1;
+  else if (op === "dots" && !w.stripe) w.dots = w.dots ? null : pick(others);
+  else if (op === "stripe" && !w.dots) w.stripe = w.stripe ? null : { c: pick(others), n: 3 };
+  else w.shape = (w.shape + 1) % 3;
+  return w;
+}
+function makeRound(r, spec) {
+  const vs = [], keys = new Set();
+  const add = v => { const k = keyOf(v); if (keys.has(k)) return false; keys.add(k); vs.push(v); return true; };
+  const bases = CN.slice().sort(() => r() - 0.5);
+  let bi = 0;
+  // 家族：同じ色で1か所ちがい
+  for (let f = 0; f < spec.fam && vs.length < spec.pairs; f++) {
+    const root = randVariant(r, bases[bi++]); add(root);
+    let n = 0, tries = 0;
+    while (n < 2 && vs.length < spec.pairs && tries++ < 30) if (add(mutate(r, root))) n++;
+  }
+  while (vs.length < spec.pairs) add(randVariant(r, bases[bi++ % bases.length]));
+  const list = [];
+  vs.forEach((v, i) => { list.push({ v, id: i }, { v, id: i }); });
+  // 片方だけのくつした：どれかのきょうだい
+  for (let l = 0; l < spec.lone; l++) {
+    let w, tries = 0;
+    do { w = mutate(r, vs[Math.floor(r() * vs.length)]); } while (keys.has(keyOf(w)) && tries++ < 30);
+    keys.add(keyOf(w)); list.push({ v: w, id: 100 + l, lone: true });
+  }
+  return list;
+}
+
+/* 柄つきの絵を作る：Blender の陰影 × 柄（しるしの絵で長さ・まわり・部位を読む） */
+let DATA = null, SHADE = null, CELLPX = 0;
+const toLin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+const LIN = new Float32Array(256).map((_, i) => toLin(i));
+function prepare() {
+  CELLPX = IMG.sockS.height;
+  const w = IMG.sockS.width, h = IMG.sockS.height;
+  const read = im => { const c = mk(w, h), g = c.getContext("2d"); g.drawImage(im, 0, 0, w, h); return g.getImageData(0, 0, w, h).data; };
+  SHADE = read(IMG.sockS); DATA = read(IMG.sockD);
+  // 影（形ごと）
+  SHADOW = [0, 1, 2].map(k => {
+    const c = mk(CELLPX, CELLPX), g = c.getContext("2d");
+    g.filter = "blur(" + Math.round(CELLPX * 0.02) + "px)";
+    g.drawImage(IMG.sockS, k * CELLPX, 0, CELLPX, CELLPX, 0, 0, CELLPX, CELLPX);
+    g.filter = "none"; g.globalCompositeOperation = "source-in"; g.fillStyle = "rgba(70,45,20,0.55)"; g.fillRect(0, 0, CELLPX, CELLPX);
+    return c;
+  });
+}
+let SHADOW = [];
+const cache = new Map();
+function sprite(v) {
+  const k = keyOf(v);
+  if (cache.has(k)) return cache.get(k);
+  const n = CELLPX, c = mk(n, n), g = c.getContext("2d"), id = g.createImageData(n, n), o = id.data;
+  const sh = GEO.shapes[v.shape], L = sh.L, h0 = sh.heel[0], h1 = sh.heel[1], rowW = SHADE.length / 4 / IMG.sockS.height;
+  const base = COL[v.base];
+  const legEnd = h0 + 1;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const si = (y * rowW + v.shape * n + x) * 4, a = SHADE[si + 3];
+    if (a < 4) continue;
+    const u = LIN[DATA[si]], vv = LIN[DATA[si + 1]], rg = LIN[DATA[si + 2]];
+    const s = u * L, part = Math.round(rg * 4);       // 0 本体 1 はき口 2 かかと 3 つま先
+    let col = base;
+    if (v.stripe) {
+      const st = 3.2, en = v.shape === 0 ? L - 5.5 : legEnd, span = en - st;
+      if (s > st && s < en) { const p = (s - st) / span * v.stripe.n + 0.25; if (p % 1 > 0.5) col = COL[v.stripe.c]; }
+    }
+    if (v.dots) {
+      const ax = s / 2.4, ay = Math.cos(TAU * vv) * 4.6 / 2.4 + (Math.floor(ax + 0.5) % 2) * 0.5;
+      const dx = ax - Math.round(ax), dy = ay - Math.round(ay);
+      if (dx * dx + dy * dy < 0.09) col = COL[v.dots];
+    }
+    if (part === 1) col = v.cuff ? COL[v.cuff] : col === base ? base : col;
+    if (part === 2 && v.heel) col = COL[v.heel];
+    if (part === 3 && v.toe) col = COL[v.toe];
+    const L0 = SHADE[si] / 255 / 0.68;
+    o[(y * n + x) * 4] = Math.min(255, col[0] * L0);
+    o[(y * n + x) * 4 + 1] = Math.min(255, col[1] * L0);
+    o[(y * n + x) * 4 + 2] = Math.min(255, col[2] * L0);
+    o[(y * n + x) * 4 + 3] = a;
+  }
+  g.putImageData(id, 0, 0);
+  cache.set(k, c);
+  return c;
+}
+function mk(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 560, lh - H, 0) }; }
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.bg && (v.lw > W + 1 || v.lh > H + 1)) {
+    cx.save(); cx.filter = "blur(16px)"; cx.drawImage(IMG.bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(70,50,30,.2)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  drawScene(cx, S.t);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play" || S.state === "dump" || S.state === "clear") drawHud();
+}
+function drawScene(g, t) {
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 0, W, H);
+  drawTray(g);
+  for (const s of S.socks) if (!s.gone) drawSock(g, s);
+  for (const f of S.fx) drawSock(g, f.s);
+  for (const q of S.parts) { g.globalAlpha = clamp(q.life, 0, 1); g.fillStyle = q.c; g.beginPath(); g.arc(q.x, q.y, q.r, 0, TAU); g.fill(); }
+  g.globalAlpha = 1;
+}
+function drawSock(g, s, alpha = 1) {
+  if (!CELLPX) return;
+  const sp = sprite(s.v), lift = s.lift || 0, sc = (s.sc || 1) * (1 + lift * 0.07);
+  const shake = s.shake > 0 ? Math.sin(s.shake * 60) * 7 * s.shake : 0;
+  g.save(); g.translate(s.x + shake, s.y - lift * 6 - (s.z || 0)); g.rotate(s.a);
+  g.scale(s.flip * sc, sc);
+  // 影
+  const so = 4 + lift * 10 + (s.z || 0) * 0.4;
+  g.save(); g.rotate(-s.a); g.translate(so * 0.6, so); g.rotate(s.a); g.globalAlpha = alpha * (0.75 - lift * 0.2);
+  g.drawImage(SHADOW[s.v.shape], -CW / 2, -CW / 2, CW, CW); g.restore();
+  g.globalAlpha = alpha;
+  g.drawImage(sp, -CW / 2, -CW / 2, CW, CW);
+  g.restore();
+  if (s === S.sel) {
+    g.save(); g.translate(s.x, s.y - lift * 6); g.strokeStyle = `rgba(255,248,220,${0.7 + 0.3 * Math.sin(S.t * 8)})`; g.lineWidth = 3; g.setLineDash([6, 6]);
+    g.beginPath(); g.arc(0, 0, CW * 0.36, 0, TAU); g.stroke(); g.restore();
+  }
+}
+/* トレイ：ペアは2つ重ねてたたむ */
+function slotPos(i, n) {
+  const [a, b] = visX(), m = Math.max(n, 5), w = Math.min(TRAY.w - 70, b - a - 80);
+  return { x: TRAY.x - w / 2 + (m === 1 ? w / 2 : w * i / (m - 1)), y: TRAY.y + 4 };
+}
+function drawTray(g) {
+  const n = ROUNDS[S.round] ? ROUNDS[S.round].pairs : 5;
+  for (let i = 0; i < S.pairs.length; i++) {
+    const p = S.pairs[i], q = slotPos(i, n);
+    if (p.fly < 1) continue;
+    drawFolded(g, p.v, q.x, q.y, 1);
+  }
+}
+function drawFolded(g, v, x, y, al, big = 1) {
+  const sc = 0.36 * big * 0.85 * GEO.cell * GEO.ppc / CW;
+  for (let k = 0; k < 2; k++) drawSock(g, { v, x: x + k * 5 - 2, y: y + k * 3 - 2, a: -Math.PI / 2 + 0.06 - k * 0.04, flip: 1, sc, lift: 0 }, al);
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(60,45,30,.66)"; rr(g, 12, top, w, 52, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 18px "M PLUS Rounded 1c",sans-serif';
+  const spec = ROUNDS[S.round];
+  g.fillText(`かご ${S.round + 1}/3　ペア ${S.pairs.length}/${spec.pairs}`, 28, top + 26);
+  g.textAlign = "right";
+  g.fillStyle = "#fff";
+  g.fillText(`${S.time.toFixed(1)}秒`, 12 + w - 14, top + 26);
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 64;
+    g.fillStyle = S.msg.warn ? "rgba(170,60,40,.92)" : "rgba(60,45,30,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 当たり判定：絵のアルファで ---------- */
+function hit(s, p) {
+  const sc = (s.sc || 1), dx = p.x - s.x, dy = p.y - s.y;
+  const ca = Math.cos(-s.a), sa = Math.sin(-s.a);
+  let lx = (dx * ca - dy * sa) / sc, ly = (dx * sa + dy * ca) / sc;
+  lx *= s.flip;
+  const px = Math.floor((lx / CW + 0.5) * CELLPX), py = Math.floor((ly / CW + 0.5) * CELLPX);
+  if (px < 0 || py < 0 || px >= CELLPX || py >= CELLPX) return false;
+  // 指は太いので、まわり 2 マスも見る
+  const rowW = IMG.sockS.width;
+  for (const [ox, oy] of [[0, 0], [3, 0], [-3, 0], [0, 3], [0, -3]]) {
+    const xx = clamp(px + ox, 0, CELLPX - 1), yy = clamp(py + oy, 0, CELLPX - 1);
+    if (SHADE[((yy * rowW) + s.v.shape * CELLPX + xx) * 4 + 3] > 100) return true;
+  }
+  return false;
+}
+function topAt(p) { for (let i = S.socks.length - 1; i >= 0; i--) { const s = S.socks[i]; if (!s.gone && !s.busy && hit(s, p)) return s; } return null; }
+function toTop(s) { const i = S.socks.indexOf(s); if (i >= 0) { S.socks.splice(i, 1); S.socks.push(s); } }
+
+/* ---------- 入力：タップで選ぶ、ドラッグでどかす ---------- */
+let drag = null;
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+cv.addEventListener("pointerdown", e => {
+  if (S.state !== "play") return;
+  const p = toWorld(e), s = topAt(p);
+  if (!s) return;
+  toTop(s);
+  drag = { s, p0: p, last: p, moved: false, id: e.pointerId };
+  try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  pick();
+});
+cv.addEventListener("pointermove", e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const p = toWorld(e);
+  if (!drag.moved && Math.hypot(p.x - drag.p0.x, p.y - drag.p0.y) > 10) drag.moved = true;
+  if (drag.moved) {
+    const s = drag.s;
+    const [vx0, vx1] = visX();
+    s.x = clamp(s.x + p.x - drag.last.x, vx0 + 20, vx1 - 20); s.y = clamp(s.y + p.y - drag.last.y, 110, AREA.y1 + 40);
+    s.lift = 1;
+  }
+  drag.last = p;
+});
+const up = e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (d.moved) { d.s.lift = d.s === S.sel ? 1 : 0; drop(); return; }
+  tap(d.s);
+};
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", () => { if (drag) { drag.s.lift = drag.s === S.sel ? 1 : 0; drag = null; } });
+
+function tap(s) {
+  if (S.state !== "play" || s.gone || s.busy) return;
+  if (!S.sel) { S.sel = s; s.lift = 1; return; }
+  if (S.sel === s) { s.lift = 0; S.sel = null; drop(); return; }
+  const a = S.sel; S.sel = null;
+  if (a.id === b_id(s)) match(a, s);
+  else miss(a, s);
+}
+const b_id = s => s.id;
+function match(a, b) {
+  a.busy = b.busy = true;
+  const i = S.pairs.length, q = slotPos(i, ROUNDS[S.round].pairs);
+  S.pairs.push({ v: a.v, fly: 0 }); S.allPairs.push(a.v);
+  for (const [s, k] of [[a, 0], [b, 1]]) {
+    s.gone = true;
+    S.fx.push({ s, t: 0, from: { x: s.x, y: s.y, a: s.a, sc: s.sc || 1 }, to: { x: q.x + k * 5 - 2, y: q.y + k * 3 - 2, a: -Math.PI / 2 + 0.06 - k * 0.04, sc: 0.36 * 0.85 * GEO.cell * GEO.ppc / CW }, pair: S.pairs[i], k });
+  }
+  for (let j = 0; j < 14; j++) { const an = Math.random() * TAU; S.parts.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, vx: Math.cos(an) * 160, vy: Math.sin(an) * 160, r: 2 + Math.random() * 2, life: 0.8, c: "rgba(255,246,210,.9)" }); }
+  sndMatch(S.pairs.length);
+  KIT.vibrate(12);
+}
+function miss(a, b) {
+  S.miss++; S.time += PENALTY;
+  a.lift = 0; b.lift = 0; a.shake = b.shake = 0.5;
+  const d = b.lone || a.lone ? diffOf(a.v, b.v) : diffOf(a.v, b.v);
+  say(`ちがうペア！ ${d ? DIFF_TEXT[d] : ""}（+${PENALTY}秒）`, 2.0, true);
+  sndMiss(); KIT.vibrate([30, 40, 30]);
+}
+
+/* ---------- 音 ---------- */
+function pick() { KIT.noise({ dur: 0.16, vol: 0.05, f: 900, to: 2600, q: 0.7, wet: 0.05, a: 0.03 }); }
+function drop() { KIT.noise({ dur: 0.14, vol: 0.06, f: 600, to: 250, q: 0.8, wet: 0.05 }); }
+function sndMatch(n) {
+  const t0 = KIT.ensure().currentTime, m = [72, 74, 76, 79, 81, 84, 86, 88, 91][Math.min(8, n - 1)];
+  KIT.noise({ dur: 0.12, vol: 0.07, f: 500, to: 220, q: 0.8, wet: 0.05 });
+  KIT.inst.marimba(m, 0.03, 0.2, 0.12); KIT.inst.marimba(m + 7, 0.11, 0.2, 0.09);
+}
+function sndMiss() {
+  KIT.tone({ f: 220, to: 190, dur: 0.14, vol: 0.09, type: "square", lp: 900, wet: 0.05 });
+  KIT.tone({ f: 190, to: 160, t: 0.16, dur: 0.18, vol: 0.09, type: "square", lp: 900, wet: 0.05 });
+}
+function sndClear() { [0, 4, 7, 12, 16].forEach((d, i) => KIT.inst.bell(76 + d, i * 0.09, 0.4, 0.08)); }
+function sndDump() { for (let i = 0; i < 6; i++) KIT.noise({ t: i * 0.07, dur: 0.12, vol: 0.04, f: 500 + Math.random() * 600, q: 0.7, wet: 0.08 }); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  if (S.state === "play") S.time += dt;
+  // 洗濯かごからふってくる
+  if (S.state === "dump") {
+    let all = true;
+    for (const s of S.socks) {
+      if (!s.drop) continue;
+      s.drop.t += dt;
+      const k = clamp((s.drop.t - s.drop.delay) / 0.55, 0, 1);
+      if (k < 1) all = false;
+      if (k > 0 && !s.drop.snd) { s.drop.snd = true; }
+      const e = ease(k);
+      s.x = lerp(BASKET.x, s.drop.x, e); s.y = lerp(BASKET.y, s.drop.y, e); s.z = Math.sin(k * Math.PI) * 90 * (1 - k * 0.3);
+      s.a = s.drop.a - (1 - e) * s.drop.spin; s.sc = lerp(0.5, 1, e);
+      if (k >= 1) { s.z = 0; s.sc = 1; }
+    }
+    if (all) { for (const s of S.socks) delete s.drop; S.state = "play"; say(ROUNDS[S.round].lone ? "どれかひとつ、片方だけのくつしたがある…" : "同じくつしたを2つずつタップ", 2.2); }
+  }
+  for (const s of S.socks) {
+    if (s.shake > 0) s.shake = Math.max(0, s.shake - dt);
+    if (s !== S.sel && (!drag || drag.s !== s) && s.lift > 0) s.lift = Math.max(0, s.lift - dt * 6);
+  }
+  for (const f of S.fx) {
+    f.t += dt * 2.2; const e = ease(clamp(f.t, 0, 1));
+    f.s.x = lerp(f.from.x, f.to.x, e); f.s.y = lerp(f.from.y, f.to.y, e) - Math.sin(e * Math.PI) * 60;
+    f.s.a = lerp(f.from.a, f.to.a, e); f.s.sc = lerp(f.from.sc, f.to.sc, e); f.s.flip = e > 0.5 ? 1 : f.s.flip; f.s.lift = 0;
+    if (f.t >= 1) f.pair.fly = 1;
+  }
+  S.fx = S.fx.filter(f => f.t < 1);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.92; q.vy *= 0.92; q.life -= dt * 1.6; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  if (S.state === "play") {
+    const left = S.socks.filter(s => !s.gone);
+    if (left.every(s => s.lone) && !S.fx.length) roundClear(left);
+  }
+  if (S.state === "clear" && S.t >= S.lock) {
+    S.round++;
+    if (S.round >= ROUNDS.length) finish(); else dump();
+  }
+}
+function roundClear(left) {
+  S.state = "clear"; S.sel = null;
+  S.roundTimes.push(S.time);
+  sndClear();
+  if (left.length) { say("ぜんぶペアに！…片方は、どこへ？", 2.2); for (const s of left) s.shake = 0.6; }
+  else say(`かご ${S.round + 1} おわり！`, 1.6);
+  S.lock = S.t + (left.length ? 2.4 : 1.6);
+}
+function dump() {
+  const r = KIT.rng(Math.floor(Math.random() * 1e9));
+  const spec = ROUNDS[S.round];
+  setArea();
+  const list = makeRound(r, spec).sort(() => r() - 0.5);
+  S.pairs = []; S.sel = null;
+  // 重なりすぎないように、ゆるいグリッド＋ゆらぎ
+  const cols = 3, rows = Math.ceil(list.length / cols);
+  S.socks = list.map((it, i) => {
+    const c = i % cols, rw = Math.floor(i / cols);
+    const x = lerp(AREA.x0, AREA.x1, (c + 0.5) / cols) + (r() - 0.5) * (AREA.x1 - AREA.x0) / cols * 0.6;
+    const y = lerp(AREA.y0 + 20, AREA.y1, (rw + 0.5) / rows) + (r() - 0.5) * 70;
+    const a = r() * TAU;
+    return { v: it.v, id: it.id, lone: !!it.lone, x: BASKET.x, y: BASKET.y, z: 0, a, flip: r() < 0.5 ? 1 : -1, sc: 0.5, lift: 0, shake: 0, gone: false,
+      drop: { x: clamp(x, AREA.x0, AREA.x1), y: clamp(y, AREA.y0, AREA.y1), a, spin: (r() - 0.5) * 6, t: 0, delay: i * 0.05 } };
+  });
+  // 先に絵を作っておく
+  for (const s of S.socks) sprite(s.v);
+  S.state = "dump"; sndDump();
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.round = 0; S.time = 0; S.miss = 0; S.allPairs = []; S.roundTimes = []; S.fx = []; S.parts = [];
+  dump();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[45, "洗濯物の達人"], [65, "几帳面さん"], [90, "日曜の朝"], [130, "片方どこ？"], [1e9, "ぜんぶ同じに見える"]];
+function finish() {
+  S.state = "result";
+  const time = Math.round(S.time * 10) / 10;
+  const rank = RANKS.find(r => time < r[0])[1];
+  S.res = { time, rank, miss: S.miss };
+  $("rBig").innerHTML = `${time.toFixed(1)}<small>秒</small>`;
+  $("rRank").textContent = rank;
+  const rt = S.roundTimes.map((t, i) => t - (S.roundTimes[i - 1] || 0));
+  $("rStats").innerHTML = `<div class="stat${S.miss ? " ng" : " good"}"><small>まちがい</small><b>${S.miss}回</b></div>`
+    + `<div class="stat"><small>ペア</small><b>21組</b></div>`
+    + `<div class="stat"><small>いちばん速いかご</small><b>${Math.min(...rt).toFixed(1)}秒</b></div>`;
+  const best = KIT.store.get("kutsushita-best", null);
+  if (best === null || time < best) KIT.store.set("kutsushita-best", time);
+  $("rNote").textContent = best === null || time < best ? "自己ベスト更新！" : `自己ベスト ${best.toFixed(1)}秒`;
+  $("result").hidden = false;
+  sndClear();
+  KIT.music.stop(); setTimeout(() => startMusic(true), 1200);
+}
+function shareText() { const r = S.res; return `くつしたペア、洗濯かご3杯を ${r.time.toFixed(1)}秒でペアに（まちがい ${r.miss}回）\nわたしは「${r.rank}」\n#くつしたペア`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  // 床にたたんだペアをならべる
+  // 床の日だまりに、21組をならべる
+  if (IMG.bg) g.drawImage(IMG.bg, 60, 260, 600, 630, 0, 0, 600, 630);
+  const vs = S.allPairs || [];
+  vs.forEach((v, i) => { const col = i % 7, row = Math.floor(i / 7); drawFolded(g, v, 58 + col * 80, 130 + row * 190, 1, 1.35); });
+  g.restore();
+  g.fillStyle = "#fffaf2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#5f86a8"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#4a3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("くつしたペア", 650, 92);
+  g.fillStyle = "#8a7a69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("洗濯かご3杯、21組をペアにした時間", 650, 170);
+  g.fillStyle = "#43637f"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = S.res.time.toFixed(1); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("秒", 660 + tw, 274);
+  g.fillStyle = "#4a3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#8a7a69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`まちがい ${S.res.miss}回`, 650, 400);
+  g.fillText("#くつしたペア ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 72, key: 65, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 11], [5, 9, 16], [2, 5, 9], [7, 11, 14]], lead: "epiano", chord: "epiano", beat: "none", seed: 5, leadVol: 0.06, chordVol: 0.05, density: 0.45 }
+    : { bpm: 104, key: 65, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "marimba", chord: "epiano", beat: "shaker", seed: 44, leadVol: 0.08, chordVol: 0.045, density: 0.55, swing: 0.25 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "kutsushita.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("kutsushita-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best.toFixed(1)}秒` : "3杯ぶんをペアにした時間で採点（はやいほどいい）";
+  IMG = await KIT.loadImages(SRC);
+  prepare();
+  // タイトルの後ろ：床にくつしたをいくつか
+  const r = KIT.rng(3);
+  setArea();
+  S.socks = makeRound(r, { pairs: 4, lone: 0, fam: 1 }).map((it, i) => ({ v: it.v, id: it.id, x: lerp(AREA.x0, AREA.x1, (i % 3) / 2) + (r() - 0.5) * 40, y: 200 + Math.floor(i / 3) * 170 + r() * 40, a: r() * TAU, flip: 1, sc: 1, lift: 0, shake: 0, gone: false }));
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { tap, topAt, hit, ROUNDS, makeRound, keyOf };
+</script>
+</body>
+</html>

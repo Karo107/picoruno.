@@ -1,0 +1,1 @@
+{"bg":{"src":"out/bg.png","fmt":"jpg","w":810,"q":84},"lit":{"src":"out/lit.png","fmt":"jpg","q":84},"door":{"src":"out/door.png","fmt":"webp","q":88},"food":{"src":"out/food.png","fmt":"webp","q":84},"geo":{"src":"out/geo.json","fmt":"json"}}

@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1e">
+<title>線香花火のこり</title>
+<meta name="description" content="夏の夜の庭先で、線香花火を1本。風が吹いても、手をそっと動かして火の玉を最後まで落とさずに。牡丹・松葉・柳・散り菊、どこまで見とどけられるか。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="線香花火のこり">
+<meta property="og:description" content="火の玉を、最後まで落とさずに。夏の夜の線香花火ゲーム。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./senkou.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0f1e'/%3E%3Cpath d='M16 2v16' stroke='%23c76a93' stroke-width='2'/%3E%3Ccircle cx='16' cy='20' r='3.4' fill='%23ffb347'/%3E%3Cpath d='M16 20l-8 4M16 20l8 5M16 20l-6-8M16 20l7-7M16 20l1 9' stroke='%23ffd27a' stroke-width='1.2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：夜の庭（Blender）を canvas に。線香花火と火花はゲームの中で描く。カードは下に重ねる。 */
+:root{
+  --night:#0b0f1e; --card:#fbf8f2; --ink:#2b2433; --sub:#7a6f7e; --line:#e7dfd3;
+  --fire:#ff9a3c; --fire-d:#c4561f; --paper:#c76a93;
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN",serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:var(--night);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.55);background:rgba(11,15,30,.5);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.5);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--mincho);font-weight:800;font-size:1.15rem;background:var(--fire-d);color:#fff;box-shadow:0 4px 0 #8a3812;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8a3812}
+.btn:focus-visible{outline:3px solid var(--fire);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--fire-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--mincho);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.15;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f4eee5;border-radius:12px;padding:10px 12px}
+.how b{font-weight:700;font-size:.78rem;background:var(--fire-d);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .big{text-align:center;font-family:var(--mincho);font-weight:800;font-size:2.8rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.42em;color:var(--sub)}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--mincho);font-weight:800;font-size:1.45rem;color:var(--fire-d)}
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stg{background:#f4eee5;border-radius:10px;padding:6px 2px;text-align:center;font-size:.78rem;color:#b9ad9f}
+.stg b{display:block;font-family:var(--mincho);font-size:1rem;color:inherit}
+.stg.on{background:#fde7d2;color:var(--fire-d)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(11,15,30,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>線香花火のこり</h1>
+  <p>夏の夜、最後に残った1本。火の玉を落とさずに、散り菊まで見とどけられるか。</p>
+  <div class="how">
+    <b>動かす</b><span>画面をなぞると、花火を持つ手が動く（PCはマウスを動かすだけ）</span>
+    <b>風</b><span>蚊取り線香のけむりがなびいたら、風が来る</span>
+    <b>コツ</b><span>ゆれた火の玉の下へ、そっと手を寄せる</span>
+  </div>
+  <button class="btn" id="start" type="button">火をつける</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap" id="rCap">火の玉がもった時間</div>
+  <div class="big" id="rBig">0<small>秒</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stages" id="rStages"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう1本</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "線香花火のこり";
+const GAME_URL = "https://runococco.github.io/picoruno./senkou.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { dark: "__IMG_dark__", lit: "__IMG_lit__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* 花火の一生：秒 */
+const STAGES = [
+  { id: "tsubomi", name: "つぼみ", end: 3 },
+  { id: "botan", name: "牡丹", end: 10 },
+  { id: "matsuba", name: "松葉", end: 22 },
+  { id: "yanagi", name: "柳", end: 32 },
+  { id: "chirigiku", name: "散り菊", end: 42 }
+];
+const LIFE = 42;
+const L = 100;           // こよりの先のやわらかい部分（px）
+const GRAV = 5200;       // ふりこの重さ（周期がそれらしく見える値）
+const HOME = { x: GEO.ball[0], y: GEO.ball[1] - L };
+
+const S = { state: "title", t: 0, life: 0, hand: { x: HOME.x, y: HOME.y }, handT: { x: HOME.x, y: HOME.y }, hv: { x: 0, y: 0 },
+  th: 0, om: 0, wind: 0, windTo: 0, gust: null, nextGust: 0, sparks: [], embers: [], smoke: [], stress: 0, ball: null, drop: null,
+  r: 0, msg: null, stage: 0, glow: 0, seed: 1, endAt: 0, tested: false };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.max(vw / W, vh / H);       // 背景は「全面をおおう」
+  fit = Math.min(fit, vh / 760, Math.max(vw / 1920, vh / H));   // 横長の画面では寄りすぎない（絵の幅は1920まで）
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+// 画面の中央に火の玉の位置が来るように、世界座標を置く
+const view = () => { const lw = vw / fit, lh = vh / fit; return { ox: lw / 2 - W / 2, oy: clamp(lh * 0.46 - GEO.ball[1], lh - H, 0), lw, lh }; };
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.fillStyle = "#06080f"; cx.fillRect(0, 0, v.lw, v.lh);
+  cx.translate(v.ox, v.oy);
+  if (IMG.dark) {
+    // 絵は横に広い（x=-600〜1320）。縦画面ではまん中だけが見える
+    cx.drawImage(IMG.dark, -600, 0, 1920, H);
+    // 火花の明るさで、灯りの入った絵を重ねる
+    const fl = S.glow * (0.82 + 0.18 * Math.sin(S.t * 31) * Math.sin(S.t * 17.3));
+    if (fl > 0.01 && IMG.lit) { cx.globalAlpha = clamp(fl * 0.8, 0, 1); cx.drawImage(IMG.lit, -600, 0, 1920, H); cx.globalAlpha = 1; }
+  }
+  drawSmoke();
+  drawStick();
+  drawSparks();
+  drawBall();
+  drawDrop();
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play" || S.state === "end") drawHud();
+}
+
+/* 蚊取り線香のけむり：風の向きが見える */
+function drawSmoke() {
+  const g = cx, P = S.smoke.filter((p, i) => i % 3 === 0);
+  if (P.length < 3) return;
+  g.save(); g.lineCap = "round"; g.lineJoin = "round";
+  // 粒をなめらかな1本の筋につなぐ（根もとは細く濃く、上ほど太く淡く）
+  for (const [wd, al] of [[18, 0.03], [8, 0.06], [3, 0.11]]) {
+    for (let i = P.length - 2; i > 0; i--) {
+      const a = P[i + 1], b = P[i], c = P[i - 1];
+      const m0 = [(a.x + b.x) / 2, (a.y + b.y) / 2], m1 = [(b.x + c.x) / 2, (b.y + c.y) / 2];
+      g.strokeStyle = `rgba(205,210,225,${al * clamp(b.life * 1.4, 0, 1)})`; g.lineWidth = wd * (0.4 + (1 - b.life) * 1.6);
+      g.beginPath(); g.moveTo(m0[0], m0[1]); g.quadraticCurveTo(b.x, b.y, m1[0], m1[1]); g.stroke();
+    }
+  }
+  g.restore();
+}
+/* 線香花火：上から手で持った「こより」。手から先 L は、ゆれるやわらかい部分 */
+function drawStick() {
+  const g = cx, h = S.hand, b = ballPos();
+  const tx = h.x + (h.x - HOME.x) * 0.25, ty = -60;
+  g.save(); g.lineCap = "round";
+  // 持ち手側（かたい）
+  const grad = g.createLinearGradient(0, ty, 0, h.y);
+  grad.addColorStop(0, "rgba(199,106,147,0)"); grad.addColorStop(0.25, "#9b4a74"); grad.addColorStop(1, "#c76a93");
+  g.strokeStyle = grad; g.lineWidth = 3.2;
+  g.beginPath(); g.moveTo(tx, ty); g.lineTo(h.x, h.y); g.stroke();
+  // ねじりの模様
+  g.strokeStyle = "rgba(255,220,240,.35)"; g.lineWidth = 1;
+  for (let i = 0; i < 18; i++) { const k = i / 18, x = lerp(tx, h.x, k), y = lerp(ty, h.y, k); if (y < 0) continue; g.beginPath(); g.moveTo(x - 1.8, y); g.lineTo(x + 1.8, y + 3); g.stroke(); }
+  // 火薬の入った先（ゆれる）：手から火の玉まで
+  if (S.ball || S.state === "title" || S.state === "ready") {
+    const end = S.ball ? b : { x: h.x + Math.sin(S.th) * L, y: h.y + Math.cos(S.th) * L };
+    const mx = (h.x + end.x) / 2 + Math.sin(S.th) * -8, my = (h.y + end.y) / 2;
+    g.strokeStyle = S.life > 1 ? "#3a2a2a" : "#b4648a"; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(h.x, h.y); g.quadraticCurveTo(mx, my, end.x, end.y); g.stroke();
+  }
+  g.restore();
+}
+function ballPos() { return { x: S.hand.x + Math.sin(S.th) * L, y: S.hand.y + Math.cos(S.th) * L }; }
+function drawBall() {
+  if (!S.ball) return;
+  const g = cx, b = ballPos(), r = S.r;
+  if (r <= 0.2) return;
+  // まわりの光（加算）
+  g.save(); g.globalCompositeOperation = "lighter";
+  const hal = 30 + r * 7 * S.glow;
+  const rg = g.createRadialGradient(b.x, b.y, 0, b.x, b.y, hal);
+  rg.addColorStop(0, `rgba(255,170,80,${0.55 * S.glow + 0.1})`); rg.addColorStop(0.3, `rgba(255,110,40,${0.22 * S.glow})`); rg.addColorStop(1, "rgba(255,80,20,0)");
+  g.fillStyle = rg; g.beginPath(); g.arc(b.x, b.y, hal, 0, 6.283); g.fill();
+  g.restore();
+  // 火の玉：落ちそうになるほど、しずくのようにのびる
+  const st = clamp(S.stress, 0, 1), ang = S.th;
+  g.save(); g.translate(b.x, b.y); g.rotate(-ang);
+  const wob = 1 + Math.sin(S.t * 23) * 0.05 + Math.sin(S.t * 41) * 0.03;
+  const ry = r * (1 + st * 0.7) * wob, rx = r * (1 - st * 0.15) / wob;
+  const cg = g.createRadialGradient(-r * 0.2, -r * 0.2, 0, 0, 0, Math.max(rx, ry));
+  const dim = S.state === "end" && !S.drop ? clamp(1 - (S.t - S.endAt) / 2.5, 0, 1) : 1;
+  cg.addColorStop(0, `rgba(255,${Math.round(240 * dim + 15)},${Math.round(200 * dim)},1)`);
+  cg.addColorStop(0.45, `rgba(255,${Math.round(120 * dim + 40)},${Math.round(40 * dim)},1)`);
+  cg.addColorStop(1, `rgba(${Math.round(200 * dim + 40)},${Math.round(40 * dim + 10)},10,.95)`);
+  g.fillStyle = cg;
+  g.beginPath(); g.ellipse(0, (ry - r) * 0.6, rx, ry, 0, 0, 6.283); g.fill();
+  // くびれ
+  if (st > 0.35) { g.strokeStyle = `rgba(255,190,120,${(st - 0.35) * 1.2})`; g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, -L * 0.15); g.lineTo(0, -ry * 0.6); g.stroke(); }
+  g.restore();
+}
+function drawSparks() {
+  const g = cx;
+  g.save(); g.globalCompositeOperation = "lighter"; g.lineCap = "round";
+  for (const p of S.sparks) {
+    const a = clamp(p.life / p.max, 0, 1);
+    g.strokeStyle = p.col.replace("A", (a * p.al).toFixed(3)); g.lineWidth = p.w;
+    const tl = p.trail || 0.03;
+    g.beginPath(); g.moveTo(p.x - p.vx * tl, p.y - p.vy * tl); g.lineTo(p.x, p.y); g.stroke();
+  }
+  g.restore();
+}
+function drawDrop() {
+  const d = S.drop; if (!d) return;
+  const g = cx;
+  g.save(); g.globalCompositeOperation = "lighter";
+  if (!d.landed) {
+    const rg = g.createRadialGradient(d.x, d.y, 0, d.x, d.y, 18);
+    rg.addColorStop(0, "rgba(255,200,120,1)"); rg.addColorStop(0.4, "rgba(255,110,40,.8)"); rg.addColorStop(1, "rgba(255,80,20,0)");
+    g.fillStyle = rg; g.beginPath(); g.arc(d.x, d.y, 18, 0, 6.283); g.fill();
+    g.strokeStyle = "rgba(255,140,60,.5)"; g.lineWidth = d.r * 1.4; g.lineCap = "round"; g.beginPath(); g.moveTo(d.x, d.y - d.vy * 0.02); g.lineTo(d.x, d.y); g.stroke();
+  } else {
+    const k = clamp(1 - (S.t - d.landAt) / 3, 0, 1);
+    const rg = g.createRadialGradient(d.x, d.y, 0, d.x, d.y, 24);
+    rg.addColorStop(0, `rgba(255,120,40,${k})`); rg.addColorStop(1, "rgba(255,80,20,0)");
+    g.fillStyle = rg; g.beginPath(); g.ellipse(d.x, d.y, 24, 10, 0, 0, 6.283); g.fill();
+  }
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(11,15,30,.55)"; rr(g, 12, top, w, 54, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 21px "Shippori Mincho B1",serif';
+  g.fillText(STAGES[S.stage].name, 28, top + 28);
+  // 一生のゲージ
+  const gx = 28 + 74, gw = w - 74 - 32 - 70;
+  g.fillStyle = "rgba(255,255,255,.15)"; rr(g, gx, top + 24, gw, 6, 3); g.fill();
+  STAGES.slice(0, -1).forEach(s => { g.fillStyle = "rgba(255,255,255,.35)"; g.fillRect(gx + gw * s.end / LIFE - 0.5, top + 21, 1, 12); });
+  g.fillStyle = "#ffb15e"; rr(g, gx, top + 24, gw * clamp(S.life / LIFE, 0, 1), 6, 3); g.fill();
+  g.textAlign = "right"; g.font = '700 19px "Zen Maru Gothic",sans-serif';
+  g.fillText(`${S.life.toFixed(1)}秒`, 12 + w - 14, top + 28);
+  // 風
+  if (Math.abs(S.wind) > 120) {
+    const dir = Math.sign(S.wind), a = clamp((Math.abs(S.wind) - 120) / 900, 0, 1);
+    g.globalAlpha = a; g.fillStyle = "#cfe3ff"; g.textAlign = "center"; g.font = '700 17px "Zen Maru Gothic",sans-serif';
+    const y = top + 82, x = vw / 2 + dir * (8 + Math.sin(S.t * 6) * 4);
+    g.fillText(dir > 0 ? "風 ≫" : "≪ 風", x, y);
+    g.globalAlpha = 1;
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 19px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = vh * 0.66;
+    g.fillStyle = "rgba(11,15,30,.75)"; rr(g, vw / 2 - tw / 2, y, tw, 44, 22); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 23);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+
+/* ---------- 入力：なぞった分だけ手が動く（どこから触っても手は飛ばない） ---------- */
+let lastP = null;
+function toWorld(e) { return { x: e.clientX / fit, y: e.clientY / fit }; }
+cv.addEventListener("pointerdown", e => { lastP = toWorld(e); try { cv.setPointerCapture(e.pointerId); } catch (er) {} });
+cv.addEventListener("pointermove", e => {
+  const p = toWorld(e);
+  if (e.pointerType === "mouse" || e.buttons) {
+    if (lastP) { S.handT.x += p.x - lastP.x; S.handT.y += p.y - lastP.y; }
+    const half = Math.max(120, Math.min(260, view().lw / 2 - 70));
+    S.handT.x = clamp(S.handT.x, HOME.x - half, HOME.x + half); S.handT.y = clamp(S.handT.y, HOME.y - 160, HOME.y + 200);
+  }
+  lastP = p;
+});
+const up = () => { lastP = null; };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+cv.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") lastP = null; });
+
+/* ---------- 音 ---------- */
+let fizz = null;
+function fizzNode() {
+  const ac = KIT.ensure(); if (!ac) return null;
+  if (!fizz) {
+    const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+    const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 2500;
+    const pk = ac.createBiquadFilter(); pk.type = "peaking"; pk.frequency.value = 5000; pk.gain.value = 6;
+    const g = ac.createGain(); g.gain.value = 0;
+    src.connect(hp); hp.connect(pk); pk.connect(g); g.connect(KIT.bus()); src.start();
+    fizz = { src, hp, g, pk };
+  }
+  return fizz;
+}
+function setFizz(v, pitch = 0) {
+  const n = fizzNode(); if (!n) return;
+  const ac = KIT.ensure();
+  n.g.gain.setTargetAtTime(v, ac.currentTime, 0.05);
+  n.pk.frequency.setTargetAtTime(4200 + pitch * 3000, ac.currentTime, 0.1);
+}
+function crackle(vol = 0.06) {
+  KIT.noise({ dur: 0.02 + Math.random() * 0.03, vol: vol * (0.5 + Math.random()), f: 3000 + Math.random() * 5000, q: 1.5, wet: 0.05, type: "bandpass" });
+}
+let windNode = null;
+function setWind(v) {
+  const ac = KIT.ensure(); if (!ac) return;
+  if (!windNode) {
+    const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.2; bp.frequency.value = 500;
+    const g = ac.createGain(); g.gain.value = 0;
+    src.connect(bp); bp.connect(g); g.connect(KIT.bus()); src.start();
+    windNode = { bp, g };
+  }
+  windNode.g.gain.setTargetAtTime(Math.min(0.12, v * 0.0001), ac.currentTime, 0.15);
+  windNode.bp.frequency.setTargetAtTime(380 + v * 0.35, ac.currentTime, 0.2);
+}
+// 夏の夜：虫の声（ゲームの外でも、ずっと小さく鳴いている）
+let bugsT = 0;
+function bugs(dt) {
+  bugsT -= dt; if (bugsT > 0 || KIT.muted) return;
+  bugsT = 0.9 + Math.random() * 1.6;
+  const f = 4200 + Math.random() * 600, n = 3 + Math.floor(Math.random() * 4), pan = Math.random() * 1.6 - 0.8;
+  for (let i = 0; i < n; i++) KIT.tone({ f, t: i * 0.11, dur: 0.07, vol: 0.012, type: "sine", wet: 0.3, pan, a: 0.01 });
+}
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function stageAt(life) { let i = 0; while (i < STAGES.length - 1 && life >= STAGES[i].end) i++; return i; }
+function update(dt) {
+  S.t += dt;
+  if (S.state !== "title") bugs(dt);
+  // 手はなめらかに目標へ（指の飛びをおさえる）
+  const n = 4, h = dt / n;
+  for (let i = 0; i < n; i++) step(h);
+  // 風：ときどき突風
+  if (S.state === "play") {
+    if (S.t >= S.nextGust && !S.gust && S.life > 4) {
+      const dir = Math.random() < 0.5 ? -1 : 1, pow = 700 + Math.min(1, S.life / LIFE) * 1500 + Math.random() * 300;
+      S.gust = { t0: S.t, dir, pow, dur: 1.4 + Math.random() * 1.4 };
+      if (!S.firstGust) { S.firstGust = true; say("けむりがなびいた。風が来る！", 1.8); }
+    }
+    if (S.gust) {
+      const k = (S.t - S.gust.t0);
+      const env = k < 0.7 ? 0 : k < 1.3 ? (k - 0.7) / 0.6 : k < 1.3 + S.gust.dur ? 1 : Math.max(0, 1 - (k - 1.3 - S.gust.dur) / 0.8);
+      // けむりは本番の0.7秒前からなびく（予告）
+      S.smokeWind = S.gust.dir * Math.min(1, k / 0.4) * (k < 1.3 + S.gust.dur ? 1 : env);
+      S.windTo = S.gust.dir * S.gust.pow * env * (1 + 0.25 * Math.sin(S.t * 9) + 0.15 * Math.sin(S.t * 23));
+      if (k > 2.2 + S.gust.dur) { S.gust = null; S.nextGust = S.t + 2.6 + Math.random() * 3.2 - Math.min(1.2, S.life / 30); }
+    } else { S.windTo = 0; S.smokeWind = lerp(S.smokeWind || 0, 0, 1 - Math.pow(0.2, dt)); }
+  } else { S.windTo = 0; S.smokeWind = lerp(S.smokeWind || 0, 0, 1 - Math.pow(0.2, dt)); }
+  S.wind = lerp(S.wind, S.windTo, 1 - Math.pow(0.02, dt));
+  setWind(Math.abs(S.wind) + Math.abs(S.smokeWind || 0) * 200);
+  // けむり
+  if (Math.random() < dt * 24) S.smoke.unshift({ x: GEO.smoke[0], y: GEO.smoke[1], px: GEO.smoke[0], py: GEO.smoke[1], vx: 0, vy: -26 - Math.random() * 10, life: 1, ph: Math.random() * 6 });
+  for (const p of S.smoke) {
+    p.px = p.x; p.py = p.y;
+    p.vx = lerp(p.vx, (S.smokeWind || 0) * 150 + Math.sin(S.t * 0.9 - p.y * 0.012) * 8, 1 - Math.pow(0.3, dt));
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 0.28;
+  }
+  S.smoke = S.smoke.filter(p => p.life > 0);
+  // 花火
+  if (S.state === "play") burn(dt);
+  for (const p of S.sparks) {
+    p.px = p.x; p.py = p.y;
+    p.vy += p.g * dt; p.vx *= Math.pow(p.drag, dt); p.vy *= Math.pow(p.drag, dt);
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (p.split && p.life < p.max - p.split) { p.split = 0; branch(p); }
+  }
+  S.sparks = S.sparks.filter(p => p.life > 0);
+  if (S.sparks.length > 1500) S.sparks.splice(0, S.sparks.length - 1500);
+  // 落ちた火の玉
+  const d = S.drop;
+  if (d && !d.landed) {
+    d.vy += 2200 * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+    if (d.y >= GEO.ground[1] + (d.x - GEO.ball[0]) * 0.05) {
+      d.landed = true; d.landAt = S.t; d.y = GEO.ground[1];
+      KIT.noise({ dur: 0.35, vol: 0.12, f: 2500, to: 900, q: 0.8, wet: 0.1 });
+      KIT.tone({ f: 120, to: 60, dur: 0.15, vol: 0.12, type: "sine", wet: 0 });
+      for (let i = 0; i < 10; i++) S.sparks.push(mk(d.x, d.y, (Math.random() - 0.5) * 160, -60 - Math.random() * 120, 0.3, 1.3, 600, 0.5));
+    }
+  }
+  if (S.state === "play" || S.state === "end") S.glow = lerp(S.glow, targetGlow(), 1 - Math.pow(0.05, dt));
+  else S.glow = lerp(S.glow, 0, 1 - Math.pow(0.05, dt));
+  if (S.state === "end" && S.t - S.endAt > 2.6 && !S.shown) { S.shown = true; showResult(); }
+}
+function targetGlow() {
+  if (!S.ball || S.drop) return 0;
+  if (S.state === "end") return Math.max(0, 0.3 - (S.t - S.endAt) * 0.15);
+  return [0.25, 0.45, 0.95, 0.75, 0.4][S.stage] * (S.stage === 4 ? clamp((LIFE - S.life) / 6 + 0.3, 0.3, 1) : 1);
+}
+/* ふりこ：手（支点）の加速と風で、火の玉がゆれる */
+function step(h) {
+  const hd = S.hand, ht = S.handT;
+  // 手は「ばね」で目標を追う（指の動きのカクつきを、ふつうの手の動きにする）
+  const K = 22 * 22, C = 2 * 22;
+  const ax = clamp(K * (ht.x - hd.x) - C * S.hv.x, -30000, 30000), ay = clamp(K * (ht.y - hd.y) - C * S.hv.y, -30000, 30000);
+  S.hv.x += ax * h; S.hv.y += ay * h;
+  hd.x += S.hv.x * h; hd.y += S.hv.y * h;
+  S.hacc = Math.hypot(ax, ay);
+  // 松葉のころは、火の玉自身がパチパチとゆれる
+  const kick = S.state === "play" && S.stage === 2 ? (Math.random() - 0.5) * 9000 * h * 60 * 0.02 : 0;
+  const wind = S.wind + kick;
+  const th = S.th;
+  const acc = -(GRAV / L) * Math.sin(th) - (ax / L) * Math.cos(th) + (ay / L) * Math.sin(th) * -1 + (wind / L) * Math.cos(th) - 1.1 * S.om;
+  S.om += acc * h; S.th += S.om * h;
+  if (S.state === "play" && S.ball && S.life > 2) {
+    // 落ちる条件：角度と、ふりまわしの強さ（火の玉が大きいほどきびしい）
+    const thMax = lerp(0.95, 0.6, clamp(S.life / LIFE, 0, 1));
+    const tension = (GRAV * Math.cos(th) + L * S.om * S.om - ay * Math.cos(th)) / GRAV;
+    const s = Math.max(Math.abs(th) / thMax, (tension - 1) / 1.6);
+    S.stress = lerp(S.stress, s, 1 - Math.pow(0.001, h));
+    if (s >= 1) dropBall();
+  } else S.stress = lerp(S.stress, 0, 0.05);
+}
+const SP = 1.9;  // 火花の大きさ（画面の広さに合わせた倍率）
+function mk(x, y, vx, vy, life, w, g, drag, col = "rgba(255,200,110,A)", al = 1, split = 0) {
+  return { x, y, px: x, py: y, vx: vx * SP, vy: vy * SP, life, max: life, w: w * 1.4, g: g * SP, drag, col, al, split };
+}
+function branch(p) {
+  const n = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    const a = Math.atan2(p.vy, p.vx) + (Math.random() - 0.5) * 2.2, v = 90 + Math.random() * 160;
+    S.sparks.push(mk(p.x, p.y, Math.cos(a) * v, Math.sin(a) * v, 0.07 + Math.random() * 0.1, 0.9, 200, 0.2, "rgba(255,235,170,A)", 0.9, S.stage === 2 && !p.child && Math.random() < 0.25 ? 0.04 : 0));
+    S.sparks[S.sparks.length - 1].child = true;
+  }
+  if (Math.random() < 0.5) crackle(0.03);
+}
+function burn(dt) {
+  S.life += dt;
+  const st = stageAt(S.life);
+  if (st !== S.stage) {
+    S.stage = st;
+    if (st > 0) {
+      say(["", "牡丹（ぼたん）", "松葉（まつば）", "柳（やなぎ）", "散り菊（ちりぎく）"][st], 1.6);
+      KIT.inst.bell(67 + [0, 0, 5, 3, -2][st], 0, 0.6, 0.05);
+    }
+  }
+  // 火の玉の大きさ
+  S.r = S.life < 2.5 ? lerp(3, 9, S.life / 2.5) : lerp(9, 14, clamp((S.life - 2.5) / 25, 0, 1));
+  if (S.stage === 4) S.r *= lerp(1, 0.75, clamp((S.life - 32) / 10, 0, 1));
+  const b = ballPos();
+  // 火花：段階ごとに出かたを変える
+  const R = [10, 45, 120, 75, 22][S.stage] * (S.stage === 4 ? clamp((LIFE - S.life) / 10, 0.25, 1) : 1);
+  let n = R * dt; while (n > 0) {
+    if (Math.random() < n) spawnSpark(b);
+    n -= 1;
+  }
+  setFizz([0.02, 0.06, 0.13, 0.09, 0.04][S.stage], S.stress);
+  if (Math.random() < [0.5, 2, 9, 3, 1.2][S.stage] * dt) crackle([0.02, 0.04, 0.07, 0.04, 0.03][S.stage]);
+  if (S.life >= LIFE) burnOut();
+}
+function spawnSpark(b) {
+  const a = Math.random() * 6.283;
+  switch (S.stage) {
+    case 0: S.sparks.push(mk(b.x, b.y, Math.cos(a) * 30, Math.sin(a) * 30, 0.12, 1.4, 0, 0.5, "rgba(255,160,80,A)")); break;
+    case 1: { const v = 60 + Math.random() * 90; S.sparks.push(mk(b.x, b.y, Math.cos(a) * v, Math.sin(a) * v, 0.1 + Math.random() * 0.1, 1.2, 200, 0.3, "rgba(255,190,100,A)", 1, Math.random() < 0.3 ? 0.06 : 0)); break; }
+    case 2: { const v = 260 + Math.random() * 360; S.sparks.push(mk(b.x, b.y, Math.cos(a) * v, Math.sin(a) * v - 40, 0.09 + Math.random() * 0.12, 1.3, 300, 0.25, "rgba(255,225,150,A)", 1, 0.05 + Math.random() * 0.06)); break; }
+    case 3: { const v = 120 + Math.random() * 160, aa = -Math.PI / 2 + (Math.random() - 0.5) * 2.6; S.sparks.push(mk(b.x, b.y, Math.cos(aa) * v, Math.sin(aa) * v, 0.45 + Math.random() * 0.35, 1.0, 520, 0.6, "rgba(255,200,120,A)", 0.85)); S.sparks[S.sparks.length - 1].trail = 0.07; break; }
+    default: { const v = 50 + Math.random() * 80; S.sparks.push(mk(b.x, b.y, Math.cos(a) * v, Math.sin(a) * v, 0.12 + Math.random() * 0.1, 0.9, 260, 0.3, "rgba(255,200,140,A)", 0.9, Math.random() < 0.4 ? 0.07 : 0)); }
+  }
+}
+function dropBall() {
+  if (S.state !== "play") return;
+  const b = ballPos();
+  // 落ちる勢い：ふりこの接線の速さ
+  const vx = Math.cos(S.th) * S.om * L + S.hv.x, vy = -Math.sin(S.th) * S.om * L + S.hv.y;
+  S.drop = { x: b.x, y: b.y, vx: vx * 0.6, vy: Math.max(0, vy * 0.6), r: S.r, landed: false };
+  S.ball = false; S.r = 0;
+  S.state = "end"; S.endAt = S.t; S.dropped = true;
+  setFizz(0);
+  KIT.tone({ f: 520, to: 260, dur: 0.18, vol: 0.06, type: "sine", wet: 0.2 });
+  KIT.vibrate(30);
+  say("ぽとっ……", 1.8);
+  KIT.music.stop();
+}
+function burnOut() {
+  S.state = "end"; S.endAt = S.t; S.dropped = false; S.life = LIFE;
+  setFizz(0);
+  say("最後まで、見とどけた", 2.2);
+  [0, 7, 12, 16, 19].forEach((d, i) => KIT.inst.bell(67 + d, 0.2 + i * 0.16, 0.9, 0.09));
+  KIT.music.stop();
+}
+
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  Object.assign(S, { state: "play", life: 0, stage: 0, th: 0, om: 0, wind: 0, windTo: 0, gust: null, nextGust: S.t + 5 + Math.random() * 2, sparks: [], stress: 0,
+    ball: true, drop: null, r: 3, shown: false, dropped: false, firstGust: false });
+  S.hand.x = S.handT.x = HOME.x; S.hand.y = S.handT.y = HOME.y; S.hv = { x: 0, y: 0 };
+  // シュッ：火がつく
+  KIT.noise({ dur: 0.5, vol: 0.14, f: 1800, to: 5200, q: 0.7, wet: 0.2 });
+  KIT.tone({ f: 200, to: 90, dur: 0.3, vol: 0.05, type: "triangle", wet: 0.1 });
+  say("火がついた。そっと持って……", 2.2);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [
+  [LIFE, "散り菊まで見とどけた人"], [32, "柳まで見た人"], [22, "松葉で散った人"], [10, "牡丹で落とした人"], [0, "せっかちな人"]
+];
+function showResult() {
+  S.state = "result";
+  const sec = S.dropped ? S.life : LIFE;
+  S.sec = sec; S.rank = RANKS.find(r => sec >= r[0] - 0.001)[1];
+  S.reached = S.dropped ? stageAt(sec) : 5;
+  $("rCap").textContent = S.dropped ? "火の玉がもった時間" : "最後まで、落とさなかった";
+  $("rBig").innerHTML = `${sec.toFixed(1)}<small>秒 / ${LIFE}秒</small>`;
+  $("rRank").textContent = S.rank;
+  $("rStages").innerHTML = STAGES.slice(1).map((s, i) => `<div class="stg${S.reached > i + 1 || (S.reached === i + 1 && sec > STAGES[i].end) ? " on" : ""}"><b>${s.name}</b>${S.reached > i + 1 ? "見た" : S.reached === i + 1 ? "ここで" : "—"}</div>`).join("");
+  const best = KIT.store.get("senkou-best", 0);
+  if (sec > best) KIT.store.set("senkou-best", +sec.toFixed(1));
+  $("rNote").textContent = sec > best ? "自己ベスト更新！" : `自己ベスト ${best.toFixed(1)}秒`;
+  $("result").hidden = false;
+  setTimeout(() => startMusic(true), 300);
+}
+function shareText() {
+  return S.dropped
+    ? `線香花火のこり、${S.sec.toFixed(1)}秒で火の玉が落ちました。\n「${STAGES[stageAt(S.sec)].name}」のところで、ぽとっ。\n#線香花火のこり`
+    : `線香花火のこり、${LIFE}秒、最後の散り菊まで見とどけました。\n#線香花火のこり`;
+}
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  g.fillStyle = "#06080f"; g.fillRect(0, 0, 1200, 630);
+  // 左：灯りの入った庭
+  const im = IMG.lit || IMG.dark;
+  if (im) { const k = im.width / 1920, sy = (GEO.ball[1] - 300) * k; g.drawImage(im, 600 * k, sy, 720 * k, 630 / 600 * 720 * k, 0, 0, 600, 630); }
+  // 火の玉と火花（絵）
+  // 絵の切り出し：火の玉の位置（GEO.ball）が (300, BY) に来る
+  const bx = 300, BY = 300 * 600 / W;
+  g.save(); g.globalCompositeOperation = "lighter"; g.lineCap = "round";
+  const rnd = KIT.rng(Math.round(S.sec * 10) + 3);
+  const lvl = S.dropped ? stageAt(S.sec) : 3;
+  for (let i = 0; i < 70; i++) {
+    const a = rnd() * 6.283, l = 30 + rnd() * (lvl >= 2 ? 120 : 60);
+    const x2 = bx + Math.cos(a) * l, y2 = BY + Math.sin(a) * l;
+    g.strokeStyle = `rgba(255,${200 + Math.round(rnd() * 40)},130,${0.4 + rnd() * 0.5})`; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(bx + Math.cos(a) * 8, BY + Math.sin(a) * 8); g.lineTo(x2, y2); g.stroke();
+    for (let k = 0; k < 3; k++) { const b2 = a + (rnd() - 0.5) * 2, l2 = 10 + rnd() * 18; g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 + Math.cos(b2) * l2, y2 + Math.sin(b2) * l2); g.stroke(); }
+  }
+  const rg = g.createRadialGradient(bx, BY, 0, bx, BY, 90); rg.addColorStop(0, "rgba(255,170,80,.7)"); rg.addColorStop(1, "rgba(255,90,20,0)");
+  g.fillStyle = rg; g.beginPath(); g.arc(bx, BY, 90, 0, 6.283); g.fill();
+  g.restore();
+  g.strokeStyle = "#c76a93"; g.lineWidth = 4; g.beginPath(); g.moveTo(bx, 0); g.lineTo(bx, BY - 60); g.stroke();
+  g.strokeStyle = "#3a2a2a"; g.lineWidth = 3; g.beginPath(); g.moveTo(bx, BY - 60); g.lineTo(bx, BY - 8); g.stroke();
+  const cg = g.createRadialGradient(bx - 3, BY - 3, 0, bx, BY, 13); cg.addColorStop(0, "#fff4c8"); cg.addColorStop(0.5, "#ff9a3c"); cg.addColorStop(1, "#d8401a");
+  g.fillStyle = cg; g.beginPath(); g.arc(bx, BY, 12, 0, 6.283); g.fill();
+  // 右：結果
+  g.fillStyle = "#fbf8f2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#c4561f"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#2b2433"; g.font = '800 42px "Shippori Mincho B1",serif'; g.fillText("線香花火のこり", 650, 96);
+  g.fillStyle = "#7a6f7e"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(S.dropped ? "火の玉がもった時間" : "最後まで、落とさなかった", 650, 176);
+  g.fillStyle = "#c4561f"; g.font = '800 100px "Shippori Mincho B1",serif';
+  const t = S.sec.toFixed(1); g.fillText(t, 650, 290);
+  const tw = g.measureText(t).width; g.font = '800 34px "Shippori Mincho B1",serif'; g.fillText("秒", 662 + tw, 290);
+  g.fillStyle = "#2b2433"; g.font = '800 38px "Shippori Mincho B1",serif'; g.fillText(S.rank, 650, 372);
+  STAGES.slice(1).forEach((s, i) => {
+    const x = 650 + i * 128, y = 420, on = S.reached > i + 1 || !S.dropped;
+    g.fillStyle = on ? "#fde7d2" : "#f1ebe2"; rr(g, x, y, 116, 70, 14); g.fill();
+    g.fillStyle = on ? "#c4561f" : "#bfb4a8"; g.font = '800 26px "Shippori Mincho B1",serif'; g.textAlign = "center"; g.fillText(s.name, x + 58, y + 45); g.textAlign = "left";
+  });
+  g.fillStyle = "#7a6f7e"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#線香花火のこり ・ picoruno.", 650, 590);
+  return c;
+}
+function startMusic(calm) {
+  // 夏の夜：琴と、ゆったりした和音。プレイ中は静かに（火花の音を聞かせる）
+  KIT.music.start(calm
+    ? { bpm: 66, key: 62, chords: [[0, 3, 7, 10], [5, 8, 12, 15], [-2, 2, 5, 9], [3, 7, 10, 14]], lead: "koto", chord: "pad", beat: "none", seed: 61, scale: [0, 2, 3, 7, 9], leadVol: 0.07, chordVol: 0.05, density: 0.45 }
+    : { bpm: 60, key: 62, chords: [[0, 7, 14], [5, 12, 19], [3, 10, 17], [-2, 5, 12]], lead: "koto", chord: "pad", beat: "none", seed: 23, scale: [0, 2, 3, 7, 9], leadVol: 0.035, chordVol: 0.035, density: 0.3, bassOn: false });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "senkou.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("senkou-best", 0);
+  $("best").textContent = best ? `自己ベスト ${best.toFixed(1)}秒` : "火の玉は、およそ42秒もちます";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S;
+</script>
+</body>
+</html>

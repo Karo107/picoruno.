@@ -1,0 +1,8 @@
+{
+  "bg":      {"src": "out/bg.png", "fmt": "jpg", "w": 1080, "q": 80},
+  "shoyu":   {"src": "out/pack_shoyu.png", "fmt": "webp", "w": 620, "q": 85},
+  "karashi": {"src": "out/pack_karashi.png", "fmt": "webp", "w": 620, "q": 85},
+  "ketchup": {"src": "out/pack_ketchup.png", "fmt": "webp", "w": 620, "q": 85},
+  "goma":    {"src": "out/pack_goma.png", "fmt": "webp", "w": 620, "q": 85},
+  "soup":    {"src": "out/pack_soup.png", "fmt": "webp", "w": 620, "q": 85}
+}

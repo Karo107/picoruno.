@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1230">
+<title>マンションの灯り</title>
+<meta name="description" content="夜のマンションの窓をタップして、灯りをつけたり消したり。お題の絵を、マンションいっぱいに浮かべよう。住人もかってに灯りを切りかえるので、急いで。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="マンションの灯り">
+<meta property="og:description" content="窓の灯りで、夜のマンションに絵をかく。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./akari.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231b2550'/%3E%3Crect x='8' y='5' width='16' height='24' rx='1.5' fill='%233a4470'/%3E%3Cg fill='%23ffd27a'%3E%3Crect x='10.5' y='8' width='4' height='3'/%3E%3Crect x='17.5' y='12' width='4' height='3'/%3E%3Crect x='10.5' y='16' width='4' height='3'/%3E%3Crect x='17.5' y='20' width='4' height='3'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：道路から見上げた夜のマンション（Blender）。全部消灯／全部点灯の2枚を、窓ごとに切りかえて重ねる。 */
+:root{
+  --ground:#0b1230; --card:#fbf8f1; --ink:#2c2a3a; --sub:#7d7889; --line:#e6e0d4;
+  --main:#e3a63c; --main-d:#b07d22; --warn:#c0492f; --ok:#5d8f4e;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(10,14,40,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(0,0,10,.5);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #7fa4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f2ede2;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--main);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f2ede2;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(10,14,40,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>マンションの灯り</h1>
+  <p>夜のマンション、70部屋。窓の灯りをつけたり消したりして、お題の絵を浮かべよう。</p>
+  <div class="how">
+    <b>タップ</b><span>窓をタップすると、その部屋の灯りが切りかわる</span>
+    <b>お題</b><span>左上の見本と同じ絵になったら完成。3まいかく</span>
+    <b>住人</b><span>住んでいる人も、かってに灯りをつけたり消したりする</span>
+  </div>
+  <button class="btn" id="start" type="button">管理人室へ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">3まいの絵を、マンションに浮かべた時間</div>
+  <div class="big" id="rBig">0<small>秒</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一晩</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "マンションの灯り";
+const GAME_URL = "https://runococco.github.io/picoruno./akari.html";
+const $ = id => document.getElementById(id);
+const W = 540, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { off: "__IMG_off__", on: "__IMG_on__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const NC = GEO.cols, NF = GEO.floors, NW = NC * NF;
+
+/* お題：7 列 × 10 階（上の行が 10 階） */
+const PICS = [
+  { name: "ハート", rows: ["", "", ".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X...", "", ""] },
+  { name: "やじるし", rows: ["", "...X...", "..XXX..", ".X.X.X.", "...X...", "...X...", "...X...", "...X...", "", ""] },
+  { name: "にこにこ", rows: ["", "", ".X...X.", ".X...X.", "", "X.....X", ".X...X.", "..XXX..", "", ""] },
+  { name: "おうち", rows: ["", "...X...", "..XXX..", ".XXXXX.", "XXXXXXX", ".X...X.", ".X.X.X.", ".X.X.X.", ".XXXXX.", ""] },
+  { name: "ねこ", rows: ["", "X.....X", "XX...XX", "XXXXXXX", "XX.X.XX", "XXXXXXX", "XXX.XXX", ".XXXXX.", "", ""] },
+  { name: "木", rows: ["...X...", "..XXX..", ".XXXXX.", "..XXX..", ".XXXXX.", "XXXXXXX", "...X...", "...X...", "", ""] },
+  { name: "おんぷ", rows: ["", "...XX..", "...X.X.", "...X..X", "...X...", "...X...", ".XXX...", "XXXX...", ".XX....", ""] },
+  { name: "にっこり月", rows: ["", "..XXX..", ".XX....", "XX.....", "XX.....", "XX.....", ".XX....", "..XXX..", "", ""] }
+];
+const ROUNDS = [{ pool: [0, 1], ev: [4.5, 6.5] }, { pool: [2, 3, 7], ev: [3.2, 5] }, { pool: [4, 5, 6], ev: [2.4, 3.8] }];
+const picMask = p => { const m = new Array(NW).fill(0); p.rows.forEach((row, r) => { const f = NF - 1 - r; for (let c = 0; c < NC; c++) if (row[c] === "X") m[f * NC + c] = 1; }); return m; };
+
+const S = { state: "title", t: 0, round: 0, time: 0, lit: new Array(NW).fill(0), lv: new Array(NW).fill(0), flash: new Array(NW).fill(0), target: null, pic: null, nextEv: 0, msg: null, done: 0, roundTimes: [], res: null, taps: 0, evCount: 0, glow: 0 };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 560, lh - H, 0) }; }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+
+/* 窓ごとの形（少し広げて、まわりのしきいにもにじむ） */
+const WIN = GEO.win.map(q => { const cxw = (q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4, cyw = (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4; return { q, cx: cxw, cy: cyw, w: q[1][0] - q[0][0], h: q[0][1] - q[3][1] }; });
+let MASK = null, TMP = null;
+function compose(g) {
+  // 消灯の絵の上に、灯りのついた窓だけ点灯の絵を重ねる
+  const k = IMG.on.width / W;
+  if (!MASK) { MASK = mk(IMG.on.width, IMG.on.height); TMP = mk(IMG.on.width, IMG.on.height); }
+  const m = MASK.getContext("2d");
+  m.setTransform(1, 0, 0, 1, 0, 0); m.clearRect(0, 0, MASK.width, MASK.height); m.setTransform(k, 0, 0, k, 0, 0);
+  for (let i = 0; i < NW; i++) {
+    const a = S.lv[i]; if (a < 0.01) continue;
+    const q = WIN[i].q;
+    m.globalAlpha = a; m.fillStyle = "#fff";
+    m.beginPath(); m.moveTo(q[0][0] - 1.5, q[0][1] + 2); m.lineTo(q[1][0] + 1.5, q[1][1] + 2); m.lineTo(q[2][0] + 1.5, q[2][1] - 1); m.lineTo(q[3][0] - 1.5, q[3][1] - 1); m.closePath(); m.fill();
+  }
+  m.globalAlpha = 1;
+  const t = TMP.getContext("2d");
+  t.globalCompositeOperation = "source-over"; t.clearRect(0, 0, TMP.width, TMP.height); t.drawImage(IMG.on, 0, 0);
+  t.globalCompositeOperation = "destination-in"; t.drawImage(MASK, 0, 0);
+  g.drawImage(IMG.off, 0, 0, W, H);
+  g.drawImage(TMP, 0, 0, W, H);
+  // 窓のまわりに、あたたかい光のにじみ
+  g.save(); g.globalCompositeOperation = "lighter";
+  for (let i = 0; i < NW; i++) {
+    const a = S.lv[i]; if (a < 0.02) continue;
+    const w = WIN[i], r = w.w * 0.9;
+    const gr = g.createRadialGradient(w.cx, w.cy + w.h * 0.2, 0, w.cx, w.cy + w.h * 0.2, r);
+    gr.addColorStop(0, `rgba(255,190,110,${0.14 * a})`); gr.addColorStop(1, "rgba(255,190,110,0)");
+    g.fillStyle = gr; g.fillRect(w.cx - r, w.cy + w.h * 0.2 - r, r * 2, r * 2);
+  }
+  // 完成したときのきらめき
+  if (S.glow > 0) {
+    for (let i = 0; i < NW; i++) if (S.target && S.target[i]) {
+      const w = WIN[i], r = w.w * (1.1 + S.glow * 0.6);
+      const gr = g.createRadialGradient(w.cx, w.cy, 0, w.cx, w.cy, r);
+      gr.addColorStop(0, `rgba(255,230,160,${0.35 * S.glow})`); gr.addColorStop(1, "rgba(255,230,160,0)");
+      g.fillStyle = gr; g.fillRect(w.cx - r, w.cy - r, r * 2, r * 2);
+    }
+  }
+  g.restore();
+  // 住人が切りかえた窓：ちかっと光るふち
+  for (let i = 0; i < NW; i++) if (S.flash[i] > 0) {
+    const q = WIN[i].q, a = S.flash[i];
+    g.strokeStyle = `rgba(160,200,255,${a})`; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(q[0][0] - 4, q[0][1] + 4); g.lineTo(q[1][0] + 4, q[1][1] + 4); g.lineTo(q[2][0] + 4, q[2][1] - 4); g.lineTo(q[3][0] - 4, q[3][1] - 4); g.closePath(); g.stroke();
+  }
+}
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.off && (v.lw > W + 1 || v.lh > H + 1)) {
+    cx.save(); cx.filter = "blur(18px)"; cx.drawImage(IMG.off, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(5,8,25,.35)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  if (IMG.on) compose(cx);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play" || S.state === "done") drawHud();
+}
+function wrong() { let n = 0; for (let i = 0; i < NW; i++) if (S.lit[i] !== S.target[i]) n++; return n; }
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  // 見本
+  const cs = 8, pw = NC * cs + 20, ph = NF * cs + 46;
+  g.fillStyle = "rgba(10,14,40,.72)"; rr(g, 12, top, pw, ph, 14); g.fill();
+  g.fillStyle = "#ffd88a"; g.font = '800 13px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(S.pic ? S.pic.name : "", 12 + pw / 2, top + 14);
+  for (let f = 0; f < NF; f++) for (let c = 0; c < NC; c++) {
+    const on = S.target[f * NC + c], x = 22 + c * cs, y = top + 26 + (NF - 1 - f) * cs;
+    g.fillStyle = on ? "#ffcf6e" : "rgba(255,255,255,.14)"; g.fillRect(x + 1, y + 1, cs - 2, cs - 2);
+  }
+  // 時間とのこり
+  const w2 = Math.min(vw - 12 - pw - 12 - 70, 220), x2 = 12 + pw + 8;
+  if (w2 > 90) {
+    g.fillStyle = "rgba(10,14,40,.72)"; rr(g, x2, top, w2, 56, 14); g.fill();
+    g.fillStyle = "#fff"; g.textAlign = "left"; g.font = '800 17px "M PLUS Rounded 1c",sans-serif';
+    g.fillText(`${S.round + 1}/3まいめ`, x2 + 12, top + 18);
+    g.font = '700 14px "Zen Maru Gothic",sans-serif'; g.fillStyle = "#cfd8ff";
+    g.fillText(S.state === "done" ? "完成！" : `ちがう窓 あと${wrong()}`, x2 + 12, top + 40);
+    g.textAlign = "right"; g.fillStyle = "#fff"; g.font = '800 17px "M PLUS Rounded 1c",sans-serif';
+    g.fillText(`${S.time.toFixed(1)}秒`, x2 + w2 - 12, top + 18);
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 17px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + ph + 10;
+    g.fillStyle = S.msg.warn ? "rgba(60,80,170,.92)" : "rgba(10,14,40,.85)"; rr(g, vw / 2 - tw / 2, y, tw, 40, 20); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 21);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 入力：いちばん近い窓（窓のまわりのかべも当たり） ---------- */
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+function winAt(p) {
+  let best = -1, bd = 1e9;
+  for (let i = 0; i < NW; i++) {
+    const w = WIN[i], dx = (p.x - w.cx) / (w.w * 0.75), dy = (p.y - w.cy) / (w.h * 0.95);
+    const d = Math.max(Math.abs(dx), Math.abs(dy));
+    if (d < 1 && d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+cv.addEventListener("pointerdown", e => {
+  if (S.state !== "play") return;
+  const i = winAt(toWorld(e));
+  if (i < 0) return;
+  toggle(i, true);
+});
+function toggle(i, me) {
+  S.lit[i] ^= 1;
+  if (me) { S.taps++; sndSwitch(S.lit[i]); }
+  else { S.flash[i] = 1; sndResident(S.lit[i]); }
+  check();
+}
+function check() {
+  if (S.state === "play" && wrong() === 0) {
+    S.state = "done"; S.done = S.t; S.roundTimes.push(S.time); S.glow = 1;
+    sndDone(); say(`「${S.pic.name}」が浮かんだ！`, 1.8);
+    KIT.vibrate(20);
+  }
+}
+
+/* ---------- 音 ---------- */
+function sndSwitch(on) {
+  KIT.tone({ f: on ? 2300 : 1800, dur: 0.025, vol: 0.07, type: "square", lp: 5000, wet: 0.02 });
+  KIT.noise({ dur: 0.03, vol: 0.05, f: 3500, q: 2, wet: 0.02 });
+  if (on) KIT.tone({ f: 880 + Math.random() * 300, dur: 0.25, vol: 0.025, type: "sine", wet: 0.3, t: 0.02 });
+}
+function sndResident(on) {
+  KIT.tone({ f: on ? 1400 : 1100, dur: 0.03, vol: 0.04, type: "square", lp: 3000, wet: 0.2 });
+  KIT.tone({ f: on ? 520 : 400, dur: 0.18, vol: 0.03, type: "triangle", wet: 0.3, t: 0.02 });
+}
+function sndDone() { [0, 4, 7, 11, 14, 19].forEach((d, i) => KIT.inst.bell(72 + d, i * 0.08, 0.5, 0.08)); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  for (let i = 0; i < NW; i++) {
+    // 蛍光灯はぱっと、消すときは少しだけ余韻
+    const tg = S.lit[i];
+    S.lv[i] = tg ? Math.min(1, S.lv[i] + dt * 14) : Math.max(0, S.lv[i] - dt * 7);
+    if (S.flash[i] > 0) S.flash[i] = Math.max(0, S.flash[i] - dt * 1.4);
+  }
+  if (S.glow > 0) S.glow = Math.max(0, S.glow - dt * 0.45);
+  if (S.state === "play") {
+    S.time += dt;
+    // 住人
+    if (S.t >= S.nextEv) {
+      const ev = ROUNDS[S.round].ev;
+      S.nextEv = S.t + lerp(ev[0], ev[1], Math.random());
+      const good = [], all = [];
+      for (let i = 0; i < NW; i++) { all.push(i); if (S.lit[i] === S.target[i]) good.push(i); }
+      const pool = Math.random() < 0.7 && good.length ? good : all;
+      toggle(pool[Math.floor(Math.random() * pool.length)], false);
+      S.evCount++;
+    }
+  }
+  if (S.state === "done" && S.t - S.done > 2.0) {
+    S.round++;
+    if (S.round >= ROUNDS.length) finish(); else startRound();
+  }
+}
+function startRound() {
+  const spec = ROUNDS[S.round];
+  const used = S.used || [];
+  const pool = spec.pool.filter(i => !used.includes(i));
+  const pi = pool[Math.floor(Math.random() * pool.length)];
+  S.used = used.concat(pi);
+  S.pic = PICS[pi]; S.target = picMask(S.pic);
+  // いまの灯りに、住人の気まぐれを少し足す
+  for (let i = 0; i < NW; i++) if (Math.random() < 0.25) S.lit[i] ^= 1;
+  if (wrong() < 8) for (let i = 0; i < NW; i++) if (Math.random() < 0.3) S.lit[i] ^= 1;
+  S.state = "play"; S.nextEv = S.t + 3;
+  say(`お題「${S.pic.name}」`, 1.6);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.round = 0; S.time = 0; S.roundTimes = []; S.used = []; S.taps = 0; S.evCount = 0;
+  startRound();
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[45, "夜景デザイナー"], [70, "敏腕管理人"], [100, "夜ふかし管理人"], [150, "消し忘れ注意"], [1e9, "停電かと思った"]];
+function finish() {
+  S.state = "result";
+  const time = Math.round(S.time * 10) / 10;
+  const rank = RANKS.find(r => time < r[0])[1];
+  S.res = { time, rank, taps: S.taps, pics: S.used.map(i => PICS[i].name) };
+  $("rBig").innerHTML = `${time.toFixed(1)}<small>秒</small>`;
+  $("rRank").textContent = rank;
+  const rt = S.roundTimes.map((t, i) => t - (S.roundTimes[i - 1] || 0));
+  $("rStats").innerHTML = `<div class="stat"><small>タップした窓</small><b>${S.taps}回</b></div>`
+    + `<div class="stat"><small>住人のいたずら</small><b>${S.evCount}回</b></div>`
+    + `<div class="stat good"><small>いちばん速い絵</small><b>${Math.min(...rt).toFixed(1)}秒</b></div>`;
+  const best = KIT.store.get("akari-best", null);
+  if (best === null || time < best) KIT.store.set("akari-best", time);
+  $("rNote").textContent = (best === null || time < best ? "自己ベスト更新！　" : `自己ベスト ${best.toFixed(1)}秒　`) + `かいた絵：${S.res.pics.join("・")}`;
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 900);
+}
+function shareText() { const r = S.res; return `マンションの灯りで「${r.pics.join("」「")}」をかいた（${r.time.toFixed(1)}秒）\nわたしは「${r.rank}」\n#マンションの灯り`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  g.fillStyle = "#0b1230"; g.fillRect(0, 0, 600, 630);
+  g.translate(300, 315); g.scale(0.78, 0.78); g.translate(-W / 2, -590);
+  compose(g);
+  g.restore();
+  g.fillStyle = "#fbf8f1"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#e3a63c"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#2c2a3a"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("マンションの灯り", 650, 92);
+  g.fillStyle = "#7d7889"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("窓の灯りで、3まいの絵をかいた時間", 650, 170);
+  g.fillStyle = "#b07d22"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = S.res.time.toFixed(1); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("秒", 660 + tw, 274);
+  g.fillStyle = "#2c2a3a"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#7d7889"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`「${S.res.pics.join("」「")}」`, 650, 400);
+  g.fillText("#マンションの灯り ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 64, key: 63, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 11, 14], [5, 9, 16], [2, 5, 12], [7, 11, 17]], lead: "epiano", chord: "pad", beat: "none", seed: 21, leadVol: 0.06, chordVol: 0.04, density: 0.4 }
+    : { bpm: 80, key: 63, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "bell", chord: "epiano", beat: "lofi", seed: 73, leadVol: 0.05, chordVol: 0.05, density: 0.45, swing: 0.3 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "akari.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("akari-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best.toFixed(1)}秒` : "3まいかいた時間で採点（はやいほどいい）";
+  IMG = await KIT.loadImages(SRC);
+  // タイトルの後ろ：ふつうの夜（ぽつぽつ灯り）
+  for (let i = 0; i < NW; i++) S.lit[i] = Math.random() < 0.45 ? 1 : 0;
+  S.target = new Array(NW).fill(0);
+  requestAnimationFrame(frame);
+  // タイトル中も、住人はくらしている
+  setInterval(() => { if (S.state === "title") { const i = Math.floor(Math.random() * NW); S.lit[i] ^= 1; } }, 1400);
+})();
+window.__S = S; window.__T = { toggle, winAt, WIN, picMask, PICS };
+</script>
+</body>
+</html>
