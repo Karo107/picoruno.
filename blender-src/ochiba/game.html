@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5d5a4e">
+<title>落ち葉はき</title>
+<meta name="description" content="秋のお寺の石だたみ。竹ぼうきで落ち葉を掃いて、かごに集める。ときどき吹く風に負けずに、1分で何枚集められるか。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="落ち葉はき">
+<meta property="og:description" content="さっ、さっ。竹ぼうきで落ち葉をかごへ。風が吹くまえに。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./ochiba.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23efe3cf'/%3E%3Cpath d='M16 5l2.5 6 5-3-2 6 5 1-5 3 2 5-5.5-2L16 27l-2-6-5.5 2 2-5-5-3 5-1-2-6 5 3z' fill='%23d9502f' stroke='%235a3b33' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：真上から見た秋の石だたみ（Blender）。落ち葉と竹ぼうきは Blender で描いた絵を、ゲームの中で動かす。 */
+:root{
+  --ground:#5d5a4e; --card:#fffaf2; --ink:#4a3a2c; --sub:#8a7a69; --line:#ecdfcb;
+  --momiji:#d9502f; --momiji-d:#a8371d; --warn:#c0492f; --ok:#5d8f4e;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(60,45,30,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(40,30,20,.4);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--momiji);color:#fff;box-shadow:0 4px 0 var(--momiji-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--momiji-d)}
+.btn:focus-visible{outline:3px solid #e6b33c;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--momiji-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f7ecdb;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--momiji);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--momiji-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f7ecdb;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.ng b{color:var(--warn)}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(60,45,30,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>落ち葉はき</h1>
+  <p>秋のお寺の石だたみ。竹ぼうきで落ち葉を掃いて、右下のかごに入れよう。時間は1分。</p>
+  <div class="how">
+    <b>掃く</b><span>画面をなぞると、竹ぼうきが葉っぱを押していく</span>
+    <b>かご</b><span>かごの口まで押しこむと、1枚ずつ入る</span>
+    <b>風</b><span>ときどき風が吹く。ばらばらの葉ほど飛ばされる。山にまとめておくと飛ばされにくい</span>
+  </div>
+  <button class="btn" id="start" type="button">ほうきを持つ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">かごに入れた落ち葉</div>
+  <div class="big" id="rBig">0<small>枚</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一度掃く</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "落ち葉はき";
+const GAME_URL = "https://runococco.github.io/picoruno./ochiba.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg: "__IMG_bg__", leaves: "__IMG_leaves__", broom: "__IMG_broom__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+
+const NLEAF = 110, TIME = 60;
+const LS = 36;                                         // 葉っぱの大きさ（画面）
+const BASKET = { x: GEO.basket[0], y: GEO.basket[1], r: GEO.basketR * 0.82 };
+const BR_W = 74, BR_D = 24;                            // ほうきの穂先：はば・おくゆき
+const S = { state: "title", t: 0, left: TIME, leaves: [], got: 0, lost: 0, br: { x: 360, y: 700, vx: 0, vy: 0, a: 0.5, on: false }, gust: null, nextGust: 8, msg: null, parts: [], fx: [], res: null, sweep: 0 };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 600, lh - H, 0) }; }
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.bg && v.lw > W + 1) {
+    cx.save(); cx.filter = "blur(16px)"; cx.drawImage(IMG.bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(60,50,35,.25)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  drawScene(cx, S.t, true);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play") drawHud();
+}
+function drawScene(g, t, withBroom) {
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 0, W, H);
+  // かごの口のめじるし
+  if (S.state === "play") {
+    g.save(); g.strokeStyle = `rgba(255,236,190,${0.35 + 0.2 * Math.sin(t * 3)})`; g.lineWidth = 2; g.setLineDash([8, 7]);
+    g.beginPath(); g.arc(BASKET.x, BASKET.y, BASKET.r + 14, 0, TAU); g.stroke(); g.restore();
+  }
+  // かごに入った葉（かごの中に少しずつたまる）
+  drawBasketFill(g);
+  // 葉っぱ：低いものから
+  const ls = S.leaves.filter(l => !l.gone).sort((a, b) => a.z - b.z);
+  for (const l of ls) drawLeaf(g, l);
+  for (const f of S.fx) { g.globalAlpha = clamp(f.life, 0, 1); drawLeaf(g, f.l, f.life); }
+  g.globalAlpha = 1;
+  // 風のすじ
+  if (S.gust && S.gust.on) {
+    g.save(); g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1.5; g.lineCap = "round";
+    for (const p of S.gust.streaks) { g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - S.gust.dx * 60, p.y - S.gust.dy * 60); g.stroke(); }
+    g.restore();
+  }
+  for (const q of S.parts) { g.globalAlpha = clamp(q.life, 0, 1) * 0.7; g.fillStyle = q.c; g.beginPath(); g.arc(q.x, q.y, q.r, 0, TAU); g.fill(); }
+  g.globalAlpha = 1;
+  if (withBroom && S.state === "play") drawBroom(g);
+}
+function drawLeaf(g, l, sc = 1) {
+  if (!IMG.leaves) return;
+  const cw = IMG.leaves.width / 4, ch = IMG.leaves.height / 2, sx = (l.k % 4) * cw, sy = Math.floor(l.k / 4) * ch;
+  const s = LS * l.s * (1 + l.z * 0.012) * sc;
+  // 影
+  if (l.z > 1) { g.globalAlpha = 0.25; g.fillStyle = "#2a2318"; g.beginPath(); g.ellipse(l.x + l.z * 0.5, l.y + l.z * 0.8, s * 0.35, s * 0.25, 0, 0, TAU); g.fill(); g.globalAlpha = 1; }
+  g.save(); g.translate(l.x, l.y - l.z); g.rotate(l.a);
+  g.scale(l.flip, Math.cos(l.tilt));   // ひらひら：裏返り
+  g.drawImage(IMG.leaves, sx, sy, cw, ch, -s / 2, -s / 2, s, s);
+  g.restore();
+}
+function drawBasketFill(g) {
+  const n = Math.min(S.got, 120);
+  if (!n) return;
+  g.save(); g.beginPath(); g.arc(BASKET.x, BASKET.y + 4, BASKET.r * 0.86, 0, TAU); g.clip();
+  const r = KIT.rng(77);
+  for (let i = 0; i < n; i++) {
+    const a = r() * TAU, d = Math.sqrt(r()) * BASKET.r * 0.8;
+    drawLeaf(g, { x: BASKET.x + Math.cos(a) * d, y: BASKET.y + 6 + Math.sin(a) * d, z: 0, a: r() * TAU, k: Math.floor(r() * 8), s: 0.9, flip: 1, tilt: 0 });
+  }
+  g.restore();
+}
+function drawBroom(g) {
+  const b = S.br; if (!IMG.broom) return;
+  // 穂先の先を (b.x, b.y) に。柄は右上へのびる
+  const h = 1.5 * 150 / 1.0 * 1.0;   // 150cm を 1.5px/cm ほど
+  const w = h * IMG.broom.width / IMG.broom.height;
+  g.save(); g.translate(b.x, b.y);
+  g.globalAlpha = 0.28; g.fillStyle = "#1e180f"; g.beginPath(); g.ellipse(10, 6, BR_W * 0.55, BR_D * 0.8, b.a, 0, TAU); g.fill(); g.globalAlpha = 1;
+  g.rotate(b.a);
+  g.drawImage(IMG.broom, -w / 2, -h * 0.02 - h, w, h);   // 絵の下端＝穂先
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(60,45,30,.66)"; rr(g, 12, top, w, 62, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 19px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`かご ${S.got} / ${NLEAF}枚`, 28, top + 24);
+  g.textAlign = "right"; g.font = '800 19px "M PLUS Rounded 1c",sans-serif';
+  g.fillStyle = S.left < 10 ? "#ffb4a2" : "#fff";
+  g.fillText(`${Math.ceil(S.left)}秒`, 12 + w - 14, top + 24);
+  // 風の気配
+  const gs = S.gust;
+  const k = gs ? (gs.on ? 1 : clamp(1 - (gs.at - S.t) / 2, 0, 1)) : 0;
+  g.fillStyle = "rgba(255,255,255,.2)"; rr(g, 28, top + 44, w - 32, 7, 4); g.fill();
+  g.fillStyle = gs && gs.on ? "#ffb4a2" : "#cfe6ff"; rr(g, 28, top + 44, (w - 32) * k, 7, 4); g.fill();
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 74;
+    g.fillStyle = S.msg.warn ? "rgba(170,60,40,.92)" : "rgba(60,45,30,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 入力：なぞった分だけほうきが動く ---------- */
+let lastP = null;
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+cv.addEventListener("pointerdown", e => { lastP = toWorld(e); S.br.on = true; try { cv.setPointerCapture(e.pointerId); } catch (er) {} });
+cv.addEventListener("pointermove", e => {
+  if (!lastP || S.state !== "play") return;
+  const p = toWorld(e);
+  S.br.tx = clamp((S.br.tx ?? S.br.x) + p.x - lastP.x, 20, W - 20);
+  S.br.ty = clamp((S.br.ty ?? S.br.y) + p.y - lastP.y, 60, H - 20);
+  lastP = p;
+});
+const up = () => { lastP = null; S.br.on = false; };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+
+/* ---------- 音 ---------- */
+let snd = null;
+function loopNoise(type, f, q) {
+  const ac = KIT.ensure();
+  const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+  const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  const gn = ac.createGain(); gn.gain.value = 0;
+  src.connect(fl); fl.connect(gn); gn.connect(KIT.bus()); src.start();
+  return { fl, g: gn };
+}
+function soundInit() { if (snd || !KIT.ensure()) return; snd = { sweep: loopNoise("bandpass", 3000, 1.2), wind: loopNoise("lowpass", 500, 0.6) }; }
+function soundUpdate() {
+  if (!snd) return;
+  const ac = KIT.ensure(), now = ac.currentTime;
+  const sp = Math.hypot(S.br.vx, S.br.vy);
+  const scr = S.state === "play" && S.br.on ? clamp(sp / 900, 0, 1) : 0;
+  snd.sweep.g.gain.setTargetAtTime(scr * (0.07 + 0.03 * Math.random()), now, 0.03);
+  snd.sweep.fl.frequency.setTargetAtTime(2400 + scr * 2200 + Math.random() * 400, now, 0.02);
+  const gs = S.gust, wk = gs ? (gs.on ? gs.k : clamp(1 - (gs.at - S.t) / 2, 0, 1) * 0.3) : 0;
+  snd.wind.g.gain.setTargetAtTime(S.state === "play" ? 0.012 + wk * 0.09 : 0, now, 0.2);
+  snd.wind.fl.frequency.setTargetAtTime(300 + wk * 700, now, 0.3);
+}
+let rustleT = 0;
+function rustle(n) { if (S.t - rustleT < 0.07) return; rustleT = S.t; KIT.noise({ dur: 0.08, vol: 0.02 + Math.min(0.05, n * 0.006), f: 5000 + Math.random() * 2000, q: 1.5, wet: 0 }); }
+function bell() {   // お寺の鐘（ゴーン）
+  const t0 = KIT.ensure().currentTime;
+  [[98, 0.16, 6], [196.5, 0.06, 4], [262, 0.05, 3], [339, 0.03, 2.5], [523, 0.015, 1.5]].forEach(([f, v, d]) => KIT.tone({ f, t: t0, dur: d, vol: v, type: "sine", wet: 0.5, a: 0.01 }));
+}
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  const b = S.br;
+  // ほうきは指をなめらかに追う
+  if (b.tx !== undefined) {
+    const nx = lerp(b.x, b.tx, 1 - Math.pow(0.0001, dt)), ny = lerp(b.y, b.ty, 1 - Math.pow(0.0001, dt));
+    b.vx = lerp(b.vx, (nx - b.x) / Math.max(dt, 1e-3), 0.5); b.vy = lerp(b.vy, (ny - b.y) / Math.max(dt, 1e-3), 0.5);
+    b.x = nx; b.y = ny;
+    // 柄は動きと反対へ少したおれる
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > 60) b.a = lerp(b.a, clamp(0.5 - b.vx / 2400, -0.3, 1.1), 1 - Math.pow(0.05, dt));
+  }
+  if (S.state === "play") {
+    S.left = Math.max(0, S.left - dt);
+    if (S.left <= 0 || S.got + S.lost >= NLEAF) { finish(); return; }
+    gusts(dt);
+    sweep(dt);
+  }
+  physics(dt);
+  for (const f of S.fx) { f.life -= dt * 2.5; f.l.x = lerp(f.l.x, BASKET.x, 0.15); f.l.y = lerp(f.l.y, BASKET.y + 6, 0.15); }
+  S.fx = S.fx.filter(f => f.life > 0);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt * 2; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  if (S.gust && S.gust.on) for (const p of S.gust.streaks) { p.x += S.gust.dx * 900 * dt; p.y += S.gust.dy * 900 * dt; if (p.x < -60 || p.x > W + 60 || p.y < -60 || p.y > H + 60) { p.x = S.gust.dx > 0 ? -40 : W + 40; p.y = Math.random() * H; } }
+  soundUpdate();
+}
+/* 穂先のはばの中にある葉を、ほうきの速さで押す */
+function sweep(dt) {
+  const b = S.br; if (!b.on) return;
+  const sp = Math.hypot(b.vx, b.vy); if (sp < 30) return;
+  const ca = Math.cos(b.a), sa = Math.sin(b.a);
+  let n = 0;
+  for (const l of S.leaves) {
+    if (l.gone) continue;
+    const dx = l.x - b.x, dy = l.y - b.y;
+    const u = dx * ca + dy * sa, v = -dx * sa + dy * ca;     // u：穂先のはば方向、v：おくゆき
+    if (Math.abs(u) > BR_W / 2 || Math.abs(v) > BR_D || l.z > 18) continue;
+    const k = 0.75 * (1 - Math.abs(u) / (BR_W / 2) * 0.4);
+    l.vx = lerp(l.vx, b.vx * 1.05, k); l.vy = lerp(l.vy, b.vy * 1.05, k);
+    l.va += (Math.random() - 0.5) * 8;
+    if (sp > 500 && Math.random() < 0.12) l.vz = Math.max(l.vz, 60 + Math.random() * 120);   // 強く掃くと舞いあがる
+    n++;
+  }
+  if (n) rustle(n);
+  if (Math.random() < dt * sp / 120) S.parts.push({ x: b.x + (Math.random() - 0.5) * BR_W, y: b.y, vx: b.vx * 0.2 + (Math.random() - 0.5) * 40, vy: b.vy * 0.2 + (Math.random() - 0.5) * 40, r: 1 + Math.random(), life: 0.6, c: "rgba(210,190,150,.8)" });
+}
+/* 風：予告してから、ひと吹き */
+function gusts(dt) {
+  const gs = S.gust;
+  if (!gs && S.t >= S.nextGust) {
+    const a = (Math.random() < 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.9;
+    S.gust = { at: S.t + 2, dx: Math.cos(a), dy: Math.sin(a), on: false, k: 0, streaks: Array.from({ length: 22 }, () => ({ x: Math.random() * W, y: Math.random() * H })) };
+    say("風が来る…まとめて！", 1.8, true);
+  } else if (gs && !gs.on && S.t >= gs.at) { gs.on = true; gs.end = S.t + 1.6; }
+  else if (gs && gs.on) {
+    gs.k = Math.sin(clamp((S.t - gs.at) / 1.6, 0, 1) * Math.PI);
+    if (S.t >= gs.end) { S.gust = null; S.nextGust = S.t + 6 + Math.random() * 4; }
+  }
+}
+function physics(dt) {
+  // まわりに葉が多いほど、風に強い（山にまとめると飛ばない）
+  const cell = 34, grid = new Map();
+  for (const l of S.leaves) if (!l.gone) { const key = Math.floor(l.x / cell) + "," + Math.floor(l.y / cell); grid.set(key, (grid.get(key) || 0) + 1); }
+  const gs = S.gust && S.gust.on ? S.gust : null;
+  for (const l of S.leaves) {
+    if (l.gone) continue;
+    if (gs) {
+      const nb = grid.get(Math.floor(l.x / cell) + "," + Math.floor(l.y / cell)) || 1;
+      const res = 1 / (1 + (nb - 1) * 0.45);
+      const f = 420 * gs.k * res * l.light;
+      l.vx += gs.dx * f * dt; l.vy += gs.dy * f * dt;
+      if (res > 0.6 && Math.random() < dt * 2 * gs.k) l.vz = Math.max(l.vz, 40 + Math.random() * 80);
+      l.va += (Math.random() - 0.5) * 20 * dt * gs.k;
+    }
+    // 宙に浮くと、ゆっくり落ちてひらひら
+    if (l.z > 0 || l.vz > 0) { l.vz -= 320 * dt; l.z = Math.max(0, l.z + l.vz * dt); l.tilt += dt * 9; if (l.z === 0) { l.vz = 0; l.tilt = 0; } }
+    const fr = Math.exp(-(l.z > 0 ? 1.2 : 5.5) * dt);
+    l.vx *= fr; l.vy *= fr; l.va *= Math.exp(-4 * dt);
+    l.x += l.vx * dt; l.y += l.vy * dt; l.a += l.va * dt;
+    // かごに入った
+    if (Math.hypot(l.x - BASKET.x, l.y - BASKET.y) < BASKET.r && S.state === "play") {
+      l.gone = true; S.got++; S.fx.push({ l, life: 1 });
+      KIT.noise({ dur: 0.1, vol: 0.04, f: 1400, q: 1, wet: 0.05 });
+      if (S.got % 10 === 0) KIT.inst.koto(74 + [0, 2, 4, 7, 9][(S.got / 10) % 5], KIT.ensure().currentTime, 0.4, 0.07);
+    }
+    // 画面の外へ飛んでいった
+    if (l.x < -30 || l.x > W + 30 || l.y < -30 || l.y > H + 30) { l.gone = true; S.lost++; }
+  }
+}
+
+function startGame() {
+  KIT.ensure(); soundInit();
+  $("title").hidden = true; $("result").hidden = true;
+  const r = KIT.rng(Math.floor(Math.random() * 1e9));
+  S.leaves = [];
+  // 木の下（左上）ほど多い
+  while (S.leaves.length < NLEAF) {
+    const x = lerp(GEO.path[0] + 20, GEO.path[1] - 20, Math.pow(r(), 1.3)), y = lerp(140, 980, Math.pow(r(), 1.2));
+    if (Math.hypot(x - BASKET.x, y - BASKET.y) < BASKET.r + 70) continue;
+    S.leaves.push({ x, y, z: 0, vx: 0, vy: 0, vz: 0, a: r() * TAU, va: 0, k: Math.floor(r() * 8), s: 0.85 + r() * 0.35, flip: r() < 0.5 ? 1 : -1, tilt: 0, light: 0.7 + r() * 0.6, gone: false });
+  }
+  S.got = 0; S.lost = 0; S.left = TIME; S.t = 0; S.gust = null; S.nextGust = 9; S.fx = []; S.parts = [];
+  S.br = { x: 360, y: 760, tx: 360, ty: 760, vx: 0, vy: 0, a: 0.5, on: false };
+  S.state = "play";
+  say("なぞって掃く。かごは右下", 2.4);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[100, "境内の守り人"], [85, "ほうき名人"], [65, "ていねいな掃除"], [45, "まあまあきれい"], [25, "風とたわむれた"], [-1, "秋をたのしんだ"]];
+function finish() {
+  S.state = "result";
+  const pct = Math.round(S.got / NLEAF * 100);
+  const rest = NLEAF - S.got - S.lost;
+  const rank = RANKS.find(r => pct >= r[0])[1];
+  S.res = { got: S.got, lost: S.lost, rest, pct, rank, time: TIME - S.left };
+  $("rBig").innerHTML = `${S.got}<small>枚 / ${NLEAF}</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = `<div class="stat${pct >= 85 ? " good" : ""}"><small>きれい度</small><b>${pct}%</b></div>`
+    + `<div class="stat${S.lost ? " ng" : ""}"><small>風で飛んだ</small><b>${S.lost}枚</b></div>`
+    + `<div class="stat"><small>${rest ? "のこった葉" : "かかった時間"}</small><b>${rest ? rest + "枚" : (TIME - S.left).toFixed(1) + "秒"}</b></div>`;
+  const best = KIT.store.get("ochiba-best", null);
+  if (best === null || S.got > best) KIT.store.set("ochiba-best", S.got);
+  $("rNote").textContent = best === null || S.got > best ? "自己ベスト更新！" : `自己ベスト ${best}枚`;
+  $("result").hidden = false;
+  bell();
+  KIT.music.stop(); setTimeout(() => startMusic(true), 2500);
+}
+function shareText() { const r = S.res; return `落ち葉はき、1分で ${r.got}枚をかごへ（きれい度 ${r.pct}%）\nわたしは「${r.rank}」\n#落ち葉はき`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  g.translate(300, 315); g.translate(-clamp(BASKET.x - 100, 300, W - 300), -clamp(BASKET.y - 150, 315, H - 315));
+  drawScene(g, S.t, false); g.restore();
+  g.fillStyle = "#fffaf2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#d9502f"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#4a3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("落ち葉はき", 650, 92);
+  g.fillStyle = "#8a7a69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("1分でかごに入れた落ち葉", 650, 170);
+  g.fillStyle = "#a8371d"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = String(S.res.got); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText(`枚 / ${NLEAF}`, 660 + tw, 274);
+  g.fillStyle = "#4a3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#8a7a69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`きれい度 ${S.res.pct}%　風で飛んだ ${S.res.lost}枚`, 650, 400);
+  g.fillText("#落ち葉はき ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  const miyako = [0, 1, 5, 7, 8];   // 都節：お寺の秋
+  KIT.music.start(calm
+    ? { bpm: 66, key: 62, scale: miyako, chords: [[0, 7, 12], [5, 8, 12], [-4, 3, 8], [0, 7, 12]], lead: "koto", chord: "pad", beat: "none", seed: 12, leadVol: 0.06, chordVol: 0.04, density: 0.4 }
+    : { bpm: 88, key: 62, scale: [0, 2, 5, 7, 9], chords: [[0, 7, 12], [5, 9, 12], [2, 9, 14], [0, 7, 12]], lead: "koto", chord: "pad", beat: "shaker", seed: 31, leadVol: 0.07, chordVol: 0.04, density: 0.5 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "ochiba.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("ochiba-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best}枚` : "1分でかごに入れた枚数で採点";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { BASKET, GEO };
+</script>
+</body>
+</html>
