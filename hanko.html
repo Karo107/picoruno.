@@ -638,19 +638,22 @@ function update(dt) {
   const hk = S.hk;
   if (S.state === "intro") {
     S.introT += dt;
-    const tgt = boxWorld0(ORDER[S.round]);
+    const tgt = p2w(BOXES[ORDER[S.round]].x, BOX_CY);
     const kk = ease(S.introT / 0.9);
     hk.x = lerp(S.introFrom.x, tgt.x, kk); hk.y = lerp(S.introFrom.y, tgt.y, kk) - Math.sin(kk * Math.PI) * 60;
     hk.a = lerp(40, 0, kk); hk.h = 1;
     if (S.introT >= 0.9) { S.state = "aim"; S.roundT = 0; S.phi = Array.from({ length: 6 }, () => Math.random() * 6.28); }
   } else if (S.state === "aim") {
     S.roundT += dt;
-    const tgt = boxWorld0(ORDER[S.round]), ph = S.phi, tt = S.roundT * R.sp;
-    // ぴったり重なる瞬間がときどき来るように、2つの周期を重ねる
-    const ox = R.amp * (0.72 * Math.sin(1.3 * tt + ph[0]) + 0.28 * Math.sin(3.1 * tt + ph[1]));
-    const oy = R.amp * (0.72 * Math.sin(1.7 * tt + ph[2]) + 0.28 * Math.sin(2.3 * tt + ph[3]));
-    const oa = R.rot * (0.75 * Math.sin(1.1 * tt + ph[4]) + 0.25 * Math.sin(2.9 * tt + ph[5]));
-    hk.x = tgt.x + ox; hk.y = tgt.y + oy; hk.a = oa; hk.h = 1;
+    // ゆれの中心は「いまの紙」の欄。紙が動いても、真ん中を通る瞬間はちゃんと来る
+    const tgt = p2w(BOXES[ORDER[S.round]].x, BOX_CY), ph = S.phi, tt = S.roundT * R.sp;
+    // 8の字のゆれ：u が π の倍数になるたびに、位置も傾きも同時にぴったり真ん中を通る（約2〜3秒ごと）
+    const u = 1.3 * tt + ph[0], env = 0.8 + 0.2 * Math.sin(0.45 * tt + ph[1]), dir = ph[2] < 3.14 ? 1 : -1;
+    const fin = ease(S.roundT / 0.5);   // 着いた直後は小さく、なめらかにゆれはじめる
+    const ox = R.amp * env * fin * Math.sin(u) * dir;
+    const oy = R.amp * env * fin * 0.55 * Math.sin(2 * u + (ph[3] < 3.14 ? 0 : Math.PI));
+    const oa = R.rot * env * fin * (0.85 * Math.sin(u) + 0.15 * Math.sin(3 * u)) * (ph[4] < 3.14 ? 1 : -1);
+    hk.x = tgt.x + ox; hk.y = tgt.y + oy; hk.a = S.paper.rot + oa; hk.h = 1;
     // 残り3秒のカウント
     const left = R.time - S.roundT;
     const sec = Math.ceil(left);
@@ -694,7 +697,7 @@ function pressDown() {
   if (S.state !== "aim") return;
   S.state = "press"; S.pressT = 0; S.creak = false;
   const hk = S.hk;
-  S.lock = { x: hk.x, y: hk.y, a: hk.a };
+  S.lock = { x: hk.x, y: hk.y, a: hk.a, paper: { ...S.paper } };   // 紙に触れた瞬間で採点する
   thud(0.7);
   KIT.vibrate(15);
 }
@@ -702,8 +705,8 @@ function pressUp() {
   if (S.state !== "press") return;
   const pt = S.pressT, hk = S.hk;
   // 押した時点の紙の上での位置と角度
-  const lp = w2p(S.lock.x, S.lock.y);
-  const rel = S.lock.a - S.paper.rot;
+  const lp = w2p(S.lock.x, S.lock.y, S.lock.paper);
+  const rel = S.lock.a - S.lock.paper.rot;
   let q, kind;
   if (pt < 0.08) { q = 0.15; kind = "かすれ"; }
   else if (pt < 0.3) { q = lerp(0.3, 1, (pt - 0.08) / 0.22); kind = q > 0.92 ? "ちょうどいい" : "かすれ"; }
@@ -711,8 +714,9 @@ function pressUp() {
   else { q = lerp(1, 0.35, clamp((pt - 0.8) / 1.0, 0, 1)); kind = q > 0.92 ? "ちょうどいい" : "にじみ"; }
   const bi = ORDER[S.round], b = BOXES[bi];
   const dmm = Math.hypot(lp.x - b.x, lp.y - BOX_CY) / PX_MM;
-  const sPos = 40 * clamp(1 - dmm / 6, 0, 1);
-  const sAng = 40 * clamp(1 - Math.abs(rel) / 20, 0, 1);
+  // ズレ0.4mm・傾き0.8°までは満点あつかい
+  const sPos = 40 * clamp(1 - Math.max(0, dmm - 0.4) / 4, 0, 1);
+  const sAng = 40 * clamp(1 - Math.max(0, Math.abs(rel) - 0.8) / 12, 0, 1);
   const sInk = 20 * q;
   let score = Math.round(sPos + sAng + sInk);
   if (S.timeout) score = Math.max(0, score - 10);
