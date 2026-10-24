@@ -1,0 +1,1 @@
+{"room":{"src":"out/room.png","fmt":"jpg","w":1800,"q":80},"bell":{"src":"out/bell.png","fmt":"webp","q":86},"digi":{"src":"out/digi.png","fmt":"webp","q":86},"phone":{"src":"out/phone.png","fmt":"webp","q":86},"runner":{"src":"out/runner.png","fmt":"webp","q":86},"geo":{"src":"out/geo.json","fmt":"json"}}

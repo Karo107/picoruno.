@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b9a58c">
+<title>目覚ましぜんぶ止め</title>
+<meta name="description" content="朝7時、部屋じゅうの目覚ましがつぎつぎ鳴りだす。ベルはタップ、デジタルは長押し、スマホはスライド、にげる目覚ましは追いかけて。となりの部屋から壁ドンされる前に、ぜんぶ止めよう。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="目覚ましぜんぶ止め">
+<meta property="og:description" content="部屋じゅうの目覚ましが鳴りだした。壁ドンされる前に、ぜんぶ止められる？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./mezamashi.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f1c14b'/%3E%3Ccircle cx='9' cy='9' r='4' fill='%23ddd' stroke='%235a4330'/%3E%3Ccircle cx='23' cy='9' r='4' fill='%23ddd' stroke='%235a4330'/%3E%3Ccircle cx='16' cy='18' r='9' fill='%23c8352a' stroke='%235a4330'/%3E%3Ccircle cx='16' cy='18' r='6.5' fill='%23fffaf0'/%3E%3Cpath d='M16 18V13.5M16 18l-3 2' stroke='%235a4330' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：ななめ上から見た朝の寝室（Blender）。鳴りだした目覚ましを、それぞれの止め方で止める。 */
+:root{
+  --ground:#b9a58c; --card:#fffaf2; --ink:#3d3128; --sub:#86766a; --line:#eadfce;
+  --main:#d6553c; --main-d:#a03b27; --ok:#3e8a5a; --cool:#3f66a8;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.9);background:rgba(60,45,30,.42);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(60,40,20,.35);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #7fa4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(1.9rem,9vw,2.5rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f5ece0;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--main);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f5ece0;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(50,35,25,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (min-aspect-ratio:5/4) and (min-width:820px){#title h1{font-size:2rem}#result,#title{left:auto;right:max(24px,calc(50% - 600px));transform:none;width:380px;bottom:auto;top:50%;translate:0 -50%}}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>目覚ましぜんぶ止め</h1>
+  <p>朝7時。部屋じゅうの目覚ましが、つぎつぎ鳴りだす。となりの部屋から壁ドンされる前に、ぜんぶ止めよう。</p>
+  <div class="how">
+    <b>ベル</b><span>タップで止まる</span>
+    <b>デジタル</b><span>長押しで止まる。ちょんと押すとスヌーズ（また鳴る）</span>
+    <b>スマホ</b><span>横にスライドで止まる</span>
+    <b>にげる</b><span>走りまわる目覚ましは、追いかけてタップ</span>
+  </div>
+  <button class="btn" id="start" type="button">朝をむかえる</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap" id="rCap">鳴りっぱなしだった時間（全部の合計）</div>
+  <div class="big" id="rBig">0<small>秒</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一回あさをむかえる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "目覚ましぜんぶ止め";
+const GAME_URL = "https://runococco.github.io/picoruno./mezamashi.html";
+const $ = id => document.getElementById(id);
+const W = 540, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { room: "__IMG_room__", bell: "__IMG_bell__", digi: "__IMG_digi__", phone: "__IMG_phone__", runner: "__IMG_runner__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const R = GEO.room, SP = R.spots, FH = R.floorH;
+const BIG = 2.3;                                   // 目覚ましは実物より大きめに描く（タップしやすく）
+const ANCH = 8 * Math.sin(34 * Math.PI / 180);     // スプライトの中心から足もとまで（cm）
+const HOLD = 0.6;                                  // デジタルの長押し秒数
+const SNOOZE = 4;                                  // スヌーズでまた鳴るまで
+
+/* 床（cm）→ 画面 */
+function floorPt(x, y) { const d = FH[6] * x + FH[7] * y + 1; return { x: (FH[0] * x + FH[1] * y + FH[2]) / d, y: (FH[3] * x + FH[4] * y + FH[5]) / d }; }
+function floorScale(x, y) { const a = floorPt(x - 5, y), b = floorPt(x + 5, y); return Math.hypot(b.x - a.x, b.y - a.y) / 10; }
+
+const KINDS = {
+  bell: { name: "ベル", how: "タップ", sound: "ジリリリ", col: "#d6553c" },
+  digi: { name: "デジタル", how: "長押し", sound: "ピピピッ", col: "#e0702f" },
+  phone: { name: "スマホ", how: "スライド", sound: "♪〜", col: "#6a6fd6" },
+  runner: { name: "にげる目覚まし", how: "追いかけてタップ", sound: "ジリリリ", col: "#d9962a" }
+};
+// 置き場所と種類（ベルは5色）
+const LAYOUT = [
+  { spot: "pillow", kind: "bell", col: 0 }, { spot: "sill", kind: "bell", col: 1 }, { spot: "desk", kind: "bell", col: 2 },
+  { spot: "shelf", kind: "bell", col: 3 }, { spot: "basket", kind: "bell", col: 4 },
+  { spot: "night", kind: "digi", col: 0 }, { spot: "dresser", kind: "digi", col: 1 },
+  { spot: "phone", kind: "phone", col: 0 }, { spot: "rug", kind: "runner", col: 0 }
+];
+
+const S = { state: "title", t: 0, gt: 0, clocks: [], meter: 0, msg: null, fx: [], waves: [], dawn: 1, shake: 0, press: null, res: null, endAt: 0, don: 0, bird: 2, lastHit: {} };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900, vw / W);   // 縦長の画面でも 540 幅はかならず見せる
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: lh > H ? (lh - H) / 2 : clamp(lh * 0.5 - 540, lh - H, 0) }; }
+function visY() { const v = view(); return [Math.max(0, -v.oy), Math.min(H, v.lh - v.oy)]; }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+
+/* ---------- 目覚まし ---------- */
+function makeClocks() {
+  S.clocks = LAYOUT.map((L, i) => {
+    const c = { i, kind: L.kind, col: L.col, spot: L.spot, state: "wait", at: 0, ringT: 0, ringFrom: 0, snoozes: 0, wob: 0, doneAt: 0, nextHit: 0, phase: Math.random() * 10, swipe: 0 };
+    if (L.kind === "runner") { c.fx = 18; c.fy = -4; c.hd = 0; c.hda = -Math.PI / 2; c.tx = 18; c.ty = -4; c.spd = 0; }
+    place(c); return c;
+  });
+}
+function place(c) {
+  if (c.kind === "runner") { const p = floorPt(c.fx, c.fy); c.x = p.x; c.y = p.y; c.s = floorScale(c.fx, c.fy); }
+  else { const s = SP[c.spot]; c.x = s.x; c.y = s.y; c.s = s.s; }
+}
+function sheetOf(c) { return GEO[c.kind]; }
+function frameOf(c) {
+  const ring = c.state === "ring";
+  if (c.kind === "bell") return c.col * 3 + (ring ? 1 + (Math.floor(S.t * 18 + c.phase) % 2) : 0);
+  if (c.kind === "digi") return c.col * 2 + (ring && Math.floor(S.t * 4 + c.phase) % 2 === 0 ? 1 : 0);
+  if (c.kind === "phone") return ring ? 1 : 0;
+  // にげる目覚まし：進む向き（画面）から8方向
+  const a = Math.atan2(Math.sin(c.hd), Math.cos(c.hd));
+  return ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8;
+}
+function size(c) { const g = sheetOf(c); return { k: BIG * c.s / g.pxcm, g }; }
+function hitR(c) { return Math.max(46, 30 * BIG * c.s * 0.34); }
+function drawClock(g, c) {
+  const im = IMG[c.kind]; if (!im) return;
+  const { k, g: sh } = size(c);
+  const w = sh.cw * k, h = sh.ch * k, f = frameOf(c);
+  const ring = c.state === "ring";
+  let jx = 0, jy = 0, rot = 0;
+  if (ring) {
+    const amp = c.kind === "phone" ? 2.2 : 3.2;
+    jx = Math.sin(S.t * 63 + c.phase) * amp; jy = Math.cos(S.t * 51 + c.phase) * amp * 0.5;
+    rot = c.kind === "bell" || c.kind === "runner" ? Math.sin(S.t * 38 + c.phase) * 0.09 : 0;
+  }
+  if (c.wob > 0) rot += Math.sin(c.wob * 30) * c.wob * 0.25;
+  const pop = c.doneAt && S.t - c.doneAt < 0.3 ? 1 + Math.sin((S.t - c.doneAt) / 0.3 * Math.PI) * 0.12 : 1;
+  const ay = ANCH * BIG * c.s;   // 足もと
+  g.save();
+  g.translate(c.x + jx, c.y + jy); g.rotate(rot); g.scale(pop, pop);
+  // スマホの光
+  if (c.kind === "phone" && ring) {
+    const r = 70 + Math.sin(S.t * 8) * 8, gr = g.createRadialGradient(0, -ay * 0.2, 4, 0, -ay * 0.2, r);
+    gr.addColorStop(0, "rgba(170,180,255,.55)"); gr.addColorStop(1, "rgba(170,180,255,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(0, -ay * 0.2, r, 0, TAU); g.fill();
+  }
+  if (c.kind === "digi" && ring && f % 2 === 1) {
+    const gr = g.createRadialGradient(0, -ay * 1.4, 2, 0, -ay * 1.4, 54);
+    gr.addColorStop(0, "rgba(255,120,80,.5)"); gr.addColorStop(1, "rgba(255,120,80,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(0, -ay * 1.4, 54, 0, TAU); g.fill();
+  }
+  g.drawImage(im, f * sh.cw, 0, sh.cw, sh.ch, -w / 2, -h / 2 - ay, w, h);
+  g.restore();
+}
+
+/* ---------- 予定（いつ、どれが鳴るか） ---------- */
+function schedule() {
+  const shuf = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const bells = shuf(S.clocks.filter(c => c.kind === "bell")), digis = shuf(S.clocks.filter(c => c.kind === "digi"));
+  const phone = S.clocks.find(c => c.kind === "phone"), run = S.clocks.find(c => c.kind === "runner");
+  const plan = [[1.2, bells[0]], [4.2, bells[1]], [7.0, digis[0]], [9.4, bells[2]], [11.6, phone], [13.4, bells[3]], [14.6, digis[1]], [17.0, run], [19.2, bells[4]]];
+  for (const [t, c] of plan) c.at = t + (Math.random() - 0.5) * 0.6;
+}
+
+/* ---------- 状態 ---------- */
+function ring(c) {
+  c.state = "ring"; c.ringFrom = S.gt; c.nextHit = 0;
+  const L = KINDS[c.kind];
+  S.waves.push({ c, t: S.t });
+  if (c.kind === "runner") pickTarget(c);
+  if (!S.lastHit[c.kind]) { S.lastHit[c.kind] = 1; say(`${L.name}は「${L.how}」で止める`, 2.0); }
+}
+function stop(c) {
+  c.state = "done"; c.doneAt = S.t;
+  stopSnd(c); KIT.vibrate(15);
+  for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, sp = 90 + Math.random() * 160; S.fx.push({ x: c.x, y: c.y - 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, life: 0.7 + Math.random() * 0.4, c: ["#ffd25e", "#fff", "#ffb08a"][i % 3], r: 2 + Math.random() * 3 }); }
+  pop(c, "ピタッ", "#3e8a5a");
+  if (S.clocks.every(k => k.state === "done")) clear();
+}
+function snooze(c) {
+  c.state = "snooze"; c.snoozeAt = S.gt + SNOOZE; c.snoozes++;
+  snoozeSnd(c); pop(c, "スヌーズ…", "#7a6a5e");
+  say(c.kind === "digi" ? "スヌーズ！ デジタルは長押しで止まる" : "スヌーズ！ スマホは横にスライド", 2.2, true);
+}
+function pop(c, text, col) { S.fx.push({ text, x: c.x + (Math.random() - 0.5) * 30, y: c.y - 70, vy: -40, life: 1.1, col }); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+function pickTarget(c) {
+  const b = R.run;
+  for (let n = 0; n < 8; n++) {
+    const tx = lerp(b.x0, b.x1, Math.random()), ty = lerp(b.y0, b.y1, Math.random());
+    if (Math.hypot(tx - c.fx, ty - c.fy) > 40) { c.tx = tx; c.ty = ty; return; }
+  }
+  c.tx = lerp(b.x0, b.x1, 0.5); c.ty = lerp(b.y0, b.y1, 0.5);
+}
+
+/* ---------- 入力 ---------- */
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+function pick(p) {
+  let best = null, bd = 1e9;
+  for (const c of S.clocks) {
+    const ay = ANCH * BIG * c.s, cy = c.y - ay - 14 * c.s;
+    const d = Math.hypot(p.x - c.x, p.y - cy) - (c.state === "ring" ? 18 : 0);
+    if (d < hitR(c) + 18 && d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+cv.addEventListener("pointerdown", e => {
+  if (S.state !== "play") return;
+  KIT.ensure();
+  const p = toWorld(e), c = pick(p);
+  S.taps.push({ x: p.x, y: p.y, t: S.t });
+  if (!c) return;
+  press(c, p, e.pointerId);
+});
+cv.addEventListener("pointermove", e => { if (S.press && S.press.id === e.pointerId) drag(toWorld(e)); });
+const up = e => { if (S.press && S.press.id === e.pointerId) release(); };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+function press(c, p, id = 1) {
+  if (c.state !== "ring") { c.wob = 0.5; tapSnd(); if (c.state === "wait") pop(c, "まだ鳴ってない", "#86766a"); return; }
+  if (c.kind === "bell" || c.kind === "runner") { stop(c); return; }
+  S.press = { c, id, at: S.gt, x0: p.x, y0: p.y };
+  try { cv.setPointerCapture(id); } catch (er) {}
+  if (c.kind === "digi") holdSnd();
+}
+function drag(p) {
+  const P = S.press; if (!P) return;
+  if (P.c.kind === "phone") { P.c.swipe = clamp((p.x - P.x0) / 110, 0, 1) ; if (Math.abs(p.x - P.x0) > 90) { S.press = null; P.c.swipe = 0; stop(P.c); } }
+}
+function release() {
+  const P = S.press; S.press = null; if (!P) return;
+  const c = P.c; c.swipe = 0;
+  if (c.state !== "ring") return;
+  if (c.kind === "digi" || c.kind === "phone") snooze(c);
+}
+
+/* ---------- 音 ---------- */
+const panOf = c => clamp((c.x - 270) / 300, -0.8, 0.8);
+function bellHit(c, hi) {
+  const f = hi ? 3100 : 2500 + c.col * 140;
+  KIT.tone({ f, dur: 0.06, vol: 0.05, type: "sine", wet: 0.12, pan: panOf(c) });
+  KIT.tone({ f: f * 1.51, dur: 0.04, vol: 0.025, type: "sine", wet: 0.1, pan: panOf(c) });
+  KIT.noise({ dur: 0.025, vol: 0.05, f: 6000, q: 2, wet: 0.05 });
+}
+function digiBeep(c) { KIT.tone({ f: c.col ? 2350 : 2050, dur: 0.07, vol: 0.06, type: "square", lp: 5000, wet: 0.05, pan: panOf(c) }); }
+const RING = [76, 79, 84, 79, 81, 84, 88, 84];
+function phoneNote(c, i) { const m = RING[i % RING.length]; KIT.tone({ f: KIT.mtof(m), dur: 0.22, vol: 0.07, type: "sine", wet: 0.2, pan: panOf(c) }); KIT.tone({ f: KIT.mtof(m) * 4, dur: 0.05, vol: 0.02, type: "sine", wet: 0.1, pan: panOf(c) }); }
+function motor(c) { KIT.noise({ dur: 0.14, vol: 0.05, f: 300, q: 3, wet: 0, a: 0.02 }); }
+function stopSnd(c) { KIT.noise({ dur: 0.03, vol: 0.18, f: 2200, q: 2, wet: 0.05 }); [0, 4, 7].forEach((d, i) => KIT.tone({ f: KIT.mtof(79 + d), t: 0.04 + i * 0.05, dur: 0.25, vol: 0.05, type: "sine", wet: 0.25 })); }
+function snoozeSnd(c) { KIT.noise({ dur: 0.03, vol: 0.14, f: 1800, q: 2, wet: 0.05 }); KIT.tone({ f: 660, to: 440, dur: 0.3, vol: 0.06, type: "triangle", wet: 0.2 }); }
+function tapSnd() { KIT.noise({ dur: 0.03, vol: 0.08, f: 1500, q: 2, wet: 0.05 }); }
+function holdSnd() { KIT.noise({ dur: 0.04, vol: 0.12, f: 1300, q: 2, wet: 0.05 }); }
+function donSnd() { KIT.tone({ f: 90, to: 40, dur: 0.35, vol: 0.5, type: "sine", wet: 0.3 }); KIT.noise({ dur: 0.18, vol: 0.4, f: 220, q: 0.8, wet: 0.3 }); }
+function bird() { const b = 3200 + Math.random() * 1200, n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) KIT.tone({ f: b, to: b * 1.35, t: i * 0.12, dur: 0.08, vol: 0.025, type: "sine", wet: 0.35, pan: Math.random() - 0.5 }); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.1, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  S.dawn = S.state === "title" ? 1 : Math.max(0, S.dawn - dt * 0.6);
+  S.shake = Math.max(0, S.shake - dt * 2.5);
+  for (const f of S.fx) { f.life -= dt; if (f.text) f.y += f.vy * dt; else { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 420 * dt; } }
+  S.fx = S.fx.filter(f => f.life > 0);
+  S.waves = S.waves.filter(w => S.t - w.t < 0.8);
+  for (const c of S.clocks) { c.wob = Math.max(0, c.wob - dt * 1.5); }
+  if (S.state === "title" || S.state === "result") { S.bird -= dt; if (S.bird < 0) { S.bird = 2 + Math.random() * 3; if (S.state === "title" && KIT.muted === false && S.started) bird(); } }
+  if (S.state === "count") { S.gt += dt; if (S.gt >= 0) { S.state = "play"; } return; }
+  if (S.state !== "play") return;
+  S.gt += dt;
+  S.bird -= dt; if (S.bird < 0) { S.bird = 2.5 + Math.random() * 3; bird(); }
+  let n = 0, rate = 0;
+  for (const c of S.clocks) {
+    if (c.state === "wait" && S.gt >= c.at) ring(c);
+    if (c.state === "snooze" && S.gt >= c.snoozeAt) { ring(c); pop(c, "また鳴った！", "#d6553c"); }
+    if (c.state !== "ring") continue;
+    n++; c.ringT += dt;
+    rate += c.kind === "runner" ? 0.04 : c.kind === "bell" ? 0.032 : 0.028;
+    // 音
+    c.nextHit -= dt;
+    if (c.nextHit <= 0) {
+      if (c.kind === "bell") { bellHit(c, false); c.nextHit = 0.055; }
+      else if (c.kind === "runner") { bellHit(c, true); c.nextHit = 0.06; c.mot = (c.mot || 0) + 1; if (c.mot % 3 === 0) motor(c); }
+      else if (c.kind === "digi") { c.beep = (c.beep || 0) + 1; digiBeep(c); c.nextHit = c.beep % 4 === 0 ? 0.5 : 0.11; }
+      else { c.note = (c.note || 0) + 1; phoneNote(c, c.note); c.nextHit = 0.16; }
+    }
+    if (Math.floor((S.t + c.phase) / 0.7) !== Math.floor((S.t + c.phase - dt) / 0.7)) S.waves.push({ c, t: S.t });
+    // デジタルの長押し
+    if (S.press && S.press.c === c && c.kind === "digi" && S.gt - S.press.at >= HOLD) { S.press = null; stop(c); }
+    // にげる目覚まし
+    if (c.kind === "runner" && c.state === "ring") {
+      const dx = c.tx - c.fx, dy = c.ty - c.fy, d = Math.hypot(dx, dy);
+      if (d < 6) pickTarget(c);
+      c.spd = Math.min(70, c.spd + dt * 120);
+      const want = Math.atan2(dy, dx);
+      let da = want - c.hda; da = Math.atan2(Math.sin(da), Math.cos(da));
+      c.hda = (c.hda || 0) + clamp(da, -dt * 5, dt * 5);
+      c.fx += Math.cos(c.hda) * c.spd * dt; c.fy += Math.sin(c.hda) * c.spd * dt;
+      const p0 = floorPt(c.fx, c.fy), p1 = floorPt(c.fx + Math.cos(c.hda), c.fy + Math.sin(c.hda));
+      c.hd = Math.atan2(p1.x - p0.x, p1.y - p0.y);   // 画面の下向きが 0
+      place(c);
+    }
+  }
+  if (S.clocks.some(c => c.kind === "runner" && c.state !== "ring")) { const c = S.clocks.find(c => c.kind === "runner"); c.spd = 0; }
+  const mult = 1 + 0.25 * Math.max(0, n - 1);
+  if (n) S.meter += rate * mult * dt; else S.meter = Math.max(0, S.meter - dt * 0.07);
+  if (S.meter >= 1) wallDon();
+}
+function wallDon() {
+  S.meter = 1; S.state = "fail"; S.endAt = S.t; S.shake = 1; S.don = S.t;
+  donSnd(); setTimeout(donSnd, 260); KIT.vibrate([60, 80, 60]);
+  say("ドンッ！ となりから壁ドンされた…", 2.4, true);
+  KIT.music.stop();
+  setTimeout(() => finish(false), 1800);
+}
+function clear() {
+  S.state = "clear"; S.endAt = S.t;
+  say("ぜんぶ止めた！ しずかな朝", 2.2);
+  KIT.music.stop();
+  setTimeout(() => [0, 4, 7, 12, 16].forEach((d, i) => KIT.inst.marimba(67 + d, i * 0.1, 0.3, 0.12)), 300);
+  setTimeout(() => finish(true), 1600);
+}
+function startGame() {
+  KIT.ensure(); S.started = true;
+  $("title").hidden = true; $("result").hidden = true;
+  makeClocks(); schedule();
+  S.state = "count"; S.gt = -1.6; S.meter = 0; S.fx = []; S.waves = []; S.msg = null; S.press = null; S.lastHit = {}; S.taps = []; S.res = null;
+  say("6:59…  もうすぐ7時", 1.6);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[9, "静かな朝の達人"], [14, "てきぱき起床"], [20, "ふつうの朝"], [1e9, "ねぼすけ"]];
+function totalRing() { return S.clocks.reduce((s, c) => s + c.ringT, 0); }
+function finish(ok) {
+  S.state = "result";
+  const tot = Math.round(totalRing() * 10) / 10, stopped = S.clocks.filter(c => c.state === "done").length, sn = S.clocks.reduce((s, c) => s + c.snoozes, 0);
+  const rank = ok ? RANKS.find(r => tot <= r[0])[1] : "壁ドンされた朝";
+  const wake = 7 * 60 + Math.floor(S.gt / 2);
+  S.res = { ok, tot, stopped, sn, rank, wake: `${Math.floor(wake / 60)}:${String(wake % 60).padStart(2, "0")}` };
+  $("rCap").textContent = ok ? "鳴りっぱなしだった時間（全部の合計）" : "止められた目覚まし";
+  $("rBig").innerHTML = ok ? `${tot.toFixed(1)}<small>秒</small>` : `${stopped}<small>/ ${S.clocks.length}個</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = `<div class="stat good"><small>止めた</small><b>${stopped}/${S.clocks.length}</b></div><div class="stat ${sn ? "" : "good"}"><small>スヌーズ</small><b>${sn}回</b></div><div class="stat"><small>おきた時刻</small><b>${S.res.wake}</b></div>`;
+  const best = KIT.store.get("mezamashi-best", null);
+  const better = ok && (best === null || tot < best);
+  if (better) KIT.store.set("mezamashi-best", tot);
+  $("rNote").textContent = ok ? (better ? "自己ベスト更新！" : `自己ベスト：${best.toFixed(1)}秒`) : "メーターがいっぱいになると壁ドン。鳴った順に、すばやく止めよう。";
+  $("result").hidden = false;
+  setTimeout(() => startMusic(true), 600);
+}
+function shareText() { const r = S.res; return r.ok ? `目覚ましぜんぶ止めで、9個の目覚ましを鳴りっぱなし合計${r.tot.toFixed(1)}秒で止めた\nわたしは「${r.rank}」\n#目覚ましぜんぶ止め` : `目覚ましぜんぶ止めで、壁ドンされた…（${r.stopped}/9個）\n#目覚ましぜんぶ止め`; }
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 76, key: 62, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], lead: "epiano", chord: "pad", beat: "none", seed: 21, leadVol: 0.05, chordVol: 0.035, density: 0.35 }
+    : { bpm: 96, key: 62, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7], [5, 9, 12], [9, 12, 16], [7, 11, 14]], lead: "flute", chord: "pluck", beat: "shaker", seed: 70, leadVol: 0.045, chordVol: 0.04, density: 0.4 });
+}
+
+/* ---------- 描画 ---------- */
+function drawRoom(g) {
+  const im = IMG.room; if (!im) return;
+  g.drawImage(im, -R.ox, 0, R.w, R.h);
+  // 縦長の画面では、上は壁・下は床のはしを引きのばしてつなぐ
+  const ex = 400, k = im.height / R.h;
+  g.drawImage(im, 0, 0, im.width, 1, -R.ox, -ex, R.w, ex);
+  g.drawImage(im, 0, im.height - 1, im.width, 1, -R.ox, R.h, R.w, ex);
+}
+function light(g) {
+  // 窓からの光の筋とほこり
+  g.save(); g.globalCompositeOperation = "screen";
+  const t = S.t, w0 = SP.sill;
+  for (let i = 0; i < 3; i++) {
+    const x = w0.x - 120 + i * 70, a = 0.06 + 0.03 * Math.sin(t * 0.5 + i);
+    const gr = g.createLinearGradient(x, 80, x - 80, 760); gr.addColorStop(0, `rgba(255,220,160,${a})`); gr.addColorStop(1, "rgba(255,220,160,0)");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x, 90); g.lineTo(x + 50, 90); g.lineTo(x - 30, 760); g.lineTo(x - 140, 760); g.closePath(); g.fill();
+  }
+  g.fillStyle = "rgba(255,240,210,.7)";
+  for (let i = 0; i < 26; i++) {
+    const px = w0.x - 230 + ((i * 97 + t * 6 * (1 + (i % 3))) % 260), py = 160 + ((i * 53 + t * 10 * (1 + (i % 2))) % 520);
+    g.globalAlpha = 0.25 + 0.25 * Math.sin(t + i); g.beginPath(); g.arc(px, py, 1.3 + (i % 3) * 0.5, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+function drawWaves(g) {
+  for (const w of S.waves) {
+    const c = w.c; if (c.state !== "ring") continue;
+    const k = (S.t - w.t) / 0.8, ay = ANCH * BIG * c.s, y = c.y - ay - 12 * c.s * BIG;
+    g.save(); g.strokeStyle = `rgba(255,255,255,${0.8 * (1 - k)})`; g.lineWidth = 3.5; g.lineCap = "round";
+    for (const sx of [-1, 1]) for (let j = 0; j < 2; j++) {
+      const r = 30 + k * 40 + j * 12;
+      g.beginPath(); g.arc(c.x, y, r, sx > 0 ? -0.6 : Math.PI - 0.6, sx > 0 ? 0.6 : Math.PI + 0.6); g.stroke();
+    }
+    g.restore();
+  }
+}
+function drawRingLabels(g) {
+  g.save(); g.textAlign = "center"; g.textBaseline = "middle";
+  for (const c of S.clocks) {
+    const ay = ANCH * BIG * c.s, top = c.y - ay - 30 * c.s * BIG * 0.55;
+    if (c.state === "ring") {
+      const L = KINDS[c.kind], j = Math.sin(S.t * 30 + c.phase) * 2;
+      g.font = '800 22px "M PLUS Rounded 1c",sans-serif'; g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,.95)";
+      g.fillStyle = L.col; g.strokeText(L.sound, c.x + j, top - 8); g.fillText(L.sound, c.x + j, top - 8);
+      if (c.kind === "digi") {   // 長押しのリング
+        const P = S.press && S.press.c === c ? clamp((S.gt - S.press.at) / HOLD, 0, 1) : 0;
+        g.lineWidth = 6; g.strokeStyle = "rgba(255,255,255,.6)"; g.beginPath(); g.arc(c.x, c.y - ay * 1.3, 40, 0, TAU); g.stroke();
+        if (P > 0) { g.strokeStyle = "#3e8a5a"; g.beginPath(); g.arc(c.x, c.y - ay * 1.3, 40, -Math.PI / 2, -Math.PI / 2 + TAU * P); g.stroke(); }
+        g.font = '800 13px "M PLUS Rounded 1c",sans-serif'; g.fillStyle = "#fff"; g.strokeStyle = "rgba(60,40,30,.7)"; g.lineWidth = 4;
+        g.strokeText("長押し", c.x, c.y + 22); g.fillText("長押し", c.x, c.y + 22);
+      }
+      if (c.kind === "phone") {  // スライドのレール
+        const y = c.y + 26, k = c.swipe || 0;
+        g.fillStyle = "rgba(40,40,60,.55)"; rr(g, c.x - 56, y - 15, 112, 30, 15); g.fill();
+        g.fillStyle = "rgba(255,255,255,.85)"; g.font = '800 12px "M PLUS Rounded 1c",sans-serif'; g.fillText("スライドで停止 ›", c.x + 8, y + 1);
+        g.fillStyle = "#e8604a"; g.beginPath(); g.arc(c.x - 41 + k * 82, y, 12, 0, TAU); g.fill();
+      }
+    } else if (c.state === "snooze") {
+      const left = Math.max(0, c.snoozeAt - S.gt);
+      g.font = '800 18px "M PLUS Rounded 1c",sans-serif'; g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,.9)"; g.fillStyle = "#6c5f86";
+      const tx = `Zz… ${left.toFixed(1)}`; g.strokeText(tx, c.x, top); g.fillText(tx, c.x, top);
+    } else if (c.state === "done" && S.t - c.doneAt < 1.2) {
+      const k = (S.t - c.doneAt) / 1.2; g.globalAlpha = 1 - k;
+      g.fillStyle = "#3e8a5a"; g.beginPath(); g.arc(c.x, top - k * 20, 15, 0, TAU); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = 3.5; g.lineCap = "round"; g.lineJoin = "round";
+      g.beginPath(); g.moveTo(c.x - 7, top - k * 20); g.lineTo(c.x - 2, top - k * 20 + 5); g.lineTo(c.x + 7, top - k * 20 - 5); g.stroke();
+      g.globalAlpha = 1;
+    }
+  }
+  g.restore();
+}
+function drawFx(g) {
+  g.save(); g.textAlign = "center"; g.textBaseline = "middle";
+  for (const f of S.fx) {
+    if (f.text) {
+      g.globalAlpha = clamp(f.life / 0.4, 0, 1);
+      g.font = '800 18px "M PLUS Rounded 1c",sans-serif'; g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,.95)"; g.fillStyle = f.col;
+      g.strokeText(f.text, f.x, f.y); g.fillText(f.text, f.x, f.y);
+    } else { g.globalAlpha = clamp(f.life / 0.4, 0, 1); g.fillStyle = f.c; g.beginPath(); g.arc(f.x, f.y, f.r, 0, TAU); g.fill(); }
+  }
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  const w = Math.min(vw - 24 - 56, 300), x = 12, h = 64;
+  g.fillStyle = "rgba(45,35,30,.78)"; rr(g, x, top, w, h, 16); g.fill();
+  // デジタル時計の表示
+  const gm = Math.max(0, S.gt), min = Math.floor(gm / 2), hh = S.gt < 0 ? 6 : 7, mm = S.gt < 0 ? 59 : min;
+  g.textBaseline = "middle"; g.textAlign = "left"; g.fillStyle = "#ffcf7a"; g.font = '800 28px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${hh}:${String(mm).padStart(2, "0")}`, x + 14, top + h / 2 + 1);
+  // うるさメーター
+  const mx = x + 98, mw = w - 98 - 14, my = top + 34;
+  g.fillStyle = "rgba(255,255,255,.75)"; g.font = '700 12px "Zen Maru Gothic",sans-serif'; g.fillText("となりの部屋のイライラ", mx, top + 18);
+  const left = S.clocks.filter(c => c.state !== "done").length;
+  g.textAlign = "right"; g.fillText(`のこり ${left}`, mx + mw, top + 18);
+  g.fillStyle = "rgba(255,255,255,.18)"; rr(g, mx, my, mw, 14, 7); g.fill();
+  const m = clamp(S.meter, 0, 1), hot = m > 0.7;
+  g.fillStyle = hot ? (Math.floor(S.t * 8) % 2 ? "#ff5a3c" : "#ff9a5a") : m > 0.4 ? "#f0a948" : "#7cc28a";
+  if (m > 0) { rr(g, mx, my, Math.max(14, mw * m), 14, 7); g.fill(); }
+  // メッセージ
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '800 17px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "center";
+    const tw = Math.min(vw - 24, g.measureText(S.msg.text).width + 40), y = top + h + 12;
+    g.fillStyle = S.msg.warn ? "rgba(190,70,50,.94)" : "rgba(45,35,30,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 40, 20); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 21);
+  }
+  g.restore();
+  // 壁ドン
+  if (S.don && S.t - S.don < 1.6) {
+    const k = (S.t - S.don) / 1.6;
+    g.save(); g.globalAlpha = 1 - k * k; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = `800 ${Math.round(64 + 30 * Math.min(1, k * 6))}px "M PLUS Rounded 1c",sans-serif`;
+    g.lineWidth = 10; g.strokeStyle = "#fff"; g.fillStyle = "#c2412b";
+    g.translate(vw / 2, vh * 0.42); g.rotate(-0.12);
+    g.strokeText("ドンッ！", 0, 0); g.fillText("ドンッ！", 0, 0);
+    g.restore();
+  }
+}
+function render() {
+  const g = cx;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = "#b9a58c"; g.fillRect(0, 0, vw, vh);
+  const v = view();
+  const sh = S.shake > 0 ? S.shake * 14 : 0;
+  g.save(); g.scale(fit, fit); g.translate(v.ox + (Math.random() - 0.5) * sh, v.oy + (Math.random() - 0.5) * sh);
+  drawRoom(g);
+  light(g);
+  const order = [...S.clocks].sort((a, b) => a.y - b.y);
+  for (const c of order) drawClock(g, c);
+  drawWaves(g); drawRingLabels(g); drawFx(g);
+  // 夜明けまえ（タイトル）は少し暗く
+  if (S.dawn > 0) { g.fillStyle = `rgba(30,40,80,${0.32 * S.dawn})`; g.fillRect(-R.ox, -400, R.w, R.h + 800); }
+  if (S.state === "fail") { const k = clamp((S.t - S.endAt) * 2, 0, 1); g.fillStyle = `rgba(120,30,20,${0.18 * k})`; g.fillRect(-R.ox, -400, R.w, R.h + 800); }
+  g.restore();
+  if (S.state !== "title") drawHud();
+}
+
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  const sc = 630 / 760; g.scale(sc, sc); g.translate((600 / sc - W) / 2, -40);
+  drawRoom(g);
+  for (const k of [...S.clocks].sort((a, b) => a.y - b.y)) drawClock(g, k);
+  g.restore();
+  g.fillStyle = "#fffaf2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#d6553c"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#3d3128"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("目覚ましぜんぶ止め", 650, 92);
+  const r = S.res;
+  g.fillStyle = "#86766a"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(r.ok ? "鳴りっぱなしだった時間（合計）" : "止められた目覚まし", 650, 170);
+  g.fillStyle = "#a03b27"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = r.ok ? r.tot.toFixed(1) : `${r.stopped}`; g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText(r.ok ? "秒" : "/ 9個", 660 + tw, 274);
+  g.fillStyle = "#3d3128"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(r.rank, 650, 350);
+  g.fillStyle = "#86766a"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`おきた時刻 ${r.wake}・スヌーズ ${r.sn}回`, 650, 400);
+  g.fillText("#目覚ましぜんぶ止め ・ picoruno.", 650, 580);
+  return c;
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "mezamashi.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon(); makeClocks();
+  const best = KIT.store.get("mezamashi-best", null);
+  $("best").textContent = best !== null ? `自己ベスト：鳴りっぱなし合計 ${best.toFixed(1)}秒` : "鳴りっぱなしの合計が短いほどいい";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+S.taps = [];
+window.__S = S; window.__T = { press, drag, release, view, pick, ANCH, BIG };
+</script>
+</body>
+</html>
