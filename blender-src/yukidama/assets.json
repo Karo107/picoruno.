@@ -1,0 +1,1 @@
+{"slope":{"src":"out/slope.png","fmt":"jpg","w":810,"q":88},"ball":{"src":"out/ball.png","fmt":"webp","q":86},"obj":{"src":"out/obj.png","fmt":"webp","q":86},"yard":{"src":"out/yard.png","fmt":"jpg","w":810,"q":82},"parts":{"src":"out/parts.png","fmt":"webp","q":88},"geo":{"src":"out/geo.json","fmt":"json"}}
