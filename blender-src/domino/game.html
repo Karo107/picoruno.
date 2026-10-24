@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#d9c3a5">
+<title>ドミノひとふで</title>
+<meta name="description" content="指でなぞった線に、ドミノがならぶ。障害物をよけて、ゴールの呼び鈴まで一気にたおそう。急なカーブはたおれないので注意。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ドミノひとふで">
+<meta property="og:description" content="なぞった線にドミノがならぶ。呼び鈴まで、たおしきれる？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./domino.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23d9b48a'/%3E%3Cg fill='%23fffaf0' stroke='%235a4330' stroke-width='1'%3E%3Crect x='5' y='9' width='5' height='15' rx='1' transform='rotate(-25 7 16)'/%3E%3Crect x='13' y='9' width='5' height='15' rx='1' transform='rotate(-10 15 16)'/%3E%3Crect x='21' y='9' width='5' height='15' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：真上から見た木の床（Blender）。なぞった線にドミノをならべ、呼び鈴までたおす。 */
+:root{
+  --ground:#d9c3a5; --card:#fffaf2; --ink:#3d3128; --sub:#86766a; --line:#eadfce;
+  --main:#d0593f; --main-d:#9f3f2b; --ok:#3e8a5a; --cool:#3f66a8;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.9);background:rgba(60,45,30,.42);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(60,40,20,.35);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #7fa4ff;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f5ece0;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--main);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f5ece0;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(50,35,25,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (min-aspect-ratio:5/4) and (min-width:820px){#result,#title{left:auto;right:max(24px,calc(50% - 600px));transform:none;width:380px;bottom:auto;top:50%;translate:0 -50%}}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>ドミノひとふで</h1>
+  <p>指でなぞった線に、ドミノがならぶ。ゴールの呼び鈴まで、一気にたおそう。</p>
+  <div class="how">
+    <b>なぞる</b><span>光っているドミノから、呼び鈴まで線をひく</span>
+    <b>たおす</b><span>ならんだら「たおす！」。最後に鈴が鳴ればクリア</span>
+    <b>注意</b><span>急なカーブや、ものの上には置けない。そこで止まる</span>
+  </div>
+  <button class="btn" id="start" type="button">ならべはじめる</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">3つの部屋で、たおしたドミノ</div>
+  <div class="big" id="rBig">0<small>枚</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一回ならべる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "ドミノひとふで";
+const GAME_URL = "https://runococco.github.io/picoruno./domino.html";
+const $ = id => document.getElementById(id);
+const W = 540, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { s0: "__IMG_stage0__", s1: "__IMG_stage1__", s2: "__IMG_stage2__", bell: "__IMG_bell__", dom: "__IMG_dom__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const D = GEO.dom, PX = D.px;
+const DH = D.h * PX, DW = D.w * PX, DT = D.t * PX;   // ドミノの高さ・はば・あつみ（画面）
+const SP = DH * 0.6;                                   // ならべる間かく
+const MAXN = 80;
+const LIGHT = { x: 0.55, y: 0.62 };                    // 高さ 1 あたりの影ののび（右下へ）
+const COLORS = [1, 0, 2, 0, 3, 0];                      // 赤・白・青・白・緑・白…
+const BELL_R = 3.9 * PX;
+
+const S = { state: "title", t: 0, stage: 0, path: [], doms: [], drawing: false, fails: 0, used: 0, stageFails: 0, msg: null, bellShake: 0, conf: [], fallIdx: 0,
+  stats: [], clack: 0, startPulse: 0, lastTick: 0, stopAt: null, endAt: 0 };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 540, lh - H, 0) }; }
+function visX() { const v = view(); return [Math.max(0, -v.ox), Math.min(W, W + v.ox)]; }
+function visY() { const v = view(); return [Math.max(0, -v.oy), Math.min(H, v.lh - v.oy)]; }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+const ST = () => GEO.stages[S.stage];
+
+/* ---------- 当たり ---------- */
+function blocked(x, y, rad) {
+  const [xa, xb] = visX(), [ya, yb] = visY();
+  if (x < xa + rad || x > xb - rad || y < ya + rad || y > yb - rad) return true;
+  for (const h of ST().hit) {
+    if (h.t === "c") { if (Math.hypot(x - h.x, y - h.y) < h.r + rad) return true; }
+    else {
+      const a = h.a * Math.PI / 180, dx = x - h.x, dy = y - h.y;
+      const lx = dx * Math.cos(-a) - dy * Math.sin(-a), ly = dx * Math.sin(-a) + dy * Math.cos(-a);
+      if (Math.abs(lx) < h.w / 2 + rad && Math.abs(ly) < h.h / 2 + rad) return true;
+    }
+  }
+  const g = ST().goal;
+  if (Math.hypot(x - g[0], y - g[1]) < BELL_R + rad * 0.6) return true;
+  return false;
+}
+
+/* ---------- ならべる ---------- */
+function startDom() { const s = ST(); const a = s.start[2] * Math.PI / 180; return { x: s.start[0], y: s.start[1], a, ok: true, fall: 0, w: 0, state: 0, col: 0, start: true }; }
+function rebuild() {
+  // なぞった点を等間かくに打ちなおして、ドミノを置く
+  const st = startDom(), pts = [{ x: st.x, y: st.y }];
+  // スタートのドミノの前に、まっすぐ 1 枚ぶんの助走
+  pts.push({ x: st.x + Math.cos(st.a) * SP, y: st.y + Math.sin(st.a) * SP });
+  for (const p of S.path) pts.push(p);
+  const doms = [st];
+  let carry = 0, prev = pts[1];
+  const placed = [{ x: pts[1].x, y: pts[1].y }];
+  for (let i = 2; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    let seg = Math.hypot(b.x - a.x, b.y - a.y), t = 0;
+    while (carry + seg - t >= SP) {
+      t += SP - carry; carry = 0;
+      const k = t / Math.hypot(b.x - a.x, b.y - a.y);
+      placed.push({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) });
+    }
+    carry += seg - t;
+  }
+  for (let i = 0; i < placed.length && doms.length < MAXN; i++) {
+    const p = placed[i], q = placed[Math.min(placed.length - 1, i + 1)], o = placed[Math.max(0, i - 1)];
+    let a = Math.atan2(q.y - o.y, q.x - o.x);
+    if (i === placed.length - 1 && i > 0) a = Math.atan2(p.y - o.y, p.x - o.x);
+    if (placed.length === 1) a = st.a;
+    doms.push({ x: p.x, y: p.y, a, ok: !blocked(p.x, p.y, DW * 0.45), fall: 0, w: 0, state: 0, col: COLORS[doms.length % COLORS.length], born: S.t });
+  }
+  // 前のドミノの生まれた時間はそのまま（ならべるアニメのため）
+  for (let i = 0; i < doms.length && i < S.doms.length; i++) if (S.doms[i].born !== undefined) doms[i].born = S.doms[i].born;
+  if (doms.length > S.doms.length && S.t - S.lastTick > 0.03) { tick(doms.length); S.lastTick = S.t; }
+  S.doms = doms;
+}
+
+/* ---------- 描画 ---------- */
+function domPivot(d) { return { x: d.x + Math.cos(d.a) * DT / 2, y: d.y + Math.sin(d.a) * DT / 2 }; }
+function drawShadow(g, d) {
+  if (!d.ok) return;
+  const p = domPivot(d), ca = Math.cos(d.a), sa = Math.sin(d.a), px = -sa, py = ca;
+  const tilt = d.fall * Math.PI / 180, hh = DH * Math.cos(tilt), reach = DH * Math.sin(tilt);
+  const bx = p.x - ca * DT, by = p.y - sa * DT;
+  const tx = p.x + ca * reach + LIGHT.x * hh, ty = p.y + sa * reach + LIGHT.y * hh;
+  g.beginPath();
+  g.moveTo(bx + px * DW / 2, by + py * DW / 2); g.lineTo(bx - px * DW / 2, by - py * DW / 2);
+  g.lineTo(tx - px * DW / 2, ty - py * DW / 2); g.lineTo(tx + px * DW / 2, ty + py * DW / 2);
+  g.closePath(); g.fill();
+}
+function drawDom(g, d, alpha = 1) {
+  if (!IMG.dom) return;
+  const p = domPivot(d);
+  const ang = D.ang; let f = 0; while (f < ang.length - 1 && ang[f + 1] <= d.fall + 0.01) f++;
+  const cwW = D.cellcm[0] * PX, chW = D.cellcm[1] * PX;
+  const born = d.born !== undefined ? clamp((S.t - d.born) / 0.12, 0, 1) : 1;
+  g.save(); g.globalAlpha = alpha * born;
+  g.translate(p.x, p.y); g.rotate(d.a); if (born < 1) g.scale(0.6 + born * 0.4, 0.6 + born * 0.4);
+  g.drawImage(IMG.dom, f * D.cw, d.col * D.ch, D.cw, D.ch, -D.pivx * cwW, -chW / 2, cwW, chW);
+  g.restore();
+}
+function drawBell(g) {
+  const gl = ST().goal, sz = GEO.bell.size;
+  g.save(); g.translate(gl[0], gl[1]);
+  if (S.bellShake > 0) g.rotate(Math.sin(S.t * 60) * S.bellShake * 0.12);
+  if (IMG.bell) g.drawImage(IMG.bell, -sz / 2, -sz / 2, sz, sz);
+  g.restore();
+  if (S.state === "draw" || S.state === "ready") {
+    const k = (Math.sin(S.t * 3) + 1) / 2;
+    g.save(); g.strokeStyle = `rgba(255,236,170,${0.35 + k * 0.4})`; g.lineWidth = 3; g.setLineDash([6, 6]);
+    g.beginPath(); g.arc(gl[0], gl[1], BELL_R + 12 + k * 4, 0, TAU); g.stroke(); g.restore();
+  }
+}
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  const bg = IMG["s" + S.stage];
+  if (bg) {
+    if (v.lw > W + 1 || v.lh > H + 1) { cx.save(); cx.filter = "blur(18px)"; cx.drawImage(bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore(); cx.fillStyle = "rgba(40,25,10,.18)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh); }
+    cx.drawImage(bg, 0, 0, W, H);
+  }
+  if (S.state !== "title") {
+    drawBell(cx);
+    // なぞった線（うすく）
+    if (S.state === "draw" && S.path.length > 1) {
+      cx.save(); cx.strokeStyle = "rgba(255,255,255,.35)"; cx.lineWidth = 3; cx.lineCap = "round"; cx.lineJoin = "round";
+      cx.beginPath(); cx.moveTo(S.path[0].x, S.path[0].y); for (const p of S.path) cx.lineTo(p.x, p.y); cx.stroke(); cx.restore();
+    }
+    cx.save(); cx.fillStyle = "rgba(50,30,15,.22)"; cx.filter = "blur(1.5px)";
+    for (const d of S.doms) drawShadow(cx, d);
+    cx.restore();
+    // 置けないところ：赤いばつ
+    for (const d of S.doms) if (!d.ok) {
+      cx.save(); cx.translate(d.x, d.y); cx.strokeStyle = "rgba(220,60,40,.85)"; cx.lineWidth = 3.5; cx.lineCap = "round";
+      cx.beginPath(); cx.moveTo(-6, -6); cx.lineTo(6, 6); cx.moveTo(6, -6); cx.lineTo(-6, 6); cx.stroke(); cx.restore();
+    }
+    const order = S.doms.filter(d => d.ok).sort((a, b) => a.y - b.y);
+    for (const d of order) drawDom(cx, d);
+    // スタートのドミノ
+    if (S.state === "draw" || S.state === "ready") {
+      const d = S.doms[0] || startDom(), k = (Math.sin(S.t * 4) + 1) / 2;
+      cx.save(); cx.strokeStyle = `rgba(255,255,255,${0.5 + k * 0.5})`; cx.lineWidth = 3;
+      cx.beginPath(); cx.arc(d.x, d.y, 22 + k * 5, 0, TAU); cx.stroke(); cx.restore();
+      if (S.state === "draw" && !S.path.length) {
+        cx.save(); cx.fillStyle = "rgba(61,49,40,.85)"; cx.font = '800 16px "M PLUS Rounded 1c",sans-serif'; cx.textAlign = "center"; cx.textBaseline = "middle";
+        const ty = d.y + (d.y > 540 ? 46 : -46); rr(cx, d.x - 54, ty - 15, 108, 30, 15); cx.fill(); cx.fillStyle = "#fff"; cx.fillText("ここから", d.x, ty + 1); cx.restore();
+      }
+    }
+    // 止まったところ
+    if (S.stopAt && S.state === "fail") {
+      const k = (Math.sin(S.t * 6) + 1) / 2;
+      cx.save(); cx.strokeStyle = `rgba(230,70,50,${0.5 + k * 0.5})`; cx.lineWidth = 4;
+      cx.beginPath(); cx.arc(S.stopAt.x, S.stopAt.y, 26 + k * 6, 0, TAU); cx.stroke(); cx.restore();
+    }
+    for (const c of S.conf) { cx.save(); cx.translate(c.x, c.y); cx.rotate(c.r); cx.fillStyle = c.c; cx.fillRect(-5, -3, 10, 6); cx.restore(); }
+  }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state !== "title" && S.state !== "result") drawHud();
+}
+function hudButtons() {
+  const sf = KIT.safe(), y = vh - 76 - sf.bottom, w = Math.min(vw - 24, 400), x = (vw - w) / 2;
+  if (S.state === "ready") return [{ id: "redo", label: "かきなおす", x, y, w: w * 0.42, h: 58 }, { id: "go", label: "たおす！", x: x + w * 0.45, y, w: w * 0.55, h: 58, main: true }];
+  if (S.state === "fail") return [{ id: "retry", label: "もう一度ならべる", x, y, w, h: 58, main: true }];
+  return [];
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  const w = Math.min(vw - 24 - 56, 280), x = 12;
+  g.fillStyle = "rgba(50,35,25,.72)"; rr(g, x, top, w, 52, 16); g.fill();
+  g.textBaseline = "middle"; g.textAlign = "left";
+  g.fillStyle = "#fff"; g.font = '800 18px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`へや ${S.stage + 1}/3`, x + 14, top + 26);
+  const n = Math.max(0, S.doms.length - 1);
+  g.textAlign = "right"; g.font = '800 16px "M PLUS Rounded 1c",sans-serif'; g.fillStyle = n >= MAXN - 1 ? "#ffb4a3" : "#f3dcc0";
+  g.fillText(`ドミノ ${n}/${MAXN - 1}`, x + w - 14, top + 26);
+  for (const b of hudButtons()) {
+    g.fillStyle = b.main ? "#9f3f2b" : "#cdbfae"; rr(g, b.x, b.y + 4, b.w, b.h, 18); g.fill();
+    g.fillStyle = b.main ? "#d0593f" : "#fffaf2"; rr(g, b.x, b.y, b.w, b.h, 18); g.fill();
+    g.fillStyle = b.main ? "#fff" : "#3d3128"; g.textAlign = "center"; g.font = `800 ${b.main ? 22 : 18}px "M PLUS Rounded 1c",sans-serif`;
+    g.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 1);
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '800 18px "M PLUS Rounded 1c",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 44, y = top + 64;
+    g.fillStyle = S.msg.warn ? "rgba(190,70,50,.94)" : "rgba(50,35,25,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+  }
+  g.restore();
+}
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 入力 ---------- */
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+let ptr = null;
+cv.addEventListener("pointerdown", e => {
+  for (const b of hudButtons()) if (e.clientX >= b.x && e.clientX <= b.x + b.w && e.clientY >= b.y - 4 && e.clientY <= b.y + b.h + 6) { button(b.id); return; }
+  if (S.state === "ready") {
+    // スタートのドミノをタップしても、たおせる
+    const p = toWorld(e), d = S.doms[0];
+    if (d && Math.hypot(p.x - d.x, p.y - d.y) < 40) { button("go"); return; }
+  }
+  if (S.state !== "draw") return;
+  ptr = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  S.drawing = true; S.path = [];
+  addPoint(toWorld(e));
+});
+cv.addEventListener("pointermove", e => { if (S.drawing && e.pointerId === ptr) { const ev = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const c of ev) addPoint(toWorld(c)); } });
+const up = e => { if (!S.drawing || e.pointerId !== ptr) return; S.drawing = false; ptr = null; endDraw(); };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+function addPoint(p) {
+  const last = S.path[S.path.length - 1];
+  if (last && Math.hypot(p.x - last.x, p.y - last.y) < 4) return;
+  if (S.doms.length >= MAXN) { if (!S.full) { S.full = true; say("ドミノがたりない！", 1.2, true); beepBad(); } return; }
+  S.path.push(p); rebuild();
+}
+function endDraw() {
+  S.full = false;
+  if (S.doms.length < 3) { S.path = []; S.doms = [startDom()]; return; }
+  S.state = "ready";
+  const bad = S.doms.filter(d => !d.ok).length;
+  if (bad) say(`置けないところが ${bad} か所`, 1.6, true);
+}
+function button(id) {
+  KIT.ensure();
+  if (id === "redo") { clickSnd(); S.state = "draw"; S.path = []; S.doms = [startDom()]; }
+  else if (id === "go") { S.state = "fall"; S.fallIdx = 0; S.doms[0].state = 1; S.doms[0].w = 2.5; S.clack = 0; S.endAt = 0; flick(); }
+  else if (id === "retry") { clickSnd(); S.stageFails++; S.fails++; resetStage(); }
+}
+
+/* ---------- 音 ---------- */
+function tick(n) { KIT.tone({ f: 1400 + (n % 8) * 40, dur: 0.025, vol: 0.05, type: "triangle", lp: 4000, wet: 0.05 }); }
+function clickSnd() { KIT.noise({ dur: 0.04, vol: 0.12, f: 2600, q: 2, wet: 0.05 }); }
+function beepBad() { KIT.tone({ f: 300, dur: 0.18, vol: 0.08, type: "square", lp: 1200, wet: 0.05 }); }
+function flick() { KIT.noise({ dur: 0.05, vol: 0.15, f: 3000, q: 1.5, wet: 0.05 }); }
+function clackSnd(i) {
+  const f = 1700 + Math.min(900, i * 9) + Math.random() * 120;
+  KIT.tone({ f, dur: 0.035, vol: 0.09, type: "square", lp: 5200, wet: 0.08, pan: (Math.random() - 0.5) * 0.4 });
+  KIT.noise({ dur: 0.04, vol: 0.09, f: 3600, q: 3, wet: 0.08 });
+}
+function bellSnd() { for (const [f, v] of [[1318, 0.16], [2637, 0.06], [3951, 0.03], [1975, 0.04]]) KIT.tone({ f, dur: 2.4, vol: v, type: "sine", wet: 0.4, a: 0.002 }); }
+function failSnd() { [0, -3, -7].forEach((d, i) => KIT.inst.marimba(64 + d, i * 0.14, 0.3, 0.1)); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.1, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  if (S.bellShake > 0) S.bellShake = Math.max(0, S.bellShake - dt * 0.8);
+  for (const c of S.conf) { c.x += c.vx * dt; c.y += c.vy * dt; c.vy += 500 * dt; c.vx *= 1 - dt; c.r += c.vr * dt; c.life -= dt; }
+  S.conf = S.conf.filter(c => c.life > 0);
+  if (S.state === "fall" || S.state === "clear") { const n = Math.ceil(dt / 0.012); for (let i = 0; i < n; i++) fallStep(dt / n); }
+  if (S.state === "clear" && S.t - S.endAt > 2.4) nextStage();
+}
+function fallStep(dt) {
+  const ds = S.doms;
+  let moving = false;
+  for (let i = 0; i < ds.length; i++) {
+    const d = ds[i];
+    if (d.state === 2 && d.hitIdx) { const nl = Math.min(80, ds[d.hitIdx].fall * 0.92 + 4); if (nl > d.lean + 0.5) { d.lean = nl; d.state = 1; } }
+    if (d.state !== 1) continue;
+    moving = true;
+    // たおれる速さ：重力でだんだん速く
+    d.w += (8 + 50 * Math.sin(d.fall * Math.PI / 180)) * dt * 9;
+    d.fall = Math.min(d.lean || 88, d.fall + d.w * dt * 12);
+    // 次のドミノに当たる？
+    if (!d.passed) {
+      const reach = DH * Math.sin(d.fall * Math.PI / 180) + DT / 2;
+      const nx = nextAlive(i);
+      const target = nx ? ds[nx] : null;
+      const ca = Math.cos(d.a), sa = Math.sin(d.a);
+      if (target) {
+        const dx = target.x - d.x, dy = target.y - d.y, along = dx * ca + dy * sa, perp = Math.abs(-dx * sa + dy * ca);
+        if (along > 0 && along - DT / 2 <= reach && perp < DW * 0.8 && along < DH + DT) {
+          d.passed = true; d.lean = clamp(Math.asin(clamp((along - DT) / DH, 0, 1)) * 180 / Math.PI + 4, 18, 88);
+          target.state = 1; target.w = d.w * 0.7 + 2; clackSnd(nx); S.clack++; d.hitIdx = nx;
+        }
+      }
+      // 呼び鈴
+      const g = ST().goal, gx = g[0] - d.x, gy = g[1] - d.y, ga = gx * ca + gy * sa, gp = Math.abs(-gx * sa + gy * ca);
+      if (!d.passed && ga > 0 && ga - BELL_R <= reach + 2 && gp < BELL_R + DW * 0.5) { d.passed = true; d.lean = 62; win(); }
+    }
+    if (d.fall >= (d.lean || 88) - 0.5) { d.state = 2; if (!d.passed) { d.passed = true; d.dead = true; } }
+  }
+  if (!moving && S.state === "fall") lose();
+}
+function nextAlive(i) { for (let j = i + 1; j < S.doms.length; j++) if (S.doms[j].ok) return j; return 0; }
+function win() {
+  if (S.state !== "fall") return;
+  S.state = "clear"; S.endAt = S.t; S.bellShake = 1; bellSnd(); KIT.vibrate([20, 40, 20]);
+  const used = S.doms.filter(d => d.ok).length;
+  S.used += used; S.stats.push({ used, fails: S.stageFails });
+  say(S.stage < 2 ? `チーン！ ${used}枚でとどいた` : `チーン！ ぜんぶクリア`, 2.2);
+  for (let i = 0; i < 60; i++) { const g = ST().goal, a = Math.random() * TAU, sp = 150 + Math.random() * 300; S.conf.push({ x: g[0], y: g[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 250, r: Math.random() * 6, vr: (Math.random() - 0.5) * 12, life: 1.6 + Math.random(), c: ["#d0593f", "#3f66a8", "#3e8a5a", "#e9b949", "#fff"][i % 5] }); }
+  setTimeout(() => [0, 4, 7, 12].forEach((d, i) => KIT.inst.marimba(72 + d, i * 0.09, 0.3, 0.1)), 350);
+}
+function lose() {
+  S.state = "fail";
+  const lastFallen = [...S.doms].reverse().find(d => d.state === 2);
+  const nx = S.doms.indexOf(lastFallen);
+  const n2 = nextAlive(nx);
+  S.stopAt = n2 ? { x: (lastFallen.x + S.doms[n2].x) / 2, y: (lastFallen.y + S.doms[n2].y) / 2 } : { x: lastFallen.x, y: lastFallen.y };
+  failSnd();
+  const bad = S.doms.some(d => !d.ok);
+  say(n2 ? (bad ? "置けないところで止まった…" : "カーブが急すぎて止まった…") : "呼び鈴までとどかなかった…", 2.4, true);
+}
+function resetStage() {
+  S.state = "draw"; S.path = []; S.doms = [startDom()]; S.stopAt = null; S.endAt = 0;
+}
+function nextStage() {
+  if (S.stage >= 2) { finish(); return; }
+  S.stage++;
+  S.stageFails = 0; resetStage(); S.conf = [];
+  say(`へや ${S.stage + 1}：呼び鈴まで、なぞってね`, 2.0);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.stage = 0; S.fails = 0; S.used = 0; S.stageFails = 0; S.stats = []; S.conf = [];
+  resetStage();
+  say("光るドミノから、呼び鈴までなぞってね", 2.4);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[0, "ドミノ職人"], [2, "ならべ上手"], [5, "もう一回派"], [1e9, "たおれがち"]];
+function finish() {
+  S.state = "result";
+  const rank = RANKS.find(r => S.fails <= r[0])[1];
+  S.res = { used: S.used, fails: S.fails, rank };
+  $("rBig").innerHTML = `${S.used}<small>枚</small>`;
+  $("rRank").textContent = rank;
+  $("rStats").innerHTML = S.stats.map((s, i) => `<div class="stat ${s.fails ? "" : "good"}"><small>へや${i + 1}</small><b>${s.used}枚</b><small>${s.fails ? `やりなおし${s.fails}回` : "一発クリア"}</small></div>`).join("");
+  const best = KIT.store.get("domino-best", null), score = S.fails * 1000 + S.used;
+  if (best === null || score < best.score) KIT.store.set("domino-best", { score, used: S.used, fails: S.fails });
+  $("rNote").textContent = (S.fails ? `やりなおし ${S.fails}回。` : "全部一発クリア！ ") + (best === null || score < best.score ? "自己ベスト更新！" : `自己ベスト：やりなおし${best.fails}回・${best.used}枚`);
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 800);
+}
+function shareText() { const r = S.res; return `ドミノひとふでで、${r.used}枚のドミノをたおした（やりなおし${r.fails}回）\nわたしは「${r.rank}」\n#ドミノひとふで`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  const sc = 630 / 760; g.scale(sc, sc); g.translate((600 / sc - W) / 2, -160);
+  const bg = IMG["s" + S.stage]; if (bg) g.drawImage(bg, 0, 0, W, H);
+  g.fillStyle = "rgba(50,30,15,.22)"; for (const d of S.doms) drawShadow(g, d);
+  for (const d of S.doms.filter(d => d.ok).sort((a, b) => a.y - b.y)) drawDom(g, d);
+  const gl = ST().goal, sz = GEO.bell.size; if (IMG.bell) g.drawImage(IMG.bell, gl[0] - sz / 2, gl[1] - sz / 2, sz, sz);
+  g.restore();
+  g.fillStyle = "#fffaf2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#d0593f"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#3d3128"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("ドミノひとふで", 650, 92);
+  g.fillStyle = "#86766a"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("3つの部屋で、たおしたドミノ", 650, 170);
+  g.fillStyle = "#9f3f2b"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = String(S.res.used); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("枚", 660 + tw, 274);
+  g.fillStyle = "#3d3128"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#86766a"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`やりなおし ${S.res.fails}回`, 650, 400);
+  g.fillText("#ドミノひとふで ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 72, key: 60, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "epiano", chord: "pad", beat: "none", seed: 9, leadVol: 0.05, chordVol: 0.04, density: 0.35 }
+    : { bpm: 104, key: 60, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7], [9, 12, 16], [5, 9, 12], [7, 11, 14]], lead: "marimba", chord: "pluck", beat: "lofi", seed: 87, leadVol: 0.055, chordVol: 0.05, density: 0.5, swing: 0.2 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "domino.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("domino-best", null);
+  $("best").textContent = best ? `自己ベスト：やりなおし${best.fails}回・${best.used}枚` : "やりなおしが少ないほどいい";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { rebuild, addPoint, endDraw, button, blocked, view };
+</script>
+</body>
+</html>
