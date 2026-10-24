@@ -1126,22 +1126,6 @@ function paintTile(b){
     ctx.save();ctx.globalCompositeOperation='lighter';
     const cg=ctx.createLinearGradient(0,y+hh,0,y+hh+10);cg.addColorStop(0,`hsla(${nt.h},${nt.s+25}%,62%,.16)`);cg.addColorStop(1,`hsla(${nt.h},${nt.s+25}%,62%,0)`);
     ctx.fillStyle=cg;ctx.fillRect(x,y+hh,w,10);ctx.restore();
-    // 透けるガラス：向こうの景色（街の灯りのぼけ）をレンズのように拡大・上下にずらして映し、色ガラスで染める。
-    // その上に Blender の板（縁の面取り・つや・鉛の枠）を重ねる
-    const th=b.max,h=nt.h,s=nt.s;
-    ctx.save();ctx.beginPath();ctx.rect(x,y,w,hh);ctx.clip();
-    const mag=.72-th*.05,sw=w*mag,sh=hh*mag;
-    ctx.drawImage(bg,(x+(w-sw)/2+3)*BGS,(y+(hh-sh)/2+2)*BGS,sw*BGS,sh*BGS,x,y,w,hh);
-    ctx.globalCompositeOperation='multiply';ctx.fillStyle=`hsl(${h},${s+25}%,${80-th*6}%)`;ctx.fillRect(x,y,w,hh);
-    ctx.globalCompositeOperation='screen';ctx.fillStyle=`hsla(${h},${Math.min(95,s+30)}%,52%,${.3+th*.05})`;ctx.fillRect(x,y,w,hh);
-    ctx.globalCompositeOperation='source-over';
-    const ew=2+th;ctx.save();ctx.beginPath();ctx.rect(x,y,w,hh);ctx.rect(x+ew,y+ew,w-ew*2,hh-ew*2);ctx.clip('evenodd');
-    ctx.globalAlpha=.5;ctx.drawImage(bg,(x-14)*BGS,(y+16)*BGS,(w+28)*BGS,(hh-10)*BGS,x,y,w,hh);ctx.restore();
-    const rg=ctx.createLinearGradient(x-6,y,x+w*.55,y+hh*1.4);
-    rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(.34,'rgba(255,255,255,0)');rg.addColorStop(.38,'rgba(255,255,255,.2)');rg.addColorStop(.5,'rgba(255,255,255,.06)');rg.addColorStop(.52,'rgba(255,255,255,0)');
-    rg.addColorStop(.6,'rgba(255,255,255,0)');rg.addColorStop(.62,'rgba(255,255,255,.26)');rg.addColorStop(.65,'rgba(255,255,255,0)');
-    ctx.fillStyle=rg;ctx.fillRect(x,y,w,hh);
-    ctx.restore();
   }else{
     ctx.save();ctx.beginPath();ctx.rect(x,y,w,hh);ctx.clip();
     ctx.drawImage(bg,(x+2)*BGS,(y+3)*BGS,w*.9*BGS,hh*.9*BGS,x,y,w,hh);
@@ -1201,8 +1185,7 @@ function drawShard(s){
     ctx.fillStyle=`hsla(${(s.h+160)/2},45%,${30+s.thick*6}%,${.55*a})`;ctx.fill();ctx.restore();}
   ctx.scale(1,sy);path();
   if(ART.ready&&quality===2){
-    // 色ガラスの破片に、割れた板のその場所の面取り・つやを重ねる（傾くと暗く）
-    const lit0=48+(1-Math.abs(cf))*24;ctx.fillStyle=`hsla(${s.h},${s.sat+20}%,${lit0}%,${(.32+s.thick*.08)*a})`;ctx.fill();
+    // 割れた板の、その場所の絵をそのまま破片に（傾くと暗く）
     const [tx,ty]=tileSrc(s.tile);ctx.save();ctx.clip();ctx.globalAlpha=a*.92;
     ctx.drawImage(ART.tiles,tx,ty,TCW*TS,TCH*TS,-s.lx-3,-s.ly-3,TCW,TCH);ctx.globalAlpha=1;ctx.restore();
     const tilt=1-Math.abs(cf);if(tilt>.05){ctx.fillStyle=`rgba(${tilt>.5?'255,255,255':'0,0,0'},${Math.min(.5,tilt*.45)*a})`;ctx.fill();}
