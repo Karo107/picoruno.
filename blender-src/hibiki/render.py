@@ -134,15 +134,18 @@ def sky_mat():
     L.new(tc.outputs["Object"], sep.inputs[0])
     # 地平に向かって少し明るい、深い紺
     grad = N.new("ShaderNodeMapRange")
-    grad.inputs["From Min"].default_value = 3.4
-    grad.inputs["From Max"].default_value = 6.2
-    L.new(sep.outputs["Z"], grad.inputs["Value"])
+    grad.inputs["From Min"].default_value = 3 + 0.4 * 4.11
+    grad.inputs["From Max"].default_value = 3 + 3.2 * 4.11
+    gpos = N.new("ShaderNodeNewGeometry")
+    gsep = N.new("ShaderNodeSeparateXYZ")
+    L.new(gpos.outputs["Position"], gsep.inputs[0])
+    L.new(gsep.outputs["Z"], grad.inputs["Value"])
     cr = N.new("ShaderNodeValToRGB")
     cr.color_ramp.elements[0].color = (*srgb((0.10, 0.15, 0.30)), 1)
     cr.color_ramp.elements[1].color = (*srgb((0.025, 0.035, 0.09)), 1)
     L.new(grad.outputs[0], cr.inputs["Fac"])
     # 星
-    vo = node(N, "ShaderNodeTexVoronoi", Scale=7.0, Randomness=1.0)
+    vo = node(N, "ShaderNodeTexVoronoi", Scale=1.7, Randomness=1.0)
     L.new(tc.outputs["Object"], vo.inputs["Vector"])
     st = N.new("ShaderNodeMapRange")
     st.inputs["From Min"].default_value = 0.07
@@ -185,7 +188,7 @@ def render_bg():
     cam.data.sensor_width = 36
     cam.data.dof.use_dof = True
     cam.data.dof.focus_distance = 14
-    cam.data.dof.aperture_fstop = 2.8
+    cam.data.dof.aperture_fstop = 0.9
 
     stone = stone_mat("stone", scale=1.7)
     # 壁（窓の穴あき）
@@ -220,11 +223,12 @@ def render_bg():
     bl.noise_bump(fm, scale=6, strength=0.05)
     bl.assign(floor, fm)
     # 窓の外：月夜
-    sky = bl.plane((12, 9), (0, 4.0, 4.5), (90, 0, 0))
+    sky = bl.plane((60, 40), (0, 60.0, 12), (90, 0, 0))
     bl.assign(sky, sky_mat())
-    moon = bl.sphere(0.13, (0.78, 3.9, gz(36)))
+    K = 72 / 17.9
+    moon = bl.sphere(0.13 * K, (0.78 * K, 58, 3 + (gz(36) - 3) * K))
     bl.assign(moon, bl.emission("moon", srgb((1.0, 0.95, 0.82)), 6))
-    halo = bl.plane((1.4, 1.4), (0.78, 3.95, gz(36)), (90, 0, 0))
+    halo = bl.plane((1.4 * K, 1.4 * K), (0.78 * K, 57.5, 3 + (gz(36) - 3) * K), (90, 0, 0))
     hm = bpy.data.materials.new("halo")
     hm.use_nodes = True
     N, L = hm.node_tree.nodes, hm.node_tree.links
@@ -233,7 +237,7 @@ def render_bg():
     grd = N.new("ShaderNodeTexGradient")
     grd.gradient_type = 'SPHERICAL'
     mp = N.new("ShaderNodeMapping")
-    mp.inputs["Scale"].default_value = (1.5, 1.5, 1.5)
+    mp.inputs["Scale"].default_value = (1.5 / K, 1.5 / K, 1.5 / K)
     L.new(tc.outputs["Object"], mp.inputs["Vector"])
     L.new(mp.outputs[0], grd.inputs["Vector"])
     pw = N.new("ShaderNodeMath")
@@ -249,6 +253,15 @@ def render_bg():
     L.new(tp.outputs[0], ad.inputs[1])
     L.new(ad.outputs[0], N["Material Output"].inputs[0])
     bl.assign(halo, hm)
+    # 窓の外、遠くの街明かり（大きくぼけて、ガラス越しに透けて見える）
+    rnd = random.Random(11)
+    lamp = [bl.emission(f"lamp{i}", srgb(c), 7) for i, c in enumerate(
+        [(1.0, 0.72, 0.38), (1.0, 0.84, 0.6), (0.6, 0.85, 1.0), (1.0, 0.55, 0.3), (0.8, 1.0, 0.85)])]
+    for i in range(230):
+        x = rnd.uniform(-7.5, 7.5)
+        z = 5.0 + rnd.random() ** 1.35 * 8.0
+        s_ = bl.sphere(rnd.uniform(0.03, 0.09), (x, 40, z))
+        bl.assign(s_, rnd.choice(lamp))
     # 月の光が窓から差しこみ、縁や窓台をかすめる
     bl.light('AREA', (0.6, 2.2, 6.0), 900, (-35, 0, 0), size=3, color=(0.62, 0.72, 1.0))
     # 窓の縁石を上からなでる、月明かりの返し（アーチの形が見えるように）
@@ -390,16 +403,22 @@ def glass_mat(name, color, th, seed, clear=False):
     add = N.new("ShaderNodeAddShader")
     L.new(em.outputs[0], add.inputs[0])
     L.new(gl.outputs[0], add.inputs[1])
-    if clear:
-        # 透明ガラス：向こうが透けるよう、ほとんど透明にして、つやと淡い曇りだけ残す
-        tp = N.new("ShaderNodeBsdfTransparent")
-        mix = N.new("ShaderNodeMixShader")
-        mix.inputs[0].default_value = 0.3
-        L.new(tp.outputs[0], mix.inputs[1])
-        L.new(add.outputs[0], mix.inputs[2])
-        L.new(mix.outputs[0], out.inputs[0])
-    else:
-        L.new(add.outputs[0], out.inputs[0])
+    # 透けるガラス：平らな面はほとんど透明（向こうの景色はゲーム側で屈折させて映す）。
+    # 面取りの斜めの面と縁ほど不透明になり、色が濃く、つやが乗る。
+    nz = N.new("ShaderNodeSeparateXYZ")
+    L.new(geo.outputs["Normal"], nz.inputs[0])
+    slant = N.new("ShaderNodeMath")
+    slant.operation = 'MULTIPLY_ADD'
+    slant.inputs[1].default_value = -3.2
+    slant.inputs[2].default_value = 3.2 + ((0.18, 0.26, 0.34)[th - 1] if not clear else 0.22)
+    L.new(nz.outputs["Z"], slant.inputs[0])
+    slant.use_clamp = True
+    tp = N.new("ShaderNodeBsdfTransparent")
+    mix = N.new("ShaderNodeMixShader")
+    L.new(slant.outputs[0], mix.inputs[0])
+    L.new(tp.outputs[0], mix.inputs[1])
+    L.new(add.outputs[0], mix.inputs[2])
+    L.new(mix.outputs[0], out.inputs[0])
     return m
 
 
