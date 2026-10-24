@@ -1,0 +1,1 @@
+{"bg":{"src":"out/bg.png","fmt":"jpg","w":1080,"q":84},"bg_ok":{"src":"out/bg_ok.png","fmt":"jpg","w":1080,"q":84},"bg_bad":{"src":"out/bg_bad.png","fmt":"jpg","w":1080,"q":84},"egg":{"src":"out/egg.png","fmt":"webp","w":720,"q":88},"geo":{"src":"out/geo.json","fmt":"json"}}
