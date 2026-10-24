@@ -1,0 +1,2 @@
+{"bg": {"src": "out/bg.png", "fmt": "jpg", "w": 720, "q": 84},
+ "tiles": {"src": "out/tiles.png", "fmt": "webp", "q": 90}}
