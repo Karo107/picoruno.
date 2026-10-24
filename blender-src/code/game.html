@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4a4836">
+<title>コードほどき</title>
+<meta name="description" content="カバンの中でからまった充電ケーブル。いちばん上にあるものから順に引っぱって、ぜんぶほどく。下じきになったコードを引くと、引っかかる。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="コードほどき">
+<meta property="og:description" content="カバンの中のからまったケーブル。上にあるものから、順番に引きぬけ。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./code.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e9e4d2'/%3E%3Cpath d='M6 22c6-14 14 10 20-6M6 10c8 2 10 14 20 12' fill='none' stroke='%234a3a2c' stroke-width='3.4' stroke-linecap='round'/%3E%3Cpath d='M6 22c6-14 14 10 20-6' fill='none' stroke='%23e98c6c' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M6 10c8 2 10 14 20 12' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：真上から見たトートバッグの中（Blender）。プラグも Blender。ケーブルはゲームで、光の向きをそろえて描く。 */
+:root{
+  --ground:#4a4836; --card:#fffaf2; --ink:#3e3a2c; --sub:#857e69; --line:#e8e1cc;
+  --main:#e07a5c; --main-d:#b0563d; --warn:#c0492f; --ok:#5d8f4e;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--ground);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(40,38,28,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(30,28,20,.45);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--main);color:#fff;box-shadow:0 4px 0 var(--main-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--main-d)}
+.btn:focus-visible{outline:3px solid #e6b33c;outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--main-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f1ecdc;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--main);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--main-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f1ecdc;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.05rem}
+.stat.ng b{color:var(--warn)}
+.stat.good b{color:var(--ok)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(40,38,28,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>コードほどき</h1>
+  <p>カバンの中で、充電ケーブルがからまった。上にのっているものから順に引きぬいて、ぜんぶほどこう。カバンは3つ。</p>
+  <div class="how">
+    <b>ぬく</b><span>ケーブルをタップすると、近いほうのはしから引きぬく</span>
+    <b>順番</b><span>ほかのケーブルの下じきになっていると、引っかかる（+2秒）</span>
+    <b>見る</b><span>重なっている所を見て、いちばん上のものを探そう</span>
+  </div>
+  <button class="btn" id="start" type="button">カバンをあける</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">3つのカバン、ぜんぶほどいた時間</div>
+  <div class="big" id="rBig">0<small>秒</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一度からませる</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "コードほどき";
+const GAME_URL = "https://runococco.github.io/picoruno./code.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg: "__IMG_bg__", plugS: "__IMG_plugS__", plugM: "__IMG_plugM__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+
+const CABW = 15;                                   // ケーブルの太さ
+const PLUG_K = 2.2;                                // プラグは実物の 2.2 倍（ケーブルが太いので）
+const PCW = GEO.pcell * GEO.ppc * PLUG_K;          // プラグの絵 1 つの大きさ
+const BAGS = [{ n: 4, pts: 4 }, { n: 6, pts: 4 }, { n: 8, pts: 4 }];
+const PENALTY = 2;
+const COLS = [
+  { name: "しろ", c: [236, 234, 228] }, { name: "くろ", c: [46, 46, 50] }, { name: "グレー", c: [150, 152, 156] }, { name: "コーラル", c: [228, 122, 96] },
+  { name: "ミント", c: [128, 200, 176] }, { name: "水色", c: [120, 170, 220] }, { name: "からし", c: [222, 178, 68] }, { name: "ラベンダー", c: [170, 150, 210] }
+];
+const LIGHT = (() => { const l = [-0.45, -0.55, 0.7], n = Math.hypot(...l); return l.map(v => v / n); })();
+
+const S = { state: "title", t: 0, bag: 0, time: 0, miss: 0, cables: [], cross: [], pulling: null, msg: null, parts: [], flash: [], res: null, lock: 0, bagTimes: [], snap: null, dirty: true };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+  S.dirty = true;
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 560, lh - H, 0) }; }
+function visX() { const v = view(); return [Math.max(GEO.inner[0][0], -v.ox), Math.min(GEO.inner[1][0], W + v.ox)]; }
+function mk(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+
+/* ---------- ケーブルの形 ---------- */
+function catmull(P, step) {     // P: 点の列 → なめらかな折れ線（ほぼ等間隔）
+  const out = [];
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+    const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let k = 0; k < n; k++) {
+      const t = k / n, t2 = t * t, t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  out.push(P[P.length - 1].slice());
+  return out;
+}
+function smooth(P) {      // するどい折れ目をならす（はしの近くはそのまま）
+  let Q = P.map(p => p.slice());
+  for (let it = 0; it < 30; it++) {
+    const R = Q.map(p => p.slice());
+    for (let i = 10; i < Q.length - 10; i++) { R[i][0] = (Q[i - 1][0] + Q[i][0] * 2 + Q[i + 1][0]) / 4; R[i][1] = (Q[i - 1][1] + Q[i][1] * 2 + Q[i + 1][1]) / 4; }
+    for (let i = 4; i < 10; i++) for (const j of [i, Q.length - 1 - i]) { const k = (i - 4) / 6; R[j][0] = lerp(Q[j][0], (Q[j - 1][0] + Q[j][0] * 2 + Q[j + 1][0]) / 4, k); R[j][1] = lerp(Q[j][1], (Q[j - 1][1] + Q[j][1] * 2 + Q[j + 1][1]) / 4, k); }
+    Q = R;
+  }
+  // 長いあいだ間隔がのびちぢみしないよう、6px ごとに取りなおす
+  const out = [Q[0]]; let acc = 0;
+  for (let i = 1; i < Q.length; i++) {
+    let a = Q[i - 1], b = Q[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    while (acc + d >= 6) { const k = (6 - acc) / d; const p = [lerp(a[0], b[0], k), lerp(a[1], b[1], k)]; out.push(p); a = p; d = Math.hypot(b[0] - a[0], b[1] - a[1]); acc = 0; }
+    acc += d;
+  }
+  out.push(Q[Q.length - 1]);
+  return out;
+}
+function segX(a, b, c, d) {      // 線分 ab と cd の交点（t, u）
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [t, u] : null;
+}
+function crossings(A, B, self) {
+  const out = [];
+  for (let i = 0; i < A.length - 1; i++) {
+    const a = A[i], b = A[i + 1];
+    const minx = Math.min(a[0], b[0]), maxx = Math.max(a[0], b[0]), miny = Math.min(a[1], b[1]), maxy = Math.max(a[1], b[1]);
+    for (let j = self ? i + 3 : 0; j < B.length - 1; j++) {
+      const c = B[j], d = B[j + 1];
+      if (Math.max(c[0], d[0]) < minx || Math.min(c[0], d[0]) > maxx || Math.max(c[1], d[1]) < miny || Math.min(c[1], d[1]) > maxy) continue;
+      const h = segX(a, b, c, d);
+      if (h) out.push({ ia: i + h[0], ib: j + h[1], x: lerp(a[0], b[0], h[0]), y: lerp(a[1], b[1], h[0]) });
+    }
+  }
+  return out;
+}
+function makeBag(r, spec) {
+  const [x0, x1] = visX(), v = view(), y0 = Math.max(GEO.inner[0][1], -v.oy) + 150, y1 = Math.min(GEO.inner[1][1], v.lh - v.oy) - 140;
+  const cx0 = x0 + PCW * 0.82, cx1 = x1 - PCW * 0.82, ctr = [(cx0 + cx1) / 2, (y0 + y1) / 2];
+  const inw = p => { const d = Math.hypot(ctr[0] - p[0], ctr[1] - p[1]); return [p[0] + (ctr[0] - p[0]) / d * 70, p[1] + (ctr[1] - p[1]) / d * 70]; };
+  const near = (pts, e, R) => { for (let i = 0; i < pts.length; i += 2) if (Math.hypot(pts[i][0] - e[0], pts[i][1] - e[1]) < R) return true; return false; };
+  for (let attempt = 0; attempt < 40; attempt++) {
+    makeBag.tries = attempt;
+    const colors = COLS.slice().sort(() => r() - 0.5);
+    // はしは、ふちにそって散らばる
+    const ends = [], per = (cx1 - cx0) * 2 + (y1 - y0) * 2, off = r() * per;
+    for (let i = 0; i < spec.n * 2; i++) {
+      let d = (off + per * (i + 0.2 + r() * 0.6) / (spec.n * 2)) % per, p;
+      if (d < cx1 - cx0) p = [cx0 + d, y0]; else if ((d -= cx1 - cx0) < y1 - y0) p = [cx1, y0 + d]; else if ((d -= y1 - y0) < cx1 - cx0) p = [cx1 - d, y1]; else { d -= cx1 - cx0; p = [cx0, y1 - d]; }
+      ends.push(p);
+    }
+    const order = ends.map((_, i) => i).sort(() => r() - 0.5);
+    const cables = [], cross = [];
+    let ok = true;
+    for (let k = 0; k < spec.n && ok; k++) {
+      const A = ends[order[k * 2]], B = ends[order[k * 2 + 1]], a1 = inw(A), b1 = inw(B);
+      let got = null;
+      for (let t = 0; t < 50 && !got; t++) {
+        // A から B へ、ゆらゆらと寄り道しながら進む
+        const P = [A, a1];
+        for (let q = 1; q <= spec.pts; q++) {
+          const kk = q / (spec.pts + 1), bx = lerp(a1[0], b1[0], kk), by = lerp(a1[1], b1[1], kk);
+          const dx = b1[0] - a1[0], dy = b1[1] - a1[1], dl = Math.hypot(dx, dy) || 1;
+          const sw = (r() - 0.5) * 2 * Math.min(240, (cx1 - cx0) * 0.5);
+          P.push([clamp(bx - dy / dl * sw, cx0 + 30, cx1 - 30), clamp(by + dx / dl * sw, y0 + 40, y1 - 40)]);
+        }
+        P.push(b1, B);
+        const pts = smooth(catmull(P, 6));
+        if (crossings(pts, pts, true).length) continue;
+        // 急な折れ曲がり（ヘアピン）はなし
+        let sharp = false;
+        for (let i = 3; i < pts.length - 3 && !sharp; i++) { const a = pts[i - 3], b = pts[i], c = pts[i + 3]; const t1 = Math.atan2(b[1] - a[1], b[0] - a[0]), t2 = Math.atan2(c[1] - b[1], c[0] - b[0]); let d = Math.abs(t2 - t1); if (d > Math.PI) d = TAU - d; if (d > 1.15) sharp = true; }
+        if (sharp) continue;
+        // プラグのそばは通らない
+        let bad = false;
+        const plugPts = q => { const out = []; for (const [e, f] of [[q[0], q[3]], [q[q.length - 1], q[q.length - 4]]]) { const ux = e[0] - f[0], uy = e[1] - f[1], ul = Math.hypot(ux, uy) || 1; for (const k of [0, 40, 80, 115]) out.push([e[0] + ux / ul * k, e[1] + uy / ul * k]); } return out; };
+        const mp = plugPts(pts);
+        for (const c of cables) { if (plugPts(c.pts).some(e => near(pts, e, 32)) || mp.some(e => near(c.pts, e, 32))) { bad = true; break; } }
+        if (bad) continue;
+        // 交差どうしが近すぎると、どっちが上か見分けにくい
+        const mine = [];
+        for (const c of cables) for (const h of crossings(c.pts, pts, false)) mine.push({ a: c.id, b: k, ia: h.ia, ib: h.ib, x: h.x, y: h.y });
+        const all = cross.concat(mine);
+        for (const m of mine) { for (const o of all) if (o !== m && Math.hypot(o.x - m.x, o.y - m.y) < 24) { bad = true; break; } if (bad) break; }
+        if (bad) continue;
+        got = { pts, mine };
+      }
+      if (!got) { ok = false; break; }
+      const jack = r() < 0.18;
+      cables.push({ id: k, pts: got.pts, col: colors[k % colors.length], kinds: [jack ? "jack" : r() < 0.5 ? "usbc" : "light", jack ? "jack" : r() < 0.6 ? "usba" : "usbc"], gone: false });
+      cross.push(...got.mine);
+    }
+    if (!ok || cross.length < spec.n * 1.4) continue;
+    if (cables.some(c => !cross.some(x => x.a === c.id || x.b === c.id))) continue;   // どのケーブルも、どこかで重なっている
+    // ぬく順番をきめて、先にぬくほうを上にする（かならず解ける）
+    const rank = cables.map((_, i) => i).sort(() => r() - 0.5);
+    const pos = []; rank.forEach((id, i) => pos[id] = i);
+    for (const c of cross) c.over = pos[c.a] < pos[c.b] ? c.a : c.b;
+    return { cables, cross, solution: rank };
+  }
+  return null;
+}
+
+/* ---------- 描く：光の向きをそろえた筒 ---------- */
+function shadeAt(nx, ny, t) {   // 断面の位置 t（-1〜1）の明るさ
+  const z = Math.sqrt(Math.max(0, 1 - t * t)), sx = nx * t, sy = ny * t;
+  const d = Math.max(0, sx * LIGHT[0] + sy * LIGHT[1] + z * LIGHT[2]);
+  const hv = [LIGHT[0], LIGHT[1], LIGHT[2] + 1], hn = Math.hypot(...hv);
+  const sp = Math.pow(Math.max(0, (sx * hv[0] + sy * hv[1] + z * hv[2]) / hn), 40);
+  return { d: 0.32 + 0.78 * d, s: sp };
+}
+const STOPS = 7;
+function segPaint(g, a, b, col, w, alpha) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy); if (L < 0.01) return;
+  const ux = dx / L, uy = dy / L, nx = -uy, ny = ux, hw = w / 2;
+  const gr = g.createLinearGradient(a[0] - nx * hw, a[1] - ny * hw, a[0] + nx * hw, a[1] + ny * hw);
+  for (let i = 0; i <= STOPS; i++) {
+    const t = -1 + 2 * i / STOPS, s = shadeAt(nx, ny, t), e = Math.min(1, Math.abs(t)) > 0.92 ? 0.75 : 1;
+    const c = col.map(v => Math.min(255, Math.round(v * s.d * e + 255 * s.s * 0.55)));
+    gr.addColorStop(i / STOPS, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
+  }
+  g.fillStyle = gr;
+  const ex = 1.2;   // つなぎ目のすきまをかくす
+  g.beginPath();
+  g.moveTo(a[0] - ux * ex + nx * hw, a[1] - uy * ex + ny * hw); g.lineTo(b[0] + ux * ex + nx * hw, b[1] + uy * ex + ny * hw);
+  g.lineTo(b[0] + ux * ex - nx * hw, b[1] + uy * ex - ny * hw); g.lineTo(a[0] - ux * ex - nx * hw, a[1] - uy * ex - ny * hw);
+  g.closePath(); g.fill();
+}
+function paintRange(g, pts, i0, i1, col) {
+  for (let i = Math.max(0, i0); i < Math.min(pts.length - 1, i1); i++) segPaint(g, pts[i], pts[i + 1], col, CABW, 1);
+}
+function shadowRange(g, pts, i0, i1, a = 0.3, w = CABW + 5) {
+  g.save(); g.strokeStyle = `rgba(28,24,12,${a})`; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath();
+  for (let i = Math.max(0, i0); i <= Math.min(pts.length - 1, i1); i++) { const p = pts[i]; if (i === Math.max(0, i0)) g.moveTo(p[0] + 3, p[1] + 5); else g.lineTo(p[0] + 3, p[1] + 5); }
+  g.stroke(); g.restore();
+}
+/* プラグ：Blender の陰影 × ケーブルの色（金属はそのまま） */
+const plugCache = new Map();
+function plugSprite(kind, col) {
+  const key = kind + col.join(",");
+  if (plugCache.has(key)) return plugCache.get(key);
+  const k = GEO.kinds.indexOf(kind), n = IMG.plugS.height;
+  const c = mk(n, n), g = c.getContext("2d");
+  const read = im => { const t = mk(n, n), tg = t.getContext("2d"); tg.drawImage(im, k * n, 0, n, n, 0, 0, n, n); return tg.getImageData(0, 0, n, n); };
+  const s = read(IMG.plugS), m = read(IMG.plugM), o = s.data, md = m.data;
+  // 白いケーブルは、プラグも白
+  const pc = col;
+  for (let i = 0; i < o.length; i += 4) {
+    if (o[i + 3] < 2) continue;
+    const isP = md[i] / 255, L = o[i] / 255 / 0.5;
+    for (let ch = 0; ch < 3; ch++) o[i + ch] = Math.min(255, lerp(o[i + ch], pc[ch] * L, isP));
+  }
+  g.putImageData(s, 0, 0);
+  plugCache.set(key, c);
+  return c;
+}
+const shCache = {};
+function plugShadow(kind) {      // ぼかした黒いかげ（形ごとに1回だけ作る）
+  if (shCache[kind]) return shCache[kind];
+  const k = GEO.kinds.indexOf(kind), n = IMG.plugS.height, c = mk(n, n), g = c.getContext("2d");
+  g.filter = "blur(" + Math.max(1, Math.round(n * 0.025)) + "px)";
+  g.drawImage(IMG.plugS, k * n, 0, n, n, 0, 0, n, n); g.filter = "none";
+  g.globalCompositeOperation = "source-in"; g.fillStyle = "rgb(24,20,10)"; g.fillRect(0, 0, n, n);
+  return (shCache[kind] = c);
+}
+function drawPlug(g, c, end, pts, kind) {
+  const n = pts.length, p = end ? pts[n - 1] : pts[0], q = end ? pts[n - 4] : pts[3];
+  const a = Math.atan2(p[1] - q[1], p[0] - q[0]) + Math.PI / 2;
+  const sp = plugSprite(kind, c.col.c);
+  g.save(); g.translate(p[0], p[1]); g.rotate(a);
+  // 原点はプラグの根元（絵の上から 5.2/6）
+  g.globalAlpha = 0.4; g.drawImage(plugShadow(kind), -PCW / 2 + 4, -PCW * 5.2 / 6 + 5, PCW, PCW); g.globalAlpha = 1;
+  g.drawImage(sp, -PCW / 2, -PCW * 5.2 / 6, PCW, PCW);
+  g.restore();
+}
+/* 止まっているケーブルは、変わったときだけ描きなおす */
+let layer = null;
+function rebuild() {
+  if (!layer || layer.width !== Math.round(W * Math.min(2, dpr * fit))) layer = mk(Math.round(W * Math.min(2, dpr * fit)), Math.round(H * Math.min(2, dpr * fit)));
+  const g = layer.getContext("2d"), k = layer.width / W;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, layer.width, layer.height); g.setTransform(k, 0, 0, k, 0, 0);
+  const live = S.cables.filter(c => !c.gone && c !== (S.pulling && S.pulling.c));
+  for (const c of live) shadowRange(g, c.pts, 0, c.pts.length);
+  for (const c of live) paintRange(g, c.pts, 0, c.pts.length, c.col.c);
+  // 交差：上になるほうを、もう一度上から描く（下のケーブルに影を落とす）
+  for (const x of S.cross) {
+    const A = S.cables[x.a], B = S.cables[x.b];
+    if (A.gone || B.gone || (S.pulling && (S.pulling.c === A || S.pulling.c === B))) continue;
+    const top = S.cables[x.over], i = Math.round(x.over === x.a ? x.ia : x.ib);
+    shadowRange(g, top.pts, i - 3, i + 3, 0.34, CABW + 3);
+    paintRange(g, top.pts, i - 5, i + 5, top.col.c);
+  }
+  for (const c of live) { drawPlug(g, c, 0, c.pts, c.kinds[0]); drawPlug(g, c, 1, c.pts, c.kinds[1]); }
+  S.dirty = false;
+}
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.bg && (v.lw > W + 1 || v.lh > H + 1)) {
+    cx.save(); cx.filter = "blur(16px)"; cx.drawImage(IMG.bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(30,28,20,.3)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  drawScene(cx);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "play" || S.state === "clear") drawHud();
+}
+function drawScene(g) {
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 0, W, H);
+  if (!IMG.plugS) return;
+  if (S.dirty) rebuild();
+  // ゆれ（引っかかったとき）
+  const sh = S.shake > 0 ? Math.sin(S.t * 70) * 3 * S.shake : 0;
+  g.drawImage(layer, sh, 0, W, H);
+  // 引きぬいているケーブル
+  if (S.pulling) drawPulling(g, S.pulling);
+  for (const f of S.flash) {
+    const k = clamp(f.life, 0, 1);
+    g.strokeStyle = `rgba(255,90,60,${k})`; g.lineWidth = 4; g.beginPath(); g.arc(f.x, f.y, 22 + (1 - k) * 14, 0, TAU); g.stroke();
+  }
+  for (const q of S.parts) { g.globalAlpha = clamp(q.life, 0, 1); g.fillStyle = q.c; g.beginPath(); g.arc(q.x, q.y, q.r, 0, TAU); g.fill(); }
+  g.globalAlpha = 1;
+}
+/* 引きぬき：自分の線にそってすべって、はしの向きに外へ */
+function along(pts, cum, s) {
+  const L = cum[cum.length - 1], n = pts.length;
+  if (s <= 0) { const a = pts[0], b = pts[1], d = Math.hypot(b[0] - a[0], b[1] - a[1]); return [a[0] - (b[0] - a[0]) / d * -s, a[1] - (b[1] - a[1]) / d * -s]; }
+  if (s >= L) { const a = pts[n - 1], b = pts[n - 2], d = Math.hypot(b[0] - a[0], b[1] - a[1]); return [a[0] - (b[0] - a[0]) / d * (s - L), a[1] - (b[1] - a[1]) / d * (s - L)]; }
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m; else hi = m; }
+  const k = (s - cum[lo]) / (cum[hi] - cum[lo] || 1);
+  return [lerp(pts[lo][0], pts[hi][0], k), lerp(pts[lo][1], pts[hi][1], k)];
+}
+function drawPulling(g, P) {
+  const c = P.c, cum = c.cum, L = cum[cum.length - 1], dir = P.end ? 1 : -1, off = P.d * dir;
+  const pts = [];
+  for (let s = 0; s <= L; s += 6) pts.push(along(c.pts, cum, s + off));
+  pts.push(along(c.pts, cum, L + off));
+  shadowRange(g, pts, 0, pts.length, 0.34, CABW + 6);
+  paintRange(g, pts, 0, pts.length, c.col.c);
+  drawPlug(g, c, 0, pts, c.kinds[0]); drawPlug(g, c, 1, pts, c.kinds[1]);
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(40,38,28,.7)"; rr(g, 12, top, w, 52, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 18px "M PLUS Rounded 1c",sans-serif';
+  const left = S.cables.filter(c => !c.gone).length;
+  g.fillText(`カバン ${S.bag + 1}/3　のこり ${left}本`, 28, top + 26);
+  g.textAlign = "right";
+  g.fillText(`${S.time.toFixed(1)}秒`, 12 + w - 14, top + 26);
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 64;
+    g.fillStyle = S.msg.warn ? "rgba(170,60,40,.92)" : "rgba(40,38,28,.88)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.6, warn = false) { S.msg = { text, at: S.t, dur, warn }; }
+
+/* ---------- 入力：タップしたケーブルを、近いほうのはしから引く ---------- */
+function nearest(p) {
+  let best = null;
+  for (const c of S.cables) {
+    if (c.gone) continue;
+    let dm = 1e9, im = 0;
+    for (let i = 0; i < c.pts.length; i++) { const d = Math.hypot(c.pts[i][0] - p.x, c.pts[i][1] - p.y); if (d < dm) { dm = d; im = i; } }
+    // プラグの上も当たり
+    for (const [e, i] of [[c.pts[0], 0], [c.pts[c.pts.length - 1], c.pts.length - 1]]) { const q = c.pts[i === 0 ? 3 : c.pts.length - 4], ux = e[0] - q[0], uy = e[1] - q[1], ul = Math.hypot(ux, uy); const tip = [e[0] + ux / ul * PCW * 0.3, e[1] + uy / ul * PCW * 0.3]; const d = Math.hypot(tip[0] - p.x, tip[1] - p.y) - 10; if (d < dm) { dm = d; im = i; } }
+    if (dm > 28) continue;
+    // 交差のそばなら、上のほうをえらぶ
+    let onTop = 0;
+    for (const x of S.cross) if ((x.a === c.id || x.b === c.id) && Math.hypot(x.x - p.x, x.y - p.y) < 24 && !S.cables[x.a].gone && !S.cables[x.b].gone) onTop += x.over === c.id ? -30 : 30;
+    const sc = dm + onTop;
+    if (!best || sc < best.sc) best = { c, i: im, sc };
+  }
+  return best;
+}
+const toWorld = e => { const v = view(); return { x: e.clientX / fit - v.ox, y: e.clientY / fit - v.oy }; };
+let down = null;
+cv.addEventListener("pointerdown", e => { if (S.state !== "play") return; down = { p: toWorld(e), id: e.pointerId }; });
+cv.addEventListener("pointerup", e => { if (!down || down.id !== e.pointerId) return; const p = down.p; down = null; tapAt(p); });
+cv.addEventListener("pointercancel", () => { down = null; });
+function tapAt(p) {
+  if (S.state !== "play" || S.pulling) return;
+  const h = nearest(p);
+  if (!h) return;
+  pull(h.c, h.i);
+}
+function pull(c, i) {
+  if (S.state !== "play" || S.pulling || c.gone) return false;
+  const block = S.cross.filter(x => (x.a === c.id || x.b === c.id) && x.over !== c.id && !S.cables[x.over].gone);
+  if (block.length) {
+    S.miss++; S.time += PENALTY; S.shake = 0.45;
+    for (const b of block) S.flash.push({ x: b.x, y: b.y, life: 1.2 });
+    say(`引っかかった！ 上に${block.length}か所のってる（+${PENALTY}秒）`, 1.8, true);
+    sndStuck(); KIT.vibrate([25, 30, 25]);
+    return false;
+  }
+  if (!c.cum) { c.cum = [0]; for (let k = 1; k < c.pts.length; k++) c.cum.push(c.cum[k - 1] + Math.hypot(c.pts[k][0] - c.pts[k - 1][0], c.pts[k][1] - c.pts[k - 1][1])); }
+  const end = i > c.pts.length / 2 ? 1 : 0;
+  S.pulling = { c, end, d: 0, v: 0 };
+  S.dirty = true;
+  sndPull();
+  return true;
+}
+
+/* ---------- 音 ---------- */
+let zip = null;
+function soundInit() {
+  const ac = KIT.ensure(); if (!ac || zip) return;
+  const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+  const fl = ac.createBiquadFilter(); fl.type = "bandpass"; fl.frequency.value = 2500; fl.Q.value = 1.4;
+  const g = ac.createGain(); g.gain.value = 0;
+  src.connect(fl); fl.connect(g); g.connect(KIT.bus()); src.start();
+  zip = { fl, g };
+}
+function sndPull() { KIT.tone({ f: 1800, dur: 0.03, vol: 0.05, type: "square", lp: 4000, wet: 0 }); }
+function sndOut() { KIT.tone({ f: 2400, dur: 0.04, vol: 0.06, type: "square", lp: 5000, wet: 0.05 }); KIT.noise({ dur: 0.1, vol: 0.05, f: 700, to: 300, q: 0.8, wet: 0.05, t: 0.03 }); }
+function sndStuck() {
+  KIT.noise({ dur: 0.22, vol: 0.12, f: 260, to: 180, q: 2, wet: 0.05 });
+  KIT.tone({ f: 150, to: 120, dur: 0.22, vol: 0.08, type: "triangle", lp: 600, wet: 0.05 });
+}
+function sndClear() { [0, 4, 7, 11, 14].forEach((d, i) => KIT.inst.bell(74 + d, i * 0.08, 0.4, 0.08)); }
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  if (S.state === "play") S.time += dt;
+  if (S.shake > 0) S.shake = Math.max(0, S.shake - dt);
+  for (const f of S.flash) f.life -= dt;
+  S.flash = S.flash.filter(f => f.life > 0);
+  const P = S.pulling;
+  if (P) {
+    P.v = Math.min(2600, P.v + 5200 * dt); P.d += P.v * dt;
+    if (zip) { const now = KIT.ensure().currentTime; zip.g.gain.setTargetAtTime(0.09 * clamp(P.v / 1500, 0, 1), now, 0.02); zip.fl.frequency.setTargetAtTime(1800 + P.v, now, 0.03); }
+    const L = P.c.cum[P.c.cum.length - 1];
+    if (Math.random() < 0.6) { const e = along(P.c.pts, P.c.cum, P.end ? L : 0); S.parts.push({ x: e[0] + (Math.random() - 0.5) * 20, y: e[1] + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, r: 1.5, life: 0.5, c: "rgba(255,250,230,.8)" }); }
+    if (P.d > L + 500) {
+      P.c.gone = true; S.pulling = null; S.dirty = true; sndOut();
+      if (zip) zip.g.gain.setTargetAtTime(0, KIT.ensure().currentTime, 0.03);
+      const left = S.cables.filter(c => !c.gone).length;
+      if (!left) bagClear();
+    }
+  }
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt * 2; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  if (S.state === "clear" && S.t >= S.lock) {
+    S.bag++;
+    if (S.bag >= BAGS.length) finish(); else openBag();
+  }
+}
+function bagClear() {
+  S.state = "clear"; S.bagTimes.push(S.time);
+  sndClear(); say(`カバン ${S.bag + 1} すっきり！`, 1.4);
+  S.lock = S.t + 1.5;
+}
+function openBag() {
+  const r = KIT.rng(Math.floor(Math.random() * 1e9));
+  let bag = null;
+  for (let i = 0; i < 10 && !bag; i++) bag = makeBag(r, BAGS[S.bag]);
+  if (!bag) bag = makeBag(r, { n: BAGS[S.bag].n - 1, pts: 4 });
+  S.total += bag.cables.length;
+  S.cables = bag.cables; S.cross = bag.cross; S.solution = bag.solution; S.pulling = null; S.dirty = true;
+  S.state = "play";
+  if (S.bag === BAGS.length - 1) S.snap = null;
+  say(S.bag === 0 ? "いちばん上のケーブルはどれ？" : `カバン ${S.bag + 1}：${bag.cables.length}本`, 1.8);
+  KIT.noise({ dur: 0.35, vol: 0.06, f: 500, to: 1200, q: 0.6, wet: 0.1 });
+}
+function startGame() {
+  KIT.ensure(); soundInit();
+  $("title").hidden = true; $("result").hidden = true;
+  S.bag = 0; S.time = 0; S.miss = 0; S.total = 0; S.bagTimes = []; S.parts = []; S.flash = [];
+  openBag();
+  // 3つめのカバンのからまり具合を、シェア画像に使う
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+const RANKS = [[30, "ほどきの名人"], [50, "整理上手"], [80, "カバンの中もすっきり"], [120, "からまり慣れ"], [1e9, "もう全部ワイヤレスに"]];
+function finish() {
+  S.state = "result";
+  const time = Math.round(S.time * 10) / 10;
+  const rank = RANKS.find(r => time < r[0])[1];
+  S.res = { time, rank, miss: S.miss };
+  $("rBig").innerHTML = `${time.toFixed(1)}<small>秒</small>`;
+  $("rRank").textContent = rank;
+  const bt = S.bagTimes.map((t, i) => t - (S.bagTimes[i - 1] || 0));
+  $("rStats").innerHTML = `<div class="stat${S.miss ? " ng" : " good"}"><small>引っかかった</small><b>${S.miss}回</b></div>`
+    + `<div class="stat"><small>ほどいた本数</small><b>${S.total}本</b></div>`
+    + `<div class="stat"><small>さいごのカバン</small><b>${(bt[2] || 0).toFixed(1)}秒</b></div>`;
+  const best = KIT.store.get("code-best", null);
+  if (best === null || time < best) KIT.store.set("code-best", time);
+  $("rNote").textContent = best === null || time < best ? "自己ベスト更新！" : `自己ベスト ${best.toFixed(1)}秒`;
+  $("result").hidden = false;
+  sndClear();
+  KIT.music.stop(); setTimeout(() => startMusic(true), 1200);
+}
+function shareText() { const r = S.res; return `コードほどき、カバン3つのからまったケーブル${S.total}本を ${r.time.toFixed(1)}秒でほどいた（引っかかり ${r.miss}回）\nわたしは「${r.rank}」\n#コードほどき`; }
+function shareCanvas() {
+  const c = mk(1200, 630), g = c.getContext("2d");
+  g.save(); g.beginPath(); g.rect(0, 0, 600, 630); g.clip();
+  // 見本のからまり（8本）
+  const keep = { cables: S.cables, cross: S.cross, pulling: S.pulling };
+  const bag = makeBag(KIT.rng(Math.floor(S.time * 100) + 7), BAGS[2]);
+  if (bag) { S.cables = bag.cables; S.cross = bag.cross; S.pulling = null; S.dirty = true; }
+  g.translate(300, 315); g.scale(0.84, 0.84); g.translate(-360, -560);
+  drawScene(g);
+  Object.assign(S, keep); S.dirty = true;
+  g.restore();
+  g.fillStyle = "#fffaf2"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#e07a5c"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#3e3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("コードほどき", 650, 92);
+  g.fillStyle = "#857e69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`からまったケーブル${S.total}本を、ほどいた時間`, 650, 170);
+  g.fillStyle = "#b0563d"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = S.res.time.toFixed(1); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("秒", 660 + tw, 274);
+  g.fillStyle = "#3e3a2c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#857e69"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`引っかかり ${S.res.miss}回`, 650, 400);
+  g.fillText("#コードほどき ・ picoruno.", 650, 580);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 70, key: 62, scale: [0, 3, 5, 7, 10], chords: [[0, 3, 10], [5, 8, 15], [-2, 2, 9], [3, 7, 14]], lead: "epiano", chord: "pad", beat: "none", seed: 9, leadVol: 0.06, chordVol: 0.04, density: 0.4 }
+    : { bpm: 86, key: 62, scale: [0, 3, 5, 7, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [-2, 2, 5, 9], [3, 7, 10, 14]], lead: "pluck", chord: "epiano", beat: "lofi", seed: 61, leadVol: 0.07, chordVol: 0.05, density: 0.5, swing: 0.3 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "code.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("code-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best.toFixed(1)}秒` : "3つのカバンをほどいた時間で採点（はやいほどいい）";
+  IMG = await KIT.loadImages(SRC);
+  // タイトルの後ろ：からまったケーブル
+  const bag = makeBag(KIT.rng(11), { n: 5, pts: 4 });
+  if (bag) { S.cables = bag.cables; S.cross = bag.cross; }
+  S.dirty = true;
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { pull, nearest, makeBag };
+</script>
+</body>
+</html>
