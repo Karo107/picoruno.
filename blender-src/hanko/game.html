@@ -58,6 +58,20 @@ button,input{font-family:inherit;color:inherit}
 .name label{font-size:.85rem;color:var(--sub);white-space:nowrap}
 .name input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--mincho);font-weight:800;font-size:1.3rem;padding:4px 0}
 .best{font-size:.82rem;color:var(--sub);text-align:center}
+.names{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.names .name{flex-direction:column;align-items:stretch;gap:0;padding:6px 10px}
+.names .name label{font-size:.72rem}
+.names .name input{width:100%;font-size:1.15rem;padding:2px 0;text-align:center}
+.names .name input::placeholder{font-family:var(--body);font-weight:700;font-size:.8rem;color:#b9aba0}
+.namehint{font-size:.75rem;color:var(--sub);text-align:center;margin-top:-6px}
+.more{display:flex;flex-direction:column;gap:6px;border-top:1.5px dashed var(--line);padding-top:12px}
+.more h3{margin:0;font-size:.8rem;color:var(--sub);font-weight:700;text-align:center;letter-spacing:.1em}
+.more a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);background:#fff;border-radius:12px;padding:8px 12px;box-shadow:0 0 0 1.5px var(--line) inset}
+.more a b{font-family:var(--mincho);font-weight:800;font-size:.98rem;white-space:nowrap}
+.more a span{font-size:.75rem;color:var(--sub);flex:1;min-width:0;line-height:1.4}
+.more a::after{content:"›";color:var(--shu);font-weight:800;font-size:1.2rem}
+.more a.all{justify-content:center;background:transparent;box-shadow:none;padding:2px;font-size:.82rem;color:var(--shu-d);font-weight:700}
+.more a.all::after{content:none}
 /* 判定 */
 #judge{bottom:max(14px,env(safe-area-inset-bottom));padding:14px 18px;display:flex;align-items:center;gap:14px;cursor:pointer}
 #judge .pt{font-family:var(--mincho);font-weight:800;font-size:2.3rem;line-height:1;color:var(--shu);min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
@@ -92,7 +106,12 @@ button,input{font-family:inherit;color:inherit}
   <div class="in">
     <h1><small>picoruno. 新作</small>ハンコまっすぐ選手権</h1>
     <p>ゆれるハンコを、いいタイミングで<b>長押し</b>。「ぐっ」と押して、はなす。担当・課長・部長の3つの欄を、まっすぐきれいに押しきろう。</p>
-    <div class="name"><label for="nm">ハンコの文字</label><input id="nm" maxlength="4" autocomplete="off" placeholder="ぴこ"></div>
+    <div class="names">
+      <div class="name"><label for="nm">担当（あなた）</label><input id="nm" maxlength="4" autocomplete="off" placeholder="ぴこ"></div>
+      <div class="name"><label for="nmK">課長</label><input id="nmK" maxlength="4" autocomplete="off" placeholder="おまかせ"></div>
+      <div class="name"><label for="nmB">部長</label><input id="nmB" maxlength="4" autocomplete="off" placeholder="おまかせ"></div>
+    </div>
+    <div class="namehint">課長・部長は空けておくと、毎回ちがう名前になります</div>
     <button class="btn" id="start" type="button">押印をはじめる</button>
     <div class="best" id="best"></div>
   </div>
@@ -111,6 +130,7 @@ button,input{font-family:inherit;color:inherit}
   <div class="badge" id="rBadge" hidden></div>
   <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
   <button class="btn" id="again" type="button">もう1枚押す</button>
+  <nav class="more" aria-label="ほかのゲーム"><h3>ほかのゲームも遊ぶ</h3><div id="rMore" style="display:flex;flex-direction:column;gap:6px"></div><a class="all" href="./">picoruno. のゲームをぜんぶ見る</a></nav>
 </section>
 <div class="toast" id="toast" hidden></div>
 
@@ -126,6 +146,26 @@ const W = 720, H = 1080;               // 世界座標（1cm = 40px）
 const PX_MM = 4;
 const SRC = { bg: "__IMG_bg__", paper: "__IMG_paper__", hanko: "__IMG_hanko__" };
 let IMG = {};
+
+const SURNAMES = ["佐藤", "鈴木", "高橋", "田中", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "松本", "井上", "木村", "斎藤", "清水", "山口", "森", "池田", "橋本", "石川", "前田", "藤田", "岡田", "後藤", "長谷川", "村上", "近藤", "坂本"];
+// ほかのゲーム（結果画面で3つ紹介）
+const OTHER_GAMES = [
+  ["tape", "テープのはし", "どこかにある「はし」を爪で探す"], ["kireru", "どこからでも切れます", "小袋の“うそ”を本当にためす"],
+  ["fuchi", "ふちギリギリ", "表面張力の限界まで水を注ぐ"], ["nagareboshi", "流れ星に3回", "消えるまでに願いを3回タイプ"],
+  ["senkou", "線香花火のこり", "火の玉を最後まで落とさない"], ["seihyo", "製氷皿ひとふで", "全部のマスを同じ量に"],
+  ["label", "ラベルきれいに", "ちぎらずに1周はがす"], ["wataame", "わたあめ職人", "大きくふわふわに育てる"],
+  ["tamago", "たまご片手わり", "カラを入れずに割る"], ["elevator", "ぴったりエレベーター", "言われた階でぴったり止める"],
+  ["ochiba", "落ち葉はき", "風に負けずにひとつの山へ"], ["ketsuro", "結露のまど", "くもった窓に指でお絵かき"],
+  ["kutsushita", "くつしたペア", "似た柄にだまされずにそろえる"], ["code", "コードほどき", "からまったケーブルをほどく"],
+  ["akari", "マンションの灯り", "窓の灯りで夜景アート"], ["yukidama", "雪玉ころがし", "大きな雪だるまを作る"],
+  ["renji", "レンジ何秒？", "ちょうどいい温め時間を当てる"], ["domino", "ドミノひとふで", "なぞった線のドミノを倒しきる"],
+  ["mezamashi", "目覚ましぜんぶ止め", "鳴りだす目覚ましを全部止める"]
+];
+function moreGames() {
+  const a = OTHER_GAMES.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+  $("rMore").innerHTML = a.slice(0, 3).map(([s, t, d]) => `<a href="${s}.html"><b>${t}</b><span>${d}</span></a>`).join("");
+}
 
 /* ---------- 書類 ---------- */
 const SUBJECTS = ["会議室のおやつ補充について", "金曜日をもう1日ふやす件", "猫の手を正式に借りる件", "コピー機に名前をつける件",
@@ -143,7 +183,7 @@ const ROUND = [ // ゆれの大きさ・速さ・紙の動き
 ];
 
 const S = {
-  state: "title", t: 0, round: 0, name: "ぴこ", subject: SUBJECTS[0], date: "",
+  state: "title", t: 0, round: 0, name: "ぴこ", names: ["部長", "課長", "ぴこ"], subject: SUBJECTS[0], date: "",
   paper: { x: 360, y: 600, rot: -1.2 }, paper0: { x: 360, y: 600, rot: -1.2 },
   cam: { x: 360, y: 540, z: 1 }, camTo: { x: 360, y: 540, z: 1 },
   hk: { x: 900, y: 1300, a: 0, h: 1 },   // h: 高さ（1=浮いている, 0=紙に着地）
@@ -496,7 +536,7 @@ function pressUp() {
   const sInk = 20 * q;
   let score = Math.round(sPos + sAng + sInk);
   if (S.timeout) score = Math.max(0, score - 10);
-  const st = { x: lp.x, y: lp.y, a: rel, q, kind, alpha: 0, img: sealCanvas(S.name, q, kind, (Math.random() * 1e9) | 0) };
+  const st = { x: lp.x, y: lp.y, a: rel, q, kind, alpha: 0, img: sealCanvas(S.names[bi], q, kind, (Math.random() * 1e9) | 0) };
   S.stamps.push(st);
   S.results.push({ label: b.label, score, dmm, ang: rel, kind, timeout: !!S.timeout });
   S.timeout = false;
@@ -557,6 +597,16 @@ function startGame() {
   KIT.ensure();
   const nm = ($("nm").value || "").replace(/\s/g, "").slice(0, 4) || "ぴこ";
   S.name = nm; KIT.store.set("hanko-name", nm);
+  // 課長・部長：入力があればそれ、空なら名字をランダムに（担当とも、おたがいとも重ならない）
+  const pickName = (id, used) => {
+    const v = ($(id).value || "").replace(/\s/g, "").slice(0, 4);
+    if (v) return v;
+    const pool = SURNAMES.filter(n => !used.includes(n));
+    return pool[(Math.random() * pool.length) | 0];
+  };
+  const kacho = pickName("nmK", [nm]), bucho = pickName("nmB", [nm, kacho]);
+  KIT.store.set("hanko-boss", [$("nmK").value || "", $("nmB").value || ""]);
+  S.names = [bucho, kacho, nm];   // BOXES の順（部長・課長・担当）
   S.subject = SUBJECTS[(Math.random() * SUBJECTS.length) | 0];
   const d = new Date();
   S.date = `令和${d.getFullYear() - 2018}年${d.getMonth() + 1}月${d.getDate()}日`;
@@ -594,7 +644,7 @@ function showResult() {
   else badge.hidden = true;
   const best = KIT.store.get("hanko-best", 0);
   if (S.total > best) KIT.store.set("hanko-best", S.total);
-  $("result").hidden = false;
+  moreGames(); $("result").hidden = false;
   KIT.music.stop();
   setTimeout(() => startMusic(true), 600);
 }
@@ -670,6 +720,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && S.s
 (async function boot() {
   resize(); muteIcon();
   $("nm").value = KIT.store.get("hanko-name", "");
+  const boss = KIT.store.get("hanko-boss", ["", ""]); $("nmK").value = boss[0] || ""; $("nmB").value = boss[1] || "";
   const best = KIT.store.get("hanko-best", 0);
   $("best").textContent = best ? `自己ベスト ${best} / 300点` : "3枚押して300点満点";
   const d = new Date(); S.date = `令和${d.getFullYear() - 2018}年${d.getMonth() + 1}月${d.getDate()}日`;
