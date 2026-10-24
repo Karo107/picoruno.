@@ -188,5 +188,17 @@ const KIT = (() => {
       .catch(() => { try { const d = JSON.parse(localStorage.getItem("picoruno-stats") || "{}"); d[G] = d[G] || { plays: 0, likes: 0 }; d[G].plays++; localStorage.setItem("picoruno-stats", JSON.stringify(d)); } catch (e) {} });
   }
 
-  return { countPlay, store, ensure, tone, noise, inst, mtof, music: { start: musicStart, stop: musicStop }, get muted() { return muted; }, setMuted, vibrate, tweet, shareImage, loadImages, rng };
+  /* セーフエリア（ノッチなど）の大きさ(px) */
+  let safeEl = null;
+  function safe() {
+    if (!safeEl) {
+      safeEl = document.createElement("div");
+      safeEl.style.cssText = "position:fixed;left:0;top:0;width:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
+      document.body.appendChild(safeEl);
+    }
+    const cs = getComputedStyle(safeEl);
+    return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  }
+
+  return { safe, countPlay, store, ensure, tone, noise, inst, mtof, music: { start: musicStart, stop: musicStop }, get muted() { return muted; }, setMuted, vibrate, tweet, shareImage, loadImages, rng };
 })();

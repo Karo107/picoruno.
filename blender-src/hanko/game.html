@@ -369,7 +369,7 @@ function drawHud(lw, lh) {
   const b = BOXES[ORDER[S.round]], R = ROUND[S.round];
   const left = Math.max(0, R.time - S.roundT);
   g.fillStyle = "rgba(43,31,24,.72)";
-  const y0 = 18 + (window.visualViewport ? 0 : 0);
+  const y0 = 18 + KIT.safe().top / fit;
   const hw = Math.min(lw - 36 - 56, 520);
   roundRect(g, 18, y0, hw, 58, 16); g.fill();
   g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";

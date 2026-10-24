@@ -1,0 +1,36 @@
+{
+ "scene": {
+  "src": "out/scene.png",
+  "fmt": "jpg",
+  "w": 1440,
+  "q": 80
+ },
+ "box0": {
+  "src": "out/box0.png",
+  "fmt": "webp",
+  "w": 360,
+  "q": 85,
+  "crop": [
+   120,
+   10,
+   620,
+   510
+  ]
+ },
+ "box1": {
+  "src": "out/box1.png",
+  "fmt": "webp",
+  "w": 360,
+  "q": 85,
+  "crop": [
+   120,
+   10,
+   620,
+   510
+  ]
+ },
+ "proj": {
+  "src": "out/proj.json",
+  "fmt": "json"
+ }
+}

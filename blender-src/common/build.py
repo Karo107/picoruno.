@@ -47,6 +47,9 @@ def build(slug):
     assets = json.load(open(os.path.join(src, "assets.json")))
     total = 0
     for name, a in assets.items():
+        if a.get("fmt") == "json":
+            html = html.replace(f"__JSON_{name}__", open(os.path.join(src, a["src"])).read().strip())
+            continue
         uri, n = encode(os.path.join(src, a["src"]), a.get("fmt", "webp"), a.get("w"), a.get("q", 85), a.get("crop"), a.get("gain"))
         total += n
         print(f"  {name:12s} {n/1024:7.1f} KB")
