@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#dfe7ea">
+<title>製氷皿ひとふで</title>
+<meta name="description" content="蛇口の水を止めずに、製氷皿の16マスを同じ高さにそろえる。仕切りを越えた水はとなりへ流れる。ばらつき何mmでそろえられるか。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="製氷皿ひとふで">
+<meta property="og:description" content="水を止めずに、16マスぜんぶ同じ高さに。誰でもやるのに、誰もうまくできない。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./seihyo.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23dfe7ea'/%3E%3Crect x='9' y='4' width='14' height='24' rx='2' fill='%239fdccb' stroke='%23577' stroke-width='1.2'/%3E%3Cpath d='M16 5v22M10 10h12M10 16h12M10 22h12' stroke='%23577' stroke-width='1'/%3E%3Crect x='10.5' y='11' width='4.5' height='4' fill='%2367b5e0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：斜め上から見たシンク（Blender）。製氷皿の絵をドラッグで動かし、水と水面はゲームの中で描く。 */
+:root{
+  --steel:#dfe7ea; --card:#fbfdfd; --ink:#22404c; --sub:#6b8691; --line:#d8e3e6;
+  --mint:#5fb8a0; --mint-d:#3f8e78; --water:#3f9ad0; --warn:#d65a4a;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--steel);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.85);background:rgba(34,64,76,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(20,50,60,.3);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--mint);color:#fff;box-shadow:0 4px 0 var(--mint-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--mint-d)}
+.btn:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.water{background:var(--water);box-shadow:0 4px 0 #2a6f99}
+.btn.stop{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 6px 18px rgba(20,50,60,.25)}
+.row{display:flex;gap:10px}
+#title{bottom:max(14px,env(safe-area-inset-bottom))}
+#title .kicker{font-size:.8rem;color:var(--mint-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#eef5f4;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--mint);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#act{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));z-index:15;width:min(300px,calc(100% - 40px))}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .cap{text-align:center;font-size:.85rem;color:var(--sub)}
+#result .big{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .big small{font-size:.4em;color:var(--sub)}
+#result .rank{text-align:center;font-family:var(--pop);font-weight:800;font-size:1.4rem;color:var(--mint-d)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#eef5f4;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:.72rem;color:var(--sub)}
+.stat b{font-family:var(--pop);font-weight:800;font-size:1.1rem}
+.stat.ng b{color:var(--warn)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(34,64,76,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>製氷皿ひとふで</h1>
+  <p>蛇口の水は、一度出したら止めるまで出っぱなし。製氷皿を動かして、16マスぜんぶを同じ高さにそろえよう。</p>
+  <div class="how">
+    <b>動かす</b><span>画面をなぞると、製氷皿が動く</span>
+    <b>あふれ</b><span>仕切りを越えた水は、となりのマスへ流れる</span>
+    <b>コツ</b><span>8分目がちょうどいい。仕切りを越えると、氷がくっつく</span>
+    <b>止める</b><span>そろった！と思ったら「水を止める」。やり直しはなし</span>
+  </div>
+  <button class="btn" id="start" type="button">シンクの前に立つ</button>
+  <div class="best" id="best"></div>
+</section>
+
+<button class="btn water" id="act" type="button" hidden>水を出す</button>
+
+<section class="sheet" id="result" hidden>
+  <div class="cap">16マスの高さのばらつき</div>
+  <div class="big" id="rBig">0<small>mm</small></div>
+  <div class="rank" id="rRank"></div>
+  <div class="stats" id="rStats"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一皿</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "製氷皿ひとふで";
+const GAME_URL = "https://runococco.github.io/picoruno./seihyo.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg: "__IMG_bg__", tray: "__IMG_tray__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* 製氷皿（render.py と同じ寸法、cm） */
+const TW = 11, TL = 26, WALL = 0.35, DIV = 0.3, FLOOR = 0.35, DIVH = 2.35, TH = 3.0, COLS = 2, ROWS = 8;
+const CW = (TW - 2 * WALL - (COLS - 1) * DIV) / COLS, CH = (TL - 2 * WALL - (ROWS - 1) * DIV) / ROWS;
+const AREA = CW * CH;                 // 1マスの底面積 cm²
+const D = DIVH - FLOOR, R = TH - FLOOR;   // 仕切りまでの深さ・ふちまでの深さ
+const N = COLS * ROWS;
+const Q = 30;                         // 水の勢い cm³/秒（だいたい1秒で1マス）
+const IDEAL = 0.85;                   // 仕切りの8分目半が理想（仕切りを越えると、氷がくっつく）
+const TENS = 0.12;                    // 表面張力で仕切りより盛り上がれる高さ cm
+const MAXT = 40;
+
+const S = { state: "title", t: 0, h: new Float32Array(N), off: { x: 0, y: 0 }, offT: { x: 0, y: 0 }, ov: { x: 0, y: 0 }, oa: { x: 0, y: 0 },
+  pour: false, pourT: 0, sink: 0, spill: 0, parts: [], ripples: [], msg: null, hitCell: -1, hitOn: "none", res: null, flow: 0 };
+
+/* ---------- 座標：製氷皿の中の cm ⇔ 画面 ---------- */
+const E = { x: GEO.ex, y: GEO.ey };
+const det = E.x[0] * E.y[1] - E.x[1] * E.y[0];
+function toTray(px, py) {   // 画面の点（仕切りの高さ）→ 皿の中心からの cm
+  const dx = px - GEO.center[0] - S.off.x, dy = py - GEO.center[1] - S.off.y;
+  return { a: (dx * E.y[1] - dy * E.y[0]) / det, b: (E.x[0] * dy - E.x[1] * dx) / det };
+}
+function cellAt(a, b) {     // cm → マス番号（仕切りの上なら近い2マス）
+  const x = a + TW / 2 - WALL, y = b + TL / 2 - WALL;
+  if (x < -WALL || x > TW - WALL || y < -WALL || y > TL - WALL) return null;       // 皿の外
+  const c = clamp(Math.floor(x / (CW + DIV)), 0, COLS - 1), r = clamp(Math.floor(y / (CH + DIV)), 0, ROWS - 1);
+  const fx = x - c * (CW + DIV), fy = y - r * (CH + DIV);
+  const out = [{ i: r * COLS + c, w: 1 }];
+  if (fx > CW && c < COLS - 1) out.push({ i: r * COLS + c + 1, w: 1 });
+  else if (fy > CH && r < ROWS - 1) out.push({ i: (r + 1) * COLS + c, w: 1 });
+  else if (x < 0 || x > TW - 2 * WALL || y < 0 || y > TL - 2 * WALL) return [{ i: out[0].i, w: 1, rim: true }];
+  return out;
+}
+const idx = (r, c) => r * COLS + c;
+const VX = 1.9;   // 高さの見え方の強調（上からだと差が見えにくいので）
+const lv = (cell, h) => { // 水面の四すみ（画面）
+  const k = Math.min(h, R) / D * VX;
+  return cell.bot.map((p, j) => { const q = cell.div[j]; return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]; });
+};
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(Math.max(vw / W, vh / H), vh / 860);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+function view() { const lw = vw / fit, lh = vh / fit; return { lw, lh, ox: (lw - W) / 2, oy: clamp(lh * 0.5 - 560, lh - H, 0) }; }
+
+function render() {
+  const v = view();
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(v.ox, v.oy);
+  if (IMG.bg && v.lw > W + 1) {
+    cx.save(); cx.filter = "blur(16px)"; cx.drawImage(IMG.bg, -v.ox - 40, -v.oy - 40, v.lw + 80, v.lh + 80); cx.restore();
+    cx.fillStyle = "rgba(223,231,234,.35)"; cx.fillRect(-v.ox, -v.oy, v.lw, v.lh);
+  }
+  drawScene(cx, S.t);
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state === "aim" || S.state === "pour") drawHud();
+}
+function drawScene(g, t) {
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 0, W, H);
+  // 製氷皿（影つき）
+  g.save(); g.translate(S.off.x, S.off.y);
+  if (IMG.tray) g.drawImage(IMG.tray, 0, 0, W, H);
+  drawWater(g, t);
+  g.restore();
+  drawStream(g, t);
+  for (const q of S.parts) { g.globalAlpha = clamp(q.life, 0, 1) * 0.85; g.fillStyle = "rgba(235,248,255,.95)"; g.beginPath(); g.arc(q.x, q.y, q.r, 0, 6.283); g.fill(); }
+  g.globalAlpha = 1;
+}
+function poly(g, P) { g.beginPath(); P.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); }
+function drawWater(g, t) {
+  // 奥の行から手前へ描く
+  const order = GEO.cells.map((c, i) => i).sort((a, b) => GEO.cells[b].r - GEO.cells[a].r);
+  for (const i of order) {
+    const h = S.h[i]; if (h < 0.02) continue;
+    const cell = GEO.cells[i], s = lv(cell, h);
+    // 上から見えるのは水面だけ（奥の壁は水面より上が乾いて見える）。深いほど青く
+    poly(g, s); g.fillStyle = `rgba(40,140,210,${0.06 + clamp(h / D, 0, 1.2) ** 1.3 * 0.42})`; g.fill();
+    // 手前のふち（メニスカス）は少し暗く
+    g.strokeStyle = "rgba(40,110,160,.35)"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(s[3][0] + 1, s[3][1] - 1); g.lineTo(s[2][0] - 1, s[2][1] - 1); g.stroke();
+    // 水面：ゆれ（加速度）でわずかに明るさがずれる
+    const sl = clamp(S.oa.y * 0.00004, -0.25, 0.25);
+    const gr = g.createLinearGradient(s[0][0], s[0][1], s[3][0], s[3][1]);
+    gr.addColorStop(0, `rgba(235,250,255,${0.55 + sl})`); gr.addColorStop(0.3, "rgba(170,220,245,.18)"); gr.addColorStop(1, `rgba(120,195,235,${0.22 - sl})`);
+    poly(g, s); g.fillStyle = gr; g.fill();
+    // 奥のふちの光
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(s[0][0] + 2, s[0][1] + 1); g.lineTo(s[1][0] - 2, s[1][1] + 1); g.stroke();
+    // 仕切りを越えているマスは、水が盛り上がって見える
+    if (h > D + 0.02) { g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 1; poly(g, s); g.stroke(); }
+  }
+  // 波紋
+  for (const w of S.ripples) {
+    const cell = GEO.cells[w.i], s = lv(cell, S.h[w.i]);
+    const cxp = (s[0][0] + s[1][0] + s[2][0] + s[3][0]) / 4 + w.dx, cyp = (s[0][1] + s[1][1] + s[2][1] + s[3][1]) / 4 + w.dy;
+    const rad = (1 - w.life) * 26;
+    g.save(); poly(g, s); g.clip();
+    g.strokeStyle = `rgba(255,255,255,${w.life * 0.7})`; g.lineWidth = 1.2;
+    g.beginPath(); g.ellipse(cxp, cyp, rad, rad * 0.55, 0, 0, 6.283); g.stroke();
+    g.restore();
+  }
+}
+function drawStream(g, t) {
+  if (!S.pour && S.flow < 0.02) return;
+  const n = GEO.noz, end = S.streamEnd || GEO.hit;
+  const w = 7.5 * S.flow;
+  g.save();
+  const gr = g.createLinearGradient(n[0] - w, 0, n[0] + w, 0);
+  gr.addColorStop(0, "rgba(140,200,235,.55)"); gr.addColorStop(0.35, "rgba(230,248,255,.9)"); gr.addColorStop(0.55, "rgba(170,220,245,.7)"); gr.addColorStop(1, "rgba(110,180,225,.55)");
+  g.fillStyle = gr;
+  g.beginPath();
+  const steps = 18;
+  for (let i = 0; i <= steps; i++) { const k = i / steps, y = lerp(n[1] + 8, end[1], k), ww = w * (1 - k * 0.35), x = n[0] + Math.sin(t * 40 + k * 12) * 0.6 * k; g.lineTo(x - ww, y); }
+  for (let i = steps; i >= 0; i--) { const k = i / steps, y = lerp(n[1] + 8, end[1], k), ww = w * (1 - k * 0.35), x = n[0] + Math.sin(t * 40 + k * 12) * 0.6 * k; g.lineTo(x + ww, y); }
+  g.closePath(); g.fill();
+  // 流れのすじ
+  g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1;
+  for (let j = 0; j < 3; j++) { const ph = (t * 3 + j / 3) % 1; const y0 = lerp(n[1] + 8, end[1], ph), y1 = Math.min(end[1], y0 + 40); g.beginPath(); g.moveTo(n[0] - w * 0.3 + j, y0); g.lineTo(n[0] - w * 0.3 + j, y1); g.stroke(); }
+  g.restore();
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = Math.min(vw - 80, 360);
+  g.save();
+  g.fillStyle = "rgba(34,64,76,.66)"; rr(g, 12, top, w, 54, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 19px "M PLUS Rounded 1c",sans-serif';
+  const st = stats();
+  g.fillText(S.state === "aim" ? "製氷皿を蛇口の下へ" : `ばらつき ${st.sd.toFixed(1)}mm`, 28, top + 28);
+  g.textAlign = "right"; g.font = '700 16px "Zen Maru Gothic",sans-serif';
+  if (S.state === "pour") g.fillText(`平均 ${st.mean.toFixed(1)}mm`, 12 + w - 14, top + 28);
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 18px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 66;
+    g.fillStyle = "rgba(34,64,76,.85)"; rr(g, vw / 2 - tw / 2, y, tw, 42, 21); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, vw / 2, y + 22);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+function stats() {
+  let m = 0; for (let i = 0; i < N; i++) m += S.h[i]; m /= N;
+  let v = 0; for (let i = 0; i < N; i++) v += (S.h[i] - m) ** 2;
+  return { mean: m * 10, sd: Math.sqrt(v / N) * 10 };
+}
+
+/* ---------- 入力：なぞった分だけ皿が動く ---------- */
+let lastP = null;
+cv.addEventListener("pointerdown", e => { lastP = { x: e.clientX / fit, y: e.clientY / fit }; try { cv.setPointerCapture(e.pointerId); } catch (er) {} });
+cv.addEventListener("pointermove", e => {
+  if (!lastP || (S.state !== "aim" && S.state !== "pour")) { if (lastP) lastP = { x: e.clientX / fit, y: e.clientY / fit }; return; }
+  const p = { x: e.clientX / fit, y: e.clientY / fit };
+  S.offT.x = clamp(S.offT.x + p.x - lastP.x, -260, 260);
+  S.offT.y = clamp(S.offT.y + p.y - lastP.y, -420, 380);
+  lastP = p;
+});
+const up = () => { lastP = null; };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+
+/* ---------- 音 ---------- */
+let pourNode = null;
+function pourSound() {
+  const ac = KIT.ensure(); if (!ac) return null;
+  if (!pourNode) {
+    const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 2.5;
+    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4000;
+    const g = ac.createGain(); g.gain.value = 0;
+    src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(KIT.bus()); src.start();
+    pourNode = { bp, lp, g };
+  }
+  return pourNode;
+}
+function updatePourSound() {
+  const n = pourSound(); if (!n) return;
+  const ac = KIT.ensure();
+  let f = 500, vol = 0.22 * S.flow, lp = 3000;
+  if (S.hitOn === "cell") { const h = S.h[S.hitCell] || 0; f = 380 + (h / D) ** 2 * 1500; }
+  else if (S.hitOn === "sink") { f = 2200; lp = 7000; vol *= 1.1; }
+  n.bp.frequency.setTargetAtTime(f, ac.currentTime, 0.05);
+  n.lp.frequency.setTargetAtTime(lp, ac.currentTime, 0.1);
+  n.g.gain.setTargetAtTime(vol, ac.currentTime, 0.04);
+}
+
+/* ---------- 進行 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt;
+  // 皿は「ばね」で指を追う。速く動かすと水がゆれる
+  const K = 20 * 20, C = 2 * 20, n = 6, h = dt / n;   // こまかく刻んで安定させる
+  let ax = 0, ay = 0;
+  for (let i = 0; i < n; i++) {
+    ax = K * (S.offT.x - S.off.x) - C * S.ov.x; ay = K * (S.offT.y - S.off.y) - C * S.ov.y;
+    S.ov.x += ax * h; S.ov.y += ay * h; S.off.x += S.ov.x * h; S.off.y += S.ov.y * h;
+  }
+  S.oa.x = lerp(S.oa.x, ax, 0.3); S.oa.y = lerp(S.oa.y, ay, 0.3);
+  S.flow = lerp(S.flow, S.pour ? 1 : 0, 1 - Math.pow(0.0005, dt));
+  if (S.state === "pour") {
+    S.pourT += dt;
+    if (S.pourT > MAXT) stopWater(true);
+  }
+  // 水が落ちる場所
+  let hit = null;
+  const tr = toTray(GEO.hit[0], GEO.hit[1]);
+  const cells = cellAt(tr.a, tr.b);
+  if (cells) { S.hitOn = "cell"; S.hitCell = cells[0].i; S.streamEnd = [GEO.hit[0], GEO.hit[1] - Math.min(S.h[cells[0].i], R) * 9]; hit = cells; }
+  else { S.hitOn = "sink"; S.hitCell = -1; S.streamEnd = GEO.floor; }
+  if (S.flow > 0.05) {
+    const vol = Q * S.flow * dt;
+    if (hit) { const ws = hit.reduce((a, c) => a + c.w, 0); for (const c of hit) S.h[c.i] += vol * c.w / ws / AREA; if (hit[0].rim) { S.h[hit[0].i] -= vol * 0.4 / AREA; S.sink += vol * 0.4; } }
+    else S.sink += vol;
+    splash(dt);
+  }
+  flowBetween(dt);
+  updatePourSound();
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 1400 * dt; q.life -= dt * 2.2; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  for (const w of S.ripples) w.life -= dt * 1.6;
+  S.ripples = S.ripples.filter(w => w.life > 0);
+  if (S.state === "settle" && S.t - S.stopAt > 1.2) finish();
+}
+/* 仕切りを越えた水はとなりへ。皿のふちを越えたらシンクへこぼれる。速く動かすと波でとなりへ移る */
+function flowBetween(dt) {
+  const h = S.h, k = 9;
+  const pairs = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (c < COLS - 1) pairs.push([idx(r, c), idx(r, c + 1), "x"]);
+    if (r < ROWS - 1) pairs.push([idx(r, c), idx(r + 1, c), "y"]);
+  }
+  for (let it = 0; it < 3; it++) {
+    for (const [a, b] of pairs) {
+      const hi = h[a] > h[b] ? a : b, lo = hi === a ? b : a;
+      if (h[hi] <= D + TENS) continue;
+      const head = h[hi] - Math.max(h[lo], D + TENS * 0.5);
+      if (head <= 0) continue;
+      const m = Math.min(head / 2, head * k * dt / 3);
+      h[hi] -= m; h[lo] += m;
+    }
+  }
+  // ゆれ：加速度と逆の向きに水が寄る
+  const ax = S.oa.x / 37, ay = S.oa.y / 37;   // おおよそ cm/s²
+  const aMag = Math.hypot(ax, ay);
+  if (aMag > 260) {
+    for (const [a, b, dir] of pairs) {
+      const g = dir === "x" ? -ax : ay;          // 画面の下は皿の手前（y が小さい）
+      if (Math.abs(g) < 260) continue;
+      const from = (g > 0 ? a : b), to = from === a ? b : a;
+      if (h[from] < D - 0.35) continue;
+      const m = Math.min(h[from] * 0.5, (Math.abs(g) - 260) * 0.00006 * (h[from] - (D - 0.35)) * 60 * dt);
+      h[from] -= m; h[to] += m;
+      if (m > 0.0008 && Math.random() < 0.3) slosh(to);
+    }
+  }
+  // 全体のふちを越えたぶん
+  for (let i = 0; i < N; i++) if (h[i] > R) {
+    const ex = h[i] - R; h[i] = R; S.spill += ex * AREA;
+    if (Math.random() < 0.2) { const p = lv(GEO.cells[i], R)[3]; S.parts.push({ x: p[0] + S.off.x, y: p[1] + S.off.y, vx: (Math.random() - 0.5) * 60, vy: 40, r: 1.6, life: 1 }); }
+    if (!S.spillSaid) { S.spillSaid = true; say("ふちからこぼれた！", 1.4); }
+  }
+}
+function splash(dt) {
+  const e = S.streamEnd;
+  if (Math.random() < dt * 40 * S.flow) S.parts.push({ x: e[0] + (Math.random() - 0.5) * 8, y: e[1], vx: (Math.random() - 0.5) * 120, vy: -60 - Math.random() * 120, r: 1 + Math.random() * 1.4, life: 0.7 });
+  if (S.hitOn === "cell" && Math.random() < dt * 8) {
+    const cell = GEO.cells[S.hitCell], s = lv(cell, S.h[S.hitCell]);
+    const cxp = (s[0][0] + s[1][0] + s[2][0] + s[3][0]) / 4, cyp = (s[0][1] + s[1][1] + s[2][1] + s[3][1]) / 4;
+    S.ripples.push({ i: S.hitCell, dx: e[0] - S.off.x - cxp, dy: e[1] - S.off.y - cyp, life: 1 });
+  }
+}
+let sloshT = 0;
+function slosh(i) {
+  if (S.t - sloshT < 0.12) return; sloshT = S.t;
+  KIT.noise({ dur: 0.12, vol: 0.06, f: 900, to: 500, q: 1.5, wet: 0.1 });
+}
+
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true;
+  S.h = new Float32Array(N); S.sink = 0; S.spill = 0; S.parts = []; S.ripples = []; S.pourT = 0; S.spillSaid = false;
+  // 皿は手前に置いてある。まずは蛇口の下へ
+  S.off = { x: 0, y: 120 }; S.offT = { x: 0, y: 120 }; S.ov = { x: 0, y: 0 };
+  S.state = "aim"; S.pour = false;
+  $("act").textContent = "水を出す"; $("act").className = "btn water"; $("act").hidden = false;
+  say("なぞって、製氷皿を蛇口の下へ", 2.4);
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+}
+function startWater() {
+  S.state = "pour"; S.pour = true;
+  $("act").textContent = "水を止める"; $("act").className = "btn stop";
+  KIT.tone({ f: 300, to: 180, dur: 0.12, vol: 0.06, type: "triangle", wet: 0 });   // 蛇口のレバー
+  KIT.noise({ dur: 0.15, vol: 0.06, f: 1500, q: 1, wet: 0 });
+  say("水は止まりません。皿を動かして！", 2);
+}
+function stopWater(auto) {
+  if (S.state !== "pour") return;
+  S.state = "settle"; S.pour = false; S.stopAt = S.t;
+  $("act").hidden = true;
+  KIT.tone({ f: 220, to: 320, dur: 0.1, vol: 0.06, type: "triangle", wet: 0 });
+  if (auto) say("時間切れ。水を止めました", 1.4);
+}
+$("act").addEventListener("click", () => { if (S.state === "aim") startWater(); else if (S.state === "pour") stopWater(false); });
+
+const RANKS = [[90, "製氷皿マイスター"], [78, "そろえ上手"], [62, "ふつうの家の氷"], [45, "でこぼこ氷"], [25, "おおざっぱ"], [-1e9, "水びたし"]];
+function finish() {
+  S.state = "result";
+  S.offT = { x: 0, y: -330 };   // 結果の上に、皿ぜんたいが見えるように
+  const st = stats();
+  const empty = Array.from(S.h).filter(h => h < 0.3).length;
+  const joined = Array.from(S.h).filter(h => h > D + 0.03).length;
+  const lost = S.sink + S.spill;
+  // 点数：ばらつきが小さく、9分目に近く、こぼさないほど高い
+  let pt = 100 - st.sd * 9 - Math.abs(st.mean / 10 - IDEAL * D) * 22 - lost / 6 - empty * 6 - joined * 3;
+  pt = Math.round(clamp(pt, 0, 100));
+  S.res = { sd: st.sd, mean: st.mean, lost, empty, joined, pt, rank: RANKS.find(r => pt >= r[0])[1] };
+  $("rBig").innerHTML = `${st.sd.toFixed(1)}<small>mm</small>`;
+  $("rRank").textContent = `${S.res.rank}（${pt}点）`;
+  $("rStats").innerHTML = `<div class="stat"><small>平均の高さ</small><b>${st.mean.toFixed(1)}mm</b><small>理想 ${(IDEAL * D * 10).toFixed(0)}mm</small></div>`
+    + `<div class="stat${lost > 20 ? " ng" : ""}"><small>こぼした水</small><b>${Math.round(lost)}ml</b>${empty ? `<small>からのマス ${empty}</small>` : ""}</div>`
+    + `<div class="stat${joined ? " ng" : ""}"><small>くっついた氷</small><b>${joined}マス</b><small>仕切り越え</small></div>`;
+  const best = KIT.store.get("seihyo-best", null);
+  if (best === null || pt > best) KIT.store.set("seihyo-best", pt);
+  $("rNote").textContent = best === null || pt > best ? "自己ベスト更新！" : `自己ベスト ${best}点`;
+  $("result").hidden = false;
+  [0, 4, 7].slice(0, pt >= 78 ? 3 : pt >= 45 ? 2 : 1).forEach((d, i) => KIT.inst.marimba(72 + d, i * 0.1, 0.3, 0.14));
+  KIT.music.stop(); setTimeout(() => startMusic(true), 500);
+}
+function shareText() { const r = S.res; return `製氷皿ひとふで、16マスのばらつき ${r.sd.toFixed(1)}mm（${r.pt}点）\nわたしは「${r.rank}」\n#製氷皿ひとふで`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  g.fillStyle = "#dfe7ea"; g.fillRect(0, 0, 600, 630);
+  // 左：いまの製氷皿（皿のまわりを切り出す）
+  const o = GEO.outer, cxp = (o[0][0] + o[2][0]) / 2 + S.off.x, cyp = (o[0][1] + o[2][1]) / 2 + S.off.y;
+  const sc = 630 / Math.max(260, (o[3][1] - o[0][1]) * 1.32);
+  g.save(); g.translate(300, 315); g.scale(sc, sc); g.translate(-cxp, -cyp);
+  drawScene(g, S.t);
+  g.restore();
+  g.fillStyle = "#fbfdfd"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#5fb8a0"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#22404c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("製氷皿ひとふで", 650, 92);
+  g.fillStyle = "#6b8691"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("16マスの高さのばらつき", 650, 170);
+  g.fillStyle = "#3f8e78"; g.font = '800 96px "M PLUS Rounded 1c",sans-serif';
+  const t = S.res.sd.toFixed(1); g.fillText(t, 650, 274);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("mm", 660 + tw, 274);
+  g.fillStyle = "#22404c"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.res.rank, 650, 350);
+  g.fillStyle = "#6b8691"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText(`${S.res.pt}点　平均 ${S.res.mean.toFixed(1)}mm　こぼした水 ${Math.round(S.res.lost)}ml`, 650, 400);
+  // 16マスの棒グラフ
+  for (let i = 0; i < N; i++) {
+    const x = 650 + i * 30, hh = clamp(S.h[i] / R, 0, 1) * 110;
+    g.fillStyle = "#e7f0ee"; rr(g, x, 440, 22, 110, 5); g.fill();
+    g.fillStyle = "#3f9ad0"; rr(g, x, 550 - hh, 22, hh, 5); g.fill();
+  }
+  g.strokeStyle = "#5fb8a0"; g.setLineDash([6, 5]); g.lineWidth = 2; const iy = 550 - IDEAL * D / R * 110; g.beginPath(); g.moveTo(644, iy); g.lineTo(650 + 16 * 30, iy); g.stroke(); g.setLineDash([]);
+  g.fillStyle = "#6b8691"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#製氷皿ひとふで ・ picoruno.", 650, 600);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 76, key: 65, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], lead: "marimba", chord: "pad", beat: "none", seed: 71, leadVol: 0.07, chordVol: 0.05, density: 0.5 }
+    : { bpm: 100, key: 65, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "marimba", chord: "epiano", beat: "lofi", seed: 17, leadVol: 0.06, chordVol: 0.05, density: 0.6, swing: 0.1 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "seihyo.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  const best = KIT.store.get("seihyo-best", null);
+  $("best").textContent = best !== null ? `自己ベスト ${best}点` : "16マスのばらつきを、mm単位で採点";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { toTray, cellAt, stats, GEO };
+</script>
+</body>
+</html>
