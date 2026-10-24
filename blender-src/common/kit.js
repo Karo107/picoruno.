@@ -200,5 +200,5 @@ const KIT = (() => {
     return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
   }
 
-  return { safe, countPlay, store, ensure, tone, noise, inst, mtof, music: { start: musicStart, stop: musicStop }, get muted() { return muted; }, setMuted, vibrate, tweet, shareImage, loadImages, rng };
+  return { bus: () => (ensure(), sfxBus), noiseBuffer: () => { ensure(); if (!noiseBuf) noise({ vol: 0.0001, dur: 0.01 }); return noiseBuf; }, safe, countPlay, store, ensure, tone, noise, inst, mtof, music: { start: musicStart, stop: musicStop }, get muted() { return muted; }, setMuted, vibrate, tweet, shareImage, loadImages, rng };
 })();

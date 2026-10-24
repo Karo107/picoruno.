@@ -1,0 +1,9 @@
+{
+  "bg_tumbler": {"src": "out/bg_tumbler.png", "fmt": "jpg", "w": 1080, "q": 80},
+  "bg_ochoko":  {"src": "out/bg_ochoko.png",  "fmt": "jpg", "w": 1080, "q": 80},
+  "bg_flute":   {"src": "out/bg_flute.png",   "fmt": "jpg", "w": 1080, "q": 80},
+  "hl_tumbler": {"src": "out/hl_tumbler.png", "fmt": "webp", "w": 1080, "q": 80},
+  "hl_ochoko":  {"src": "out/hl_ochoko.png",  "fmt": "webp", "w": 1080, "q": 80},
+  "hl_flute":   {"src": "out/hl_flute.png",   "fmt": "webp", "w": 1080, "q": 80},
+  "geo":        {"src": "out/geo.json", "fmt": "json"}
+}

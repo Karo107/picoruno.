@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#cfe0d8">
+<title>ふちギリギリ</title>
+<meta name="description" content="蛇口の水をグラスに注いで、表面張力でふくらむ限界まで。こぼしたら0点。タンブラー・おちょこ・フルートの3つで、ふちから何mm盛れるか。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ふちギリギリ">
+<meta property="og:description" content="表面張力で、ふちから何mm盛れる？ こぼしたら終わりの、ギリギリ注ぎゲーム。">
+<meta property="og:url" content="https://runococco.github.io/picoruno./fuchi.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23cfe0d8'/%3E%3Cpath d='M8 9h16l-2 17H10z' fill='%23fff' stroke='%23577' stroke-width='1.5'/%3E%3Cpath d='M8.6 9.5Q16 5 23.4 9.5L22 26H10z' fill='%2389c4e0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：目の高さから見たグラスと蛇口を canvas に。水はゲームの中で描く。カードは下に重ねる。 */
+:root{
+  --mint:#cfe0d8; --card:#fbfdfc; --ink:#24414a; --sub:#6c8790; --line:#d9e6e5;
+  --water:#3f97c4; --water-d:#2b6f93; --warn:#d65a4a; --brass:#c8994f;
+  --pop:"M PLUS Rounded 1c","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--mint);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.8);background:rgba(36,65,74,.45);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:20px;
+  box-shadow:0 18px 50px rgba(20,50,60,.35);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:16px;cursor:pointer;
+  font-family:var(--pop);font-weight:800;font-size:1.1rem;background:var(--water);color:#fff;box-shadow:0 4px 0 var(--water-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--water-d)}
+.btn:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{top:50%;transform:translate(-50%,-50%)}
+#title .kicker{font-size:.8rem;color:var(--water-d);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:800;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1;margin:0}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#f1f7f6;border-radius:12px;padding:10px 12px}
+.how b{font-family:var(--pop);font-weight:800;font-size:.78rem;background:var(--water);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#ok{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));z-index:15;width:min(300px,calc(100% - 40px));
+  background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 6px 18px rgba(20,50,60,.25)}
+#judge{bottom:max(14px,env(safe-area-inset-bottom));cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:14px 18px}
+#judge .pt{font-family:var(--pop);font-weight:800;font-size:2.1rem;line-height:1;color:var(--water-d);min-width:3.6ch;text-align:center;font-variant-numeric:tabular-nums}
+#judge .pt small{font-size:.42em}
+#judge .pt.ng{color:var(--warn)}
+#judge .info{flex:1;min-width:0}
+#judge .head{font-family:var(--pop);font-weight:800;font-size:1.02rem}
+#judge .detail{font-size:.84rem;color:var(--sub);margin-top:2px}
+#judge .next{position:absolute;right:14px;bottom:8px;font-size:.7rem;color:var(--sub)}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .rank{text-align:center}
+#result .rank small{display:block;font-size:.8rem;color:var(--sub)}
+#result .rank b{font-family:var(--pop);font-weight:800;font-size:1.6rem;color:var(--water-d)}
+#result .total{text-align:center;font-family:var(--pop);font-weight:800;font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums}
+#result .total small{font-size:.4em;color:var(--sub)}
+.laps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lap{background:#f1f7f6;border-radius:12px;padding:8px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.lap small{display:block;font-size:.72rem;color:var(--sub)}
+.lap b{font-family:var(--pop);font-weight:800;font-size:1.15rem}
+.lap.ng b{color:var(--warn)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(36,65,74,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1>ふちギリギリ</h1>
+  <p>蛇口の水をグラスに注いで、ふちより上へ。表面張力でぷっくりふくらむ限界まで、何mm盛れるか。こぼしたら、そのグラスは0点。</p>
+  <div class="how">
+    <b>注ぐ</b><span>画面を長押し。長く押すほど勢いが強くなる</span>
+    <b>止める</b><span>はなしても、空中の水はあとから届く</span>
+    <b>決定</b><span>ここだ、と思ったら「これでOK」</span>
+  </div>
+  <button class="btn" id="start" type="button">注ぎはじめる</button>
+  <div class="best" id="best"></div>
+</section>
+
+<button class="btn" id="ok" type="button" hidden>これでOK</button>
+
+<section class="sheet" id="judge" hidden>
+  <div class="pt" id="jPt">0</div>
+  <div class="info"><div class="head" id="jHead"></div><div class="detail" id="jDetail"></div></div>
+  <div class="next">タップで次へ</div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="rank"><small>3つのグラスで、ふちから合計</small><div class="total" id="rTotal">0<small>mm</small></div></div>
+  <div class="rank"><small>あなたは</small><b id="rRank"></b></div>
+  <div class="laps" id="rLaps"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">もう一杯</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "ふちギリギリ";
+const GAME_URL = "https://runococco.github.io/picoruno./fuchi.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const GEO = __JSON_geo__;
+const SRC = { bg_tumbler: "__IMG_bg_tumbler__", bg_ochoko: "__IMG_bg_ochoko__", bg_flute: "__IMG_bg_flute__",
+  hl_tumbler: "__IMG_hl_tumbler__", hl_ochoko: "__IMG_hl_ochoko__", hl_flute: "__IMG_hl_flute__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const ROUNDS = [
+  { id: "tumbler", name: "タンブラー", lim: [2.3, 3.6], qmax: 46 },
+  { id: "ochoko", name: "おちょこ", lim: [2.6, 4.2], qmax: 30 },
+  { id: "flute", name: "フルート", lim: [1.7, 2.9], qmax: 34 }
+];
+const DOME_X = 2.6;          // ふくらみを見やすく強調する倍率
+const DELAY = 0.2;           // 蛇口からふちまで水が落ちる時間（秒）
+
+const S = { state: "title", t: 0, round: 0, z: 0, d: 0, lim: 3, hold: false, holdT: 0, q: 0, flight: [], results: [], parts: [], ripple: 0,
+  cam: { x: 360, y: 540, z: 1 }, camTo: { x: 360, y: 540, z: 1 }, over: 0, puddle: 0, msg: null, shake: 0, okShown: false };
+const R = () => ROUNDS[S.round], G = () => GEO[R().id];
+
+/* グラスの内側：高さ z(cm) → 左右の x と画面 y */
+function rowAt(z) {
+  const rows = G().inner;
+  if (z <= rows[0][4]) return rows[0];
+  for (let i = 1; i < rows.length; i++) if (z <= rows[i][4]) {
+    const a = rows[i - 1], b = rows[i], k = (z - a[4]) / (b[4] - a[4]);
+    return a.map((v, j) => lerp(v, b[j], k));
+  }
+  return rows[rows.length - 1];
+}
+const rimZ = () => G().inner[G().inner.length - 1][4];
+const rimRow = () => G().inner[G().inner.length - 1];
+const pxmm = () => G().pxcm / 10;
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  vw = window.innerWidth; vh = window.innerHeight;
+  fit = Math.min(vw / 540, vh / 900);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+}
+window.addEventListener("resize", resize);
+
+function render() {
+  const lw = vw / fit, lh = vh / fit, c = S.cam;
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(lw / 2 + (Math.random() - 0.5) * S.shake, lh / 2 + (Math.random() - 0.5) * S.shake);
+  cx.scale(c.z, c.z); cx.translate(-c.x, -c.y);
+  const bg = IMG["bg_" + R().id];
+  if (bg) {
+    const hw = lw / 2 / c.z + 40, hh = lh / 2 / c.z + 40;
+    const bs = Math.max(hw * 2 / W, hh * 2 / H, 1);
+    if (bs > 1.001) { cx.drawImage(bg, c.x - hw, c.y - hh, hw * 2, hh * 2); cx.fillStyle = "rgba(207,224,216,.25)"; cx.fillRect(c.x - hw, c.y - hh, hw * 2, hh * 2); }
+    cx.drawImage(bg, 0, 0, W, H);
+  }
+  drawPuddle();
+  drawWater(bg);
+  // グラスのつやは「加算」で重ねる（黒は何も足さない）
+  const hl = IMG["hl_" + R().id]; if (hl) { cx.globalCompositeOperation = "lighter"; cx.globalAlpha = 0.8; cx.drawImage(hl, 0, 0, W, H); cx.globalCompositeOperation = "source-over"; cx.globalAlpha = 1; }
+  drawStream();
+  drawOverflow();
+  for (const q of S.parts) { cx.globalAlpha = clamp(q.life, 0, 1) * 0.8; cx.fillStyle = "rgba(235,248,255,.95)"; cx.beginPath(); cx.arc(q.x, q.y, q.r, 0, 6.283); cx.fill(); }
+  cx.globalAlpha = 1;
+  if (S.state === "judge" || S.state === "settle") drawRuler();
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (S.state !== "title" && S.state !== "result") drawHud();
+}
+/* 水：中の背景を少し拡大して描く（レンズのような屈折）＋色＋水面 */
+function waterPath(level, dome) {
+  const rows = G().inner, g = cx;
+  g.beginPath();
+  const lv = Math.min(level, rimZ());
+  const pts = rows.filter(r => r[4] <= lv);
+  const top = rowAt(lv);
+  g.moveTo(rows[0][0], rows[0][2]);
+  for (const r of pts) g.lineTo(r[0], r[2]);
+  g.lineTo(top[0], top[2]);
+  if (dome > 0) {
+    const L = top[0], Rr = top[1], hpx = dome * pxmm() * DOME_X;
+    for (let i = 0; i <= 24; i++) {
+      const u = i / 24, s = 2 * u - 1;
+      const wob = Math.sin(u * 9 + S.t * 14) * S.ripple * 0.25 * (1 - s * s);
+      g.lineTo(lerp(L, Rr, u), top[2] - hpx * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(s), 3.2)), 0.55) - wob);
+    }
+  } else {
+    // 水面：うしろ半分の楕円（目の高さより下なので少し見下ろす）
+    const ry = (top[1] - top[0]) / 2 * clamp((rimZ() - lv) * 0.035, 0, 0.16);
+    const mx = (top[0] + top[1]) / 2;
+    for (let i = 0; i <= 24; i++) {
+      const a = Math.PI + Math.PI * i / 24;
+      const wob = Math.sin(i * 0.9 + S.t * 16) * S.ripple * 0.3;
+      g.lineTo(mx + Math.cos(a) * (top[1] - top[0]) / 2, top[2] + Math.sin(a) * ry + wob);
+    }
+  }
+  g.lineTo(top[1], top[2]);
+  for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][1], pts[i][2]);
+  g.lineTo(rows[0][1], rows[0][2]);
+  g.closePath();
+}
+function drawWater(bg) {
+  if (S.z <= G().inner[0][4] + 0.02) return;
+  const g = cx, rr = rimRow(), mx = (rr[0] + rr[1]) / 2;
+  g.save();
+  waterPath(S.z, S.d); g.clip();
+  // 屈折：横に 1.18 倍、少し上下反転ぎみにずらす
+  if (bg) { g.save(); g.translate(mx, 0); g.scale(1.18, 1); g.translate(-mx, 6); g.drawImage(bg, 0, 0, W, H); g.restore(); }
+  const top = rowAt(Math.min(S.z, rimZ()));
+  const gr = g.createLinearGradient(rr[0], 0, rr[1], 0);
+  gr.addColorStop(0, "rgba(40,120,160,.32)"); gr.addColorStop(0.2, "rgba(120,190,220,.14)"); gr.addColorStop(0.75, "rgba(120,190,220,.12)"); gr.addColorStop(1, "rgba(40,120,160,.34)");
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  const vg = g.createLinearGradient(0, top[2] - 60, 0, G().inner[0][2]);
+  vg.addColorStop(0, "rgba(255,255,255,.18)"); vg.addColorStop(0.15, "rgba(255,255,255,0)"); vg.addColorStop(1, "rgba(30,90,120,.18)");
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  g.restore();
+  // 水面のふち（明るい線）
+  g.save();
+  g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1.6;
+  if (S.d > 0) {
+    const L = top[0], Rr = top[1], hpx = S.d * pxmm() * DOME_X;
+    g.beginPath();
+    for (let i = 0; i <= 24; i++) {
+      const u = i / 24, s = 2 * u - 1, wob = Math.sin(u * 9 + S.t * 14) * S.ripple * 0.25 * (1 - s * s);
+      const x = lerp(L, Rr, u), y = top[2] - hpx * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(s), 3.2)), 0.55) - wob;
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke();
+    // 光のすじ
+    g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(lerp(L, Rr, 0.22), top[2] - hpx * 0.86); g.quadraticCurveTo(lerp(L, Rr, 0.35), top[2] - hpx * 0.98, lerp(L, Rr, 0.48), top[2] - hpx * 0.97); g.stroke();
+    // 限界が近いと、ふちがきらきら震える
+    const near = S.d / S.lim;
+    if (near > 0.82 && S.state !== "over") {
+      g.fillStyle = `rgba(255,255,255,${(near - 0.82) * 4})`;
+      for (const s of [-1, 1]) { const x = s < 0 ? L + 2 : Rr - 2; g.beginPath(); g.arc(x + (Math.random() - 0.5) * 2, top[2] - 3 - Math.random() * 4, 2.2, 0, 6.283); g.fill(); }
+    }
+  } else {
+    const ry = (top[1] - top[0]) / 2 * clamp((rimZ() - S.z) * 0.035, 0, 0.16), m = (top[0] + top[1]) / 2;
+    g.beginPath(); g.ellipse(m, top[2], (top[1] - top[0]) / 2, Math.max(0.5, ry), 0, 0, 6.283); g.stroke();
+  }
+  g.restore();
+}
+function drawStream() {
+  const q = S.flight.length ? Math.max(...S.flight.map(f => f.q)) : 0;
+  if (q < 0.3 && !S.hold) return;
+  const n = G().nozzle, top = rowAt(Math.min(S.z, rimZ()));
+  const yEnd = Math.max(n[1] + 10, (S.z <= G().inner[0][4] + 0.02 ? G().inner[0][2] : top[2] - (S.d > 0 ? S.d * pxmm() * DOME_X : 0)));
+  // 蛇口から出た直後だけ、まだ届いていない
+  const head = S.hold ? clamp((S.t - S.pourStart) / DELAY, 0, 1) : 1;
+  const tail = S.hold ? 0 : clamp((S.t - S.pourEnd) / DELAY, 0, 1);
+  const y0 = lerp(n[1], yEnd, tail), y1 = lerp(n[1], yEnd, head);
+  if (y1 - y0 < 2) return;
+  const w = 2 + Math.min(1, S.q / R().qmax) * 9;
+  const g = cx;
+  const gr = g.createLinearGradient(n[0] - w, 0, n[0] + w, 0);
+  gr.addColorStop(0, "rgba(160,210,235,.35)"); gr.addColorStop(0.35, "rgba(255,255,255,.85)"); gr.addColorStop(0.6, "rgba(200,235,250,.5)"); gr.addColorStop(1, "rgba(120,180,210,.4)");
+  g.fillStyle = gr;
+  g.beginPath();
+  for (let y = y0; y <= y1; y += 8) { const k = (y - n[1]) / Math.max(1, yEnd - n[1]); const ww = w * (1 - 0.35 * k) / 2 + Math.sin(y * 0.15 - S.t * 30) * 0.5; g.lineTo(n[0] - ww, y); }
+  for (let y = y1; y >= y0; y -= 8) { const k = (y - n[1]) / Math.max(1, yEnd - n[1]); const ww = w * (1 - 0.35 * k) / 2 + Math.sin(y * 0.15 - S.t * 30 + 1) * 0.5; g.lineTo(n[0] + ww, y); }
+  g.closePath(); g.fill();
+}
+function drawOverflow() {
+  if (S.over <= 0) return;
+  const top = rowAt(rimZ()), g = cx, outer = G().outerTop, mx = (top[0] + top[1]) / 2;
+  const k = clamp(S.over, 0, 1), tbl = G().table;
+  g.fillStyle = "rgba(190,225,240,.55)";
+  for (const s of [-1, 1]) {
+    const xo = mx + s * (outer - mx);
+    g.beginPath(); g.moveTo(xo - 4 * s, top[2] - 4); g.quadraticCurveTo(xo + s * 6, top[2] + 10, xo + s * 3, lerp(top[2], tbl, k)); g.lineTo(xo - s * 3, lerp(top[2], tbl, k)); g.closePath(); g.fill();
+  }
+}
+function drawPuddle() {
+  if (S.puddle <= 0) return;
+  const g = cx, tbl = G().table, k = ease(S.puddle);
+  g.fillStyle = "rgba(170,210,230,.35)"; g.beginPath(); g.ellipse(360, tbl + 6, 230 * k, 22 * k, 0, 0, 6.283); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 1.5; g.beginPath(); g.ellipse(360, tbl + 6, 230 * k, 22 * k, 0, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+}
+function drawRuler() {
+  // ふちの線と、いまの高さ
+  const top = rowAt(rimZ()), g = cx, hpx = Math.max(0, S.d) * pxmm() * DOME_X;
+  const x = top[1] + 28;
+  g.strokeStyle = "rgba(36,65,74,.75)"; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+  g.beginPath(); g.moveTo(top[0] - 30, top[2]); g.lineTo(x + 20, top[2]); g.stroke(); g.setLineDash([]);
+  if (S.d > 0) {
+    g.strokeStyle = "#2b6f93"; g.lineWidth = 3; g.beginPath(); g.moveTo(x, top[2]); g.lineTo(x, top[2] - hpx); g.stroke();
+    g.beginPath(); g.moveTo(x - 7, top[2] - hpx); g.lineTo(x + 7, top[2] - hpx); g.stroke();
+  }
+}
+function drawHud() {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top, w = vw, h = vh;
+  g.save();
+  g.fillStyle = "rgba(36,65,74,.66)"; rr(g, 12, top, Math.min(w - 80, 360), 54, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '800 21px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${S.round + 1}/3　${R().name}`, 28, top + 28);
+  // いまの高さ
+  const mm = S.d > 0 ? S.d : -(rimZ() - S.z) * 10;
+  g.textAlign = "right"; g.font = '800 20px "M PLUS Rounded 1c",sans-serif';
+  g.fillText(`${mm >= 0 ? "+" : ""}${mm.toFixed(1)}mm`, Math.min(w - 80, 360) - 6, top + 28);
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 19px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = top + 70;
+    g.fillStyle = "rgba(36,65,74,.8)"; rr(g, w / 2 - tw / 2, y, tw, 44, 22); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, w / 2, y + 23);
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+
+/* ---------- 水の音（ずっと鳴らして、量と高さで変える） ---------- */
+let pourNode = null;
+function pourSound(on) {
+  const ac = KIT.ensure(); if (!ac) return;
+  if (!pourNode) {
+    const src = ac.createBufferSource(); src.buffer = KIT.noiseBuffer(); src.loop = true;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 3;
+    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3000;
+    const g = ac.createGain(); g.gain.value = 0;
+    src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(KIT.bus());
+    src.start();
+    pourNode = { src, bp, g };
+  }
+  return pourNode;
+}
+function updatePourSound(flow) {
+  const n = pourSound(); if (!n) return;
+  const ac = KIT.ensure(), fill = clamp((S.z - G().inner[0][4]) / (rimZ() - G().inner[0][4]), 0, 1);
+  // グラスが満ちるほど、音が高くなる
+  n.bp.frequency.setTargetAtTime(300 + fill * fill * 1600 + (S.d > 0 ? 400 : 0), ac.currentTime, 0.05);
+  n.g.gain.setTargetAtTime(Math.min(0.32, flow / R().qmax * 0.32), ac.currentTime, 0.04);
+}
+
+/* ---------- 更新 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt; S.shake = Math.max(0, S.shake - dt * 30);
+  const c = S.cam, ct = S.camTo, k = 1 - Math.pow(0.03, dt);
+  c.x = lerp(c.x, ct.x, k); c.y = lerp(c.y, ct.y, k); c.z = lerp(c.z, ct.z, k);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 900 * dt; q.life -= dt * 2; }
+  S.parts = S.parts.filter(q => q.life > 0);
+  S.ripple = Math.max(0, S.ripple - dt * 8);
+  if (S.over > 0) { S.over += dt * 1.8; S.puddle = Math.min(1, S.puddle + dt * 0.8); }
+  if (!["play", "settle", "over"].includes(S.state)) { updatePourSound(0); return; }
+  // 蛇口：押している間、勢いが増す
+  if (S.hold && S.state === "play") { S.holdT += dt; S.q = R().qmax * (0.12 + 0.88 * clamp(S.holdT / 1.1, 0, 1)); }
+  else S.q = Math.max(0, S.q - dt * R().qmax * 6);
+  S.flight.push({ t: S.t, q: S.q });
+  // DELAY 秒前の流量が、いまグラスに届く
+  let arriving = 0;
+  while (S.flight.length && S.flight[0].t < S.t - DELAY) arriving = S.flight.shift().q;
+  updatePourSound(arriving);
+  if (arriving > 0.01) {
+    const vol = arriving * dt, lv = Math.min(S.z, rimZ()), r = rowAt(lv)[3];
+    if (S.z < rimZ()) {
+      S.z += vol / (Math.PI * r * r);
+      if (S.z > rimZ()) { const extra = (S.z - rimZ()) * Math.PI * r * r; S.z = rimZ(); S.d += extra / (0.5 * Math.PI * r * r) * 10; }
+    } else S.d += vol / (0.5 * Math.PI * r * r) * 10;
+    S.ripple = Math.min(10, S.ripple + arriving * dt * 3);
+    if (Math.random() < arriving / R().qmax) { const top = rowAt(Math.min(S.z, rimZ())); S.parts.push({ x: 360 + (Math.random() - 0.5) * 10, y: top[2] - S.d * pxmm() * DOME_X, vx: (Math.random() - 0.5) * 120, vy: -80 - Math.random() * 120, r: 1 + Math.random() * 1.6, life: 0.5 }); }
+    // 勢いよく当たると、限界の手前でもあふれる
+    if (S.d > 0 && S.state !== "over" && S.d + arriving * 0.018 > S.lim) overflow();
+  }
+  // ふちに近づいたら寄る
+  const near = S.z > rimZ() - 1.0;
+  const rimY = rimRow()[2];
+  if (S.state !== "over") S.camTo = near ? { x: 360, y: rimY + 30, z: 1.9 } : { x: 360, y: 540, z: 1 };
+  if (S.d > 0 && S.d / S.lim > 0.8 && Math.random() < dt * 2) KIT.tone({ f: 2400 + Math.random() * 600, dur: 0.05, vol: 0.02, type: "sine", wet: 0.3 });
+  if (!S.okShown && S.z > (G().inner[0][4] + rimZ()) / 2) { S.okShown = true; $("ok").hidden = false; }
+  if (S.state === "settle") { S.settleT += dt; if (S.settleT > DELAY + 0.5) judge(); }
+  if (S.state === "over" && S.over > 1.6 && !S.judged) judge();
+}
+function overflow() {
+  S.state = "over"; S.over = 0.01; S.hold = false; S.d = S.lim * 0.55; S.shake = 10; S.judged = false;
+  $("ok").hidden = true;
+  KIT.noise({ dur: 0.6, vol: 0.35, f: 900, to: 300, q: 0.7 }); KIT.noise({ t: 0.2, dur: 0.8, vol: 0.2, f: 400, type: "lowpass" });
+  KIT.tone({ f: 500, to: 160, dur: 0.4, vol: 0.12, type: "triangle" });
+  KIT.vibrate([40, 30, 80]);
+  say("あふれた〜！", 1.6);
+  S.camTo = { x: 360, y: rimRow()[2] + 160, z: 1.25 };
+  const top = rowAt(rimZ());
+  for (let i = 0; i < 40; i++) S.parts.push({ x: lerp(top[0], top[1], Math.random()), y: top[2] - 6, vx: (Math.random() - 0.5) * 300, vy: -120 - Math.random() * 200, r: 1.5 + Math.random() * 2, life: 0.8 });
+}
+
+/* ---------- 操作 ---------- */
+function down() {
+  if (S.state !== "play") return;
+  KIT.ensure();
+  S.hold = true; S.holdT = 0; S.pourStart = S.t;
+  KIT.tone({ f: 180, dur: 0.06, vol: 0.06, type: "triangle", wet: 0 }); // 蛇口をひねる
+}
+function upEv() { if (!S.hold) return; S.hold = false; S.pourEnd = S.t; }
+cv.addEventListener("pointerdown", e => { e.preventDefault(); if (S.state === "judge") return nextRound(); down(); });
+window.addEventListener("pointerup", upEv); window.addEventListener("pointercancel", upEv);
+window.addEventListener("keydown", e => {
+  if (e.repeat) return;
+  if (e.code === "Space") { e.preventDefault(); if (S.state === "judge") nextRound(); else down(); }
+  if (e.code === "Enter" && S.state === "play" && !$("ok").hidden) decide();
+});
+window.addEventListener("keyup", e => { if (e.code === "Space") upEv(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) upEv(); });
+$("ok").addEventListener("click", decide);
+function decide() {
+  if (S.state !== "play") return;
+  upEv(); S.state = "settle"; S.settleT = 0;
+  $("ok").hidden = true;
+  KIT.tone({ f: 880, dur: 0.06, vol: 0.08, type: "triangle", wet: 0 });
+}
+function judge() {
+  if (S.judged) return; S.judged = true;
+  const over = S.state === "over";
+  const mm = over ? 0 : S.d > 0 ? S.d : -(rimZ() - S.z) * 10;
+  S.results.push({ name: R().name, mm, over, lim: S.lim });
+  S.state = "judge"; S.judgeAt = S.t;
+  const pt = $("jPt");
+  pt.className = "pt" + (over ? " ng" : "");
+  pt.innerHTML = over ? "0<small>mm</small>" : `${mm >= 0 ? "+" : ""}${mm.toFixed(1)}<small>mm</small>`;
+  const ratio = mm / S.lim;
+  $("jHead").textContent = `${R().name}　` + (over ? "あふれました" : ratio > 0.95 ? "神のギリギリ！" : ratio > 0.85 ? "ギリギリ！" : ratio > 0.6 ? "なみなみ" : mm > 0 ? "ふちを越えた" : "まだ入る");
+  $("jDetail").textContent = `このグラスの限界は +${S.lim.toFixed(1)}mm`;
+  $("judge").hidden = false;
+  if (!over) [0, 4, 7, 12].slice(0, ratio > 0.9 ? 4 : ratio > 0.6 ? 3 : 2).forEach((d, i) => KIT.inst.bell(72 + d, 0.05 + i * 0.08, 0.4, 0.12));
+  S.camTo = { x: 360, y: rimRow()[2] + 40, z: 1.6 };
+}
+function nextRound() {
+  if (S.t - S.judgeAt < 0.4) return;
+  $("judge").hidden = true;
+  KIT.tone({ f: 880, dur: 0.05, vol: 0.08, type: "triangle", wet: 0 });
+  if (S.round < 2) startRound(S.round + 1); else finish();
+}
+function startRound(i) {
+  S.round = i; S.state = "play"; S.z = G().inner[0][4]; S.d = 0; S.q = 0; S.flight = []; S.hold = false; S.over = 0; S.puddle = 0; S.okShown = false; S.judged = false;
+  const L = R().lim; S.lim = L[0] + Math.random() * (L[1] - L[0]);
+  S.cam = { x: 360, y: 540, z: 1 }; S.camTo = { ...S.cam };
+  $("ok").hidden = true;
+  if (i === 0) say("長押しで注ぐ。ふちを越えて、ぷっくりまで", 2.6);
+  else if (i === 1) say("おちょこは小さい。すぐいっぱいになる", 2.2);
+  else say("ラスト：ほそいフルートグラス", 2);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true; $("judge").hidden = true;
+  S.results = [];
+  startMusic(false); KIT.countPlay(GAME_TITLE);
+  startRound(0);
+}
+const RANKS = [[10, "表面張力の神"], [8, "ギリギリ職人"], [5, "なみなみ名人"], [2, "ふちまで派"], [0, "ふつうに注ぐ人"], [-1e9, "ひかえめな人"]];
+function finish() {
+  S.state = "result";
+  const total = S.results.reduce((a, r) => a + r.mm, 0);
+  S.total = total; S.rank = RANKS.find(r => total >= r[0])[1];
+  $("rTotal").innerHTML = `${total >= 0 ? "+" : ""}${total.toFixed(1)}<small>mm</small>`;
+  $("rRank").textContent = S.rank;
+  $("rLaps").innerHTML = S.results.map(r => `<div class="lap${r.over ? " ng" : ""}"><small>${r.name}</small><b>${r.over ? "あふれ" : (r.mm >= 0 ? "+" : "") + r.mm.toFixed(1)}</b><small>限界 +${r.lim.toFixed(1)}</small></div>`).join("");
+  const n = S.results.filter(r => r.over).length;
+  const best = KIT.store.get("fuchi-best", null);
+  if (best === null || total > best) KIT.store.set("fuchi-best", +total.toFixed(1));
+  $("rNote").textContent = (n ? `テーブルを${n}回ふきました。` : "1滴もこぼさなかった！ ") + (best === null || total > best ? "自己ベスト更新！" : `自己ベスト +${best}mm`);
+  $("result").hidden = false; $("ok").hidden = true;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 500);
+}
+function shareText() { return `ふちギリギリ、3つのグラスでふちから合計 ${S.total >= 0 ? "+" : ""}${S.total.toFixed(1)}mm\nわたしは「${S.rank}」\n${S.results.map(r => `${r.name}${r.over ? " あふれ" : " " + (r.mm >= 0 ? "+" : "") + r.mm.toFixed(1)}`).join("・")}\n#ふちギリギリ`; }
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  const bg = IMG.bg_tumbler;
+  if (bg) g.drawImage(bg, 150, 420, 780, 819, 0, 0, 600, 630);
+  g.fillStyle = "#fbfdfc"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#3f97c4"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#24414a"; g.font = '800 40px "M PLUS Rounded 1c",sans-serif'; g.fillText("ふちギリギリ", 650, 92);
+  g.fillStyle = "#6c8790"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("3つのグラスで、ふちから合計", 650, 170);
+  g.fillStyle = "#2b6f93"; g.font = '800 92px "M PLUS Rounded 1c",sans-serif';
+  const t = `${S.total >= 0 ? "+" : ""}${S.total.toFixed(1)}`; g.fillText(t, 650, 270);
+  const tw = g.measureText(t).width; g.font = '800 34px "M PLUS Rounded 1c",sans-serif'; g.fillText("mm", 660 + tw, 270);
+  g.fillStyle = "#6c8790"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("わたしは", 650, 340);
+  g.fillStyle = "#24414a"; g.font = '800 44px "M PLUS Rounded 1c",sans-serif'; g.fillText(S.rank, 650, 396);
+  S.results.forEach((r, i) => {
+    const x = 650 + i * 172, y = 430;
+    g.fillStyle = "#eef6f5"; rr(g, x, y, 160, 100, 16); g.fill();
+    g.fillStyle = "#6c8790"; g.font = '700 19px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.fillText(r.name, x + 80, y + 32);
+    g.fillStyle = r.over ? "#d65a4a" : "#24414a"; g.font = '800 32px "M PLUS Rounded 1c",sans-serif'; g.fillText(r.over ? "あふれ" : (r.mm >= 0 ? "+" : "") + r.mm.toFixed(1), x + 80, y + 76);
+    g.textAlign = "left";
+  });
+  g.fillStyle = "#6c8790"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#ふちギリギリ ・ picoruno.", 650, 596);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 70, key: 64, chords: [[0, 4, 7, 11], [5, 9, 12, 16], [2, 5, 9, 12], [7, 11, 14, 17]], lead: "bell", chord: "pad", beat: "none", seed: 51, leadVol: 0.07, density: 0.5, chordVol: 0.06 }
+    : { bpm: 92, key: 64, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], lead: "bell", chord: "epiano", beat: "shaker", seed: 3, leadVol: 0.07, chordVol: 0.06, density: 0.7 });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("judge").addEventListener("click", nextRound);
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "fuchi.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  S.z = G().inner[0][4];
+  const best = KIT.store.get("fuchi-best", null);
+  $("best").textContent = best !== null ? `自己ベスト +${best}mm` : "3つのグラスで、ふちから何mm盛れるか";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S;
+</script>
+</body>
+</html>
