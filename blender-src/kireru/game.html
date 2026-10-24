@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d120c">
+<title>どこからでも切れます</title>
+<meta name="description" content="小袋の「こちら側のどこからでも切れます」を、本当にためすゲーム。トントンして中身を下げてから、まっすぐ横に切ろう。こぼしたら0点。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="どこからでも切れます">
+<meta property="og:description" content="「どこからでも切れます」は、本当か。しょうゆ・からし・ケチャップ・ごまドレ・液体スープ、5袋をこぼさず開けられる？">
+<meta property="og:url" content="https://runococco.github.io/picoruno./kireru.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://runococco.github.io/picoruno./og-image.png">
+<meta name="twitter:image" content="https://runococco.github.io/picoruno./og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d120c'/%3E%3Crect x='8' y='5' width='16' height='22' rx='2' fill='%23e9e3da'/%3E%3Crect x='10' y='13' width='12' height='12' rx='2' fill='%23743016'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=RocknRoll+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 画面：居酒屋のカウンターに小袋が1つ。canvas の上に、タイトル・判定・結果のカードを重ねる。 */
+:root{
+  --night:#1d120c; --card:#fbf6ee; --ink:#3a2a20; --sub:#8d7766; --line:#eadfce;
+  --lantern:#c8452f; --lantern-d:#962f1f; --soy:#5b2412; --gold:#e3b04b;
+  --pop:"RocknRoll One","Zen Maru Gothic",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+html,body{margin:0;height:100%;background:var(--night);overflow:hidden}
+[hidden]{display:none!important}
+body{color:var(--ink);font-family:var(--body);font-weight:500;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#cv{position:fixed;inset:0;display:block;touch-action:none}
+.mute{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:30;width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.55);background:rgba(29,18,12,.55);color:#fff;cursor:pointer;display:grid;place-items:center}
+.mute svg{width:22px;height:22px}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);z-index:20;width:min(430px,calc(100% - 24px));box-sizing:border-box;background:var(--card);border-radius:18px;
+  box-shadow:0 18px 50px rgba(0,0,0,.5);padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100% - 24px);overflow-y:auto}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border:0;border-radius:14px;cursor:pointer;
+  font-family:var(--pop);font-size:1.1rem;background:var(--lantern);color:#fff;box-shadow:0 4px 0 var(--lantern-d);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--lantern-d)}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn.sub{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line),0 0 0 1.5px var(--line) inset;font-family:var(--body);font-weight:700;font-size:1rem}
+.btn.x{background:#1d1d1f;box-shadow:0 4px 0 #000;font-family:var(--body);font-weight:700;font-size:1rem}
+.row{display:flex;gap:10px}
+#title{top:50%;transform:translate(-50%,-50%)}
+#title .kicker{font-size:.8rem;color:var(--lantern);font-weight:700;letter-spacing:.2em}
+#title h1{font-family:var(--pop);font-weight:400;font-size:clamp(1.7rem,8.4vw,2.3rem);line-height:1.2;margin:0}
+#title h1 small{display:block;font-size:.48em;color:var(--sub);margin-bottom:4px}
+#title p{margin:0;font-size:.93rem;line-height:1.75;color:var(--sub)}
+.how{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:.88rem;align-items:center;background:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 0 0 1.5px var(--line) inset}
+.how b{font-family:var(--pop);font-weight:400;font-size:.78rem;background:var(--soy);color:#fff;border-radius:6px;padding:2px 8px;text-align:center}
+.best{font-size:.82rem;color:var(--sub);text-align:center}
+#judge{bottom:max(14px,env(safe-area-inset-bottom));flex-direction:row;align-items:center;gap:14px;cursor:pointer;padding:14px 18px}
+#judge .pt{font-family:var(--pop);font-size:2.3rem;line-height:1;color:var(--lantern);min-width:2.3ch;text-align:center;font-variant-numeric:tabular-nums}
+#judge .pt small{font-size:.38em;color:var(--sub);font-family:var(--body);font-weight:700}
+#judge .info{flex:1;min-width:0}
+#judge .head{font-family:var(--pop);font-size:1.02rem}
+#judge .detail{font-size:.84rem;color:var(--sub);margin-top:2px}
+#judge .next{position:absolute;right:14px;bottom:8px;font-size:.7rem;color:var(--sub)}
+#result{bottom:max(12px,env(safe-area-inset-bottom))}
+#result .rank{text-align:center}
+#result .rank small{display:block;font-size:.8rem;color:var(--sub)}
+#result .rank b{font-family:var(--pop);font-weight:400;font-size:1.55rem;color:var(--lantern)}
+#result .total{text-align:center;font-family:var(--pop);font-size:1.05rem}
+#result .total span{font-size:2.1rem;font-variant-numeric:tabular-nums}
+.laps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.lap{background:#fff;border-radius:10px;padding:6px 2px;text-align:center;box-shadow:0 0 0 1.5px var(--line) inset;font-variant-numeric:tabular-nums}
+.lap small{display:block;font-size:.66rem;color:var(--sub);white-space:nowrap}
+.lap b{font-size:1rem}
+.lap.spill b{color:var(--lantern)}
+.note{font-size:.86rem;color:var(--sub);text-align:center;line-height:1.6}
+.toast{position:fixed;left:50%;top:max(16px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;background:rgba(29,18,12,.9);color:#fff;border-radius:999px;padding:8px 16px;font-size:.88rem}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="ゲーム画面"></canvas>
+<button class="mute" id="mute" type="button" aria-label="音のオン・オフ"></button>
+
+<section class="sheet" id="title">
+  <div class="kicker">picoruno. 新作</div>
+  <h1><small>こちら側の</small>どこからでも切れます</h1>
+  <p>その言葉、本当かどうか。しょうゆ・からし・ケチャップ・ごまドレ・液体スープの5袋を、こぼさず、まっすぐ開けよう。</p>
+  <div class="how">
+    <b>トントン</b><span>袋をタップして、中身を下に落とす</span>
+    <b>切る</b><span>袋の左はしから右へ、指でなぞる</span>
+    <b>コツ</b><span>ゆっくりすぎると伸びる。速すぎると曲がる</span>
+  </div>
+  <button class="btn" id="start" type="button">いただきます</button>
+  <div class="best" id="best"></div>
+</section>
+
+<section class="sheet" id="judge" hidden>
+  <div class="pt" id="jPt">0</div>
+  <div class="info"><div class="head" id="jHead"></div><div class="detail" id="jDetail"></div></div>
+  <div class="next">タップで次へ</div>
+</section>
+
+<section class="sheet" id="result" hidden>
+  <div class="rank"><small>あなたの開封力は</small><b id="rRank"></b></div>
+  <div class="total">合計 <span id="rTotal">0</span> / 500点</div>
+  <div class="laps" id="rLaps"></div>
+  <div class="note" id="rNote"></div>
+  <div class="row"><button class="btn x" id="xBtn" type="button">𝕏 にポスト</button><button class="btn sub" id="imgBtn" type="button">画像で保存</button></div>
+  <button class="btn" id="again" type="button">おかわり</button>
+</section>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/*KIT*/
+</script>
+<script>
+"use strict";
+const GAME_TITLE = "どこからでも切れます";
+const GAME_URL = "https://runococco.github.io/picoruno./kireru.html";
+const $ = id => document.getElementById(id);
+const W = 720, H = 1080;
+const SRC = { bg: "__IMG_bg__", shoyu: "__IMG_shoyu__", karashi: "__IMG_karashi__", ketchup: "__IMG_ketchup__", goma: "__IMG_goma__", soup: "__IMG_soup__" };
+let IMG = {};
+const lerp = (a, b, k) => a + (b - a) * k, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+
+/* 袋の寸法（世界座標）。スプライト 620x900 は 4.96cm x 7.2cm、袋は 4.5cm x 6.5cm */
+const PX_CM = 400 / 4.5;                         // 1cm = 88.9px
+const SPR_W = 4.96 * PX_CM, SPR_H = 7.2 * PX_CM;
+const PCX = 360, PCY = 470;                      // 袋の中心
+const PK = { x0: PCX - 200, x1: PCX + 200, y0: PCY - 3.25 * PX_CM, y1: PCY + 3.25 * PX_CM };
+PK.sealB = PK.y0 + 1.1 * PX_CM;                  // 上シールの下のふち
+PK.in = { x0: PK.x0 + 0.35 * PX_CM, x1: PK.x1 - 0.35 * PX_CM, y0: PK.sealB, y1: PK.y1 - 0.45 * PX_CM };
+const IDEAL = PK.y0 + 0.55 * PX_CM;              // いちばんきれいな切り口（シールのまんなか）
+const PX_MM = PX_CM / 10;
+const REST = PK.in.y0 + 0.5 * (PK.in.y1 - PK.in.y0);
+
+const PACKS = [
+  { id: "shoyu", name: "しょうゆ", col: [70, 24, 10, 0.9], hi: [150, 70, 35], start: REST - 20, settle: 0.45, drift: 0.035, wob: 0 },
+  { id: "karashi", name: "からし", col: [214, 164, 40, 0.97], hi: [245, 215, 110], start: PK.in.y0 + 46, settle: 0.28, drift: 0.04, wob: 0, paste: true },
+  { id: "ketchup", name: "ケチャップ", col: [185, 28, 22, 0.95], hi: [235, 90, 70], start: PK.in.y0 + 38, settle: 0.34, drift: 0.045, wob: 6 },
+  { id: "goma", name: "ごまドレ", col: [226, 206, 168, 0.95], hi: [250, 240, 215], start: PK.in.y0 + 30, settle: 0.36, drift: 0.05, wob: 10, seeds: true },
+  { id: "soup", name: "液体スープ", col: [150, 98, 50, 0.82], hi: [240, 200, 120], start: PK.in.y0 + 24, settle: 0.4, drift: 0.06, wob: 18, oil: true }
+];
+
+const S = { state: "title", t: 0, round: 0, level: REST, wave: 0, tear: null, top: null, parts: [], splats: [], shake: 0, jig: 0, results: [], msg: null, pour: 0, pool: 0, tilt: 0 };
+
+/* ---------- canvas ---------- */
+const cv = $("cv"), cx = cv.getContext("2d");
+let fit = 1, dpr = 1, offX = 0, offY = 0;
+function resize() {
+  dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  fit = Math.min(vw / 560, vh / 960);
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  cv.style.width = vw + "px"; cv.style.height = vh + "px";
+  offX = vw / 2 / fit - 360; offY = vh / 2 / fit - 530;
+}
+window.addEventListener("resize", resize);
+const toWorld = e => ({ x: e.clientX / fit - offX, y: e.clientY / fit - offY });
+
+/* ---------- 描画 ---------- */
+function render() {
+  const vw = cv.width / dpr / fit, vh = cv.height / dpr / fit;
+  cx.setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+  cx.translate(offX + (Math.random() - 0.5) * S.shake, offY + (Math.random() - 0.5) * S.shake);
+  if (IMG.bg) {
+    const cxw = vw / 2 - offX, cyw = vh / 2 - offY, bs = Math.max((vw + 60) / W, (vh + 60) / H);
+    if (bs > 1.001) { cx.drawImage(IMG.bg, cxw - 360 * bs, cyw - 540 * bs, W * bs, H * bs); cx.fillStyle = "rgba(20,10,5,.25)"; cx.fillRect(cxw - 360 * bs, cyw - 540 * bs, W * bs, H * bs); }
+    cx.drawImage(IMG.bg, 0, 0, W, H);
+  }
+  drawPool();
+  drawPacket();
+  drawStream();
+  for (const q of S.parts) { cx.globalAlpha = clamp(q.life, 0, 1); cx.fillStyle = q.c; cx.beginPath(); cx.arc(q.x, q.y, q.r, 0, 6.283); cx.fill(); }
+  cx.globalAlpha = 1;
+  // 画面に飛んだしずく
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const s of S.splats) {
+    cx.globalAlpha = clamp(s.life, 0, 1) * 0.9; cx.fillStyle = s.c;
+    cx.beginPath(); cx.ellipse(s.x, s.y + (1 - s.life) * 40, s.r, s.r * 1.15, 0, 0, 6.283); cx.fill();
+    cx.globalAlpha *= 0.5; cx.fillStyle = "rgba(255,255,255,.7)"; cx.beginPath(); cx.arc(s.x - s.r * 0.35, s.y - s.r * 0.3 + (1 - s.life) * 40, s.r * 0.2, 0, 6.283); cx.fill();
+  }
+  cx.globalAlpha = 1;
+  const w = cv.width / dpr, h = cv.height / dpr;
+  const vg = cx.createRadialGradient(w / 2, h * 0.45, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
+  vg.addColorStop(0, "rgba(10,5,2,0)"); vg.addColorStop(1, "rgba(10,5,2,.55)");
+  cx.fillStyle = vg; cx.fillRect(0, 0, w, h);
+  if (S.state !== "title" && S.state !== "result") drawHud(w, h);
+}
+const P = () => PACKS[S.round];
+function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a == null ? c[3] : a})`; }
+
+function liquidPath(g) {
+  const I = PK.in, r = 26;
+  g.beginPath(); g.roundRect ? g.roundRect(I.x0, I.y0, I.x1 - I.x0, I.y1 - I.y0, r) : g.rect(I.x0, I.y0, I.x1 - I.x0, I.y1 - I.y0);
+}
+function drawLiquid(g) {
+  const p = P(), I = PK.in;
+  if (S.drain >= 1) return;
+  g.save(); liquidPath(g); g.clip();
+  const lv = lerp(S.level, I.y1 + 4, S.drain || 0);
+  g.beginPath(); g.moveTo(I.x0, I.y1 + 10);
+  for (let x = I.x0; x <= I.x1 + 1; x += 6) {
+    const y = lv + Math.sin(x * 0.045 + S.t * 7) * S.wave * 0.6 + Math.sin(x * 0.02 - S.t * 4) * S.wave * 0.4 + Math.sin(x * 0.11 + S.t * 3) * p.wob * 0.08;
+    g.lineTo(x, y);
+  }
+  g.lineTo(I.x1, I.y1 + 10); g.closePath();
+  const gr = g.createLinearGradient(I.x0, 0, I.x1, 0);
+  gr.addColorStop(0, rgba(p.col)); gr.addColorStop(0.3, rgba(p.hi, p.col[3])); gr.addColorStop(0.55, rgba(p.col)); gr.addColorStop(1, rgba(p.col.map((v, i) => i < 3 ? v * 0.7 : v)));
+  g.fillStyle = gr; g.fill();
+  // 表面の光
+  g.strokeStyle = rgba(p.hi, 0.6); g.lineWidth = 2; g.stroke();
+  // 具（ごま・油）
+  if (p.seeds) for (const s of S.seeds) { g.fillStyle = "rgba(120,85,40,.8)"; g.beginPath(); g.ellipse(s.x, Math.max(s.y, lv + 6), 3, 1.8, s.a, 0, 6.283); g.fill(); }
+  if (p.oil) for (const s of S.seeds) { g.fillStyle = "rgba(255,220,140,.55)"; g.beginPath(); g.arc(s.x, lv + 4 + (s.y % 18), s.r, 0, 6.283); g.fill(); }
+  // 上にはりついたしずく
+  for (const d of S.drops) { g.globalAlpha = d.a; g.fillStyle = rgba(p.col); g.beginPath(); g.ellipse(d.x, d.y, d.r, d.r * 1.25, 0, 0, 6.283); g.fill(); }
+  g.restore(); g.globalAlpha = 1;
+}
+function packetSprite(g) {
+  const im = IMG[P().id];
+  if (im) g.drawImage(im, PCX - SPR_W / 2, PCY - SPR_H / 2, SPR_W, SPR_H);
+  else { g.fillStyle = "rgba(240,240,240,.35)"; g.fillRect(PK.x0, PK.y0, 400, PK.y1 - PK.y0); }
+}
+// 切り口の上（はなれる側）の領域
+function topRegion(g, tr, keep) {
+  if (!keep) g.beginPath();
+  g.moveTo(PK.x0 - 30, PK.y0 - 40);
+  g.lineTo(PK.x0 - 30, tr.pts[0].y);
+  for (const q of tr.pts) g.lineTo(q.x, q.y);
+  const fx = tr.pts[tr.pts.length - 1].x;
+  g.lineTo(fx, PK.y0 - 40); g.closePath();
+}
+function drawPacket() {
+  const g = cx;
+  g.save();
+  // 全体のゆれ（トントン）と、注ぐときの傾き
+  const jy = Math.sin(S.jig * 40) * S.jig * 10;
+  g.translate(PCX, PCY + jy); g.rotate(S.tilt); g.translate(-PCX, -PCY);
+  // 影
+  g.fillStyle = "rgba(0,0,0,.28)"; g.beginPath(); g.ellipse(PCX + 18, PK.y1 + 26, 190, 14, 0, 0, 6.283); g.fill();
+  const tr = S.tear;
+  if (!tr || tr.pts.length < 2) { drawLiquid(g); packetSprite(g); g.restore(); return; }
+  // 下側（残る側）
+  g.save();
+  g.beginPath(); g.rect(PK.x0 - 60, PK.y0 - 80, 520, PK.y1 - PK.y0 + 200);
+  topRegion(g, tr, true);
+  g.clip("evenodd");
+  drawLiquid(g); packetSprite(g);
+  g.restore();
+  // 切り口の白いすじ（フィルムが伸びた跡）
+  g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 2; g.lineJoin = "round";
+  g.beginPath(); tr.pts.forEach((q, i) => i ? g.lineTo(q.x, q.y + 1) : g.moveTo(q.x, q.y + 1)); g.stroke();
+  // 上側（ちぎれる側）
+  const T = S.top || { dx: 0, dy: -2 - 4 * tr.prog, rot: -0.02 * tr.prog, alpha: 1 };
+  if (T.alpha > 0) {
+    g.save(); g.globalAlpha = T.alpha;
+    const ax = tr.pts[tr.pts.length - 1].x, ay = tr.pts[tr.pts.length - 1].y;
+    g.translate(ax + T.dx, ay + T.dy); g.rotate(T.rot); g.translate(-ax, -ay);
+    topRegion(g, tr); g.clip();
+    packetSprite(g);
+    g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 2;
+    g.beginPath(); tr.pts.forEach((q, i) => i ? g.lineTo(q.x, q.y - 1) : g.moveTo(q.x, q.y - 1)); g.stroke();
+    g.restore();
+  }
+  // 伸びて白くなったところ
+  if (tr.stretch > 0 && !tr.done) {
+    const f = tr.pts[tr.pts.length - 1];
+    const rg = g.createRadialGradient(f.x, f.y, 2, f.x, f.y, 22 + tr.stretch * 0.2);
+    rg.addColorStop(0, `rgba(255,255,255,${Math.min(0.8, tr.stretch / 120)})`); rg.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = rg; g.beginPath(); g.arc(f.x, f.y, 30 + tr.stretch * 0.2, 0, 6.283); g.fill();
+  }
+  g.restore();
+}
+// 小皿（背景の皿の位置）にたまる
+const DISH = { x: 360, y: 792 };
+function drawPool() {
+  if (S.pool <= 0) return;
+  const p = P(), k = ease(S.pool);
+  cx.save(); cx.globalAlpha = 0.92;
+  cx.fillStyle = rgba(p.col, 0.9);
+  cx.beginPath(); cx.ellipse(DISH.x, DISH.y, 140 * k, 40 * k, 0, 0, 6.283); cx.fill();
+  cx.fillStyle = rgba(p.hi, 0.45); cx.beginPath(); cx.ellipse(DISH.x - 40 * k, DISH.y - 10 * k, 40 * k, 8 * k, -0.1, 0, 6.283); cx.fill();
+  cx.restore();
+}
+function drawStream() {
+  if (S.state !== "pour" || S.pourT < 0.45 || S.pourT > 1.6) return;
+  const p = P();
+  const o = S.mouth;  // 注ぎ口
+  cx.strokeStyle = rgba(p.col, 0.9); cx.lineCap = "round";
+  cx.lineWidth = 7 + Math.sin(S.t * 30) * 1.5;
+  cx.beginPath(); cx.moveTo(o.x, o.y); cx.quadraticCurveTo(o.x + 10, (o.y + DISH.y) / 2, DISH.x + 20, DISH.y); cx.stroke();
+}
+function drawHud(w, h) {
+  const g = cx, sf = KIT.safe(), top = 12 + sf.top;
+  g.save();
+  g.fillStyle = "rgba(29,18,12,.72)"; rr(g, 12, top, Math.min(w - 80, 380), 54, 16); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
+  g.font = '400 21px "RocknRoll One",sans-serif';
+  g.fillText(`${S.round + 1}/5　${P().name}`, 28, top + 28);
+  for (let i = 0; i < 5; i++) {
+    const r = S.results[i];
+    g.fillStyle = r ? (r.spill ? "#d9604c" : "#e3b04b") : "rgba(255,255,255,.25)";
+    g.beginPath(); g.arc(Math.min(w - 80, 380) - 110 + i * 22, top + 28, 7, 0, 6.283); g.fill();
+  }
+  if (S.msg && S.t - S.msg.at < S.msg.dur) {
+    const al = clamp((S.msg.dur - (S.t - S.msg.at)) / 0.3, 0, 1);
+    g.globalAlpha = al; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.textAlign = "center";
+    const tw = g.measureText(S.msg.text).width + 40, y = h - 110 - sf.bottom;
+    g.fillStyle = "rgba(29,18,12,.82)"; rr(g, w / 2 - tw / 2, y, tw, 48, 24); g.fill();
+    g.fillStyle = "#fff"; g.fillText(S.msg.text, w / 2, y + 25);
+  }
+  g.restore();
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
+function say(text, dur = 1.8) { S.msg = { text, at: S.t, dur }; }
+
+/* ---------- 更新 ---------- */
+let last = performance.now();
+function frame(t) { const dt = Math.min(0.05, (t - last) / 1000); last = t; update(dt); render(); requestAnimationFrame(frame); }
+function update(dt) {
+  S.t += dt; S.shake = Math.max(0, S.shake - dt * 40); S.jig = Math.max(0, S.jig - dt * 2.5);
+  S.wave = Math.max(0, S.wave - dt * 9);
+  for (const q of S.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 1300 * dt; q.life -= dt * q.dec; }
+  S.parts = S.parts.filter(q => q.life > 0 && q.y < 1300);
+  for (const s of S.splats) s.life -= dt * 0.45;
+  S.splats = S.splats.filter(s => s.life > 0);
+  if (S.drops) for (const d of S.drops) d.a = Math.max(0, d.a - dt * 0.05);
+  // 上の切れはし
+  if (S.top && S.top.vx != null) { const T = S.top; T.dx += T.vx * dt; T.dy += T.vy * dt; T.vy += 1500 * dt; T.rot += T.vr * dt; if (T.dy > 1200) T.alpha = 0; }
+  if (S.state === "pour") {
+    S.pourT += dt;
+    S.tilt = -lerp(0, 1.95, ease(S.pourT / 0.5)) * (S.pourT < 1.7 ? 1 : 1 - ease((S.pourT - 1.7) / 0.4));
+    if (S.pourT > 0.45) { S.drain = clamp((S.pourT - 0.45) / 1.1, 0, 1); S.pool = clamp((S.pourT - 0.6) / 1.0, 0, 1); }
+    if (S.pourT > 0.45 && S.pourT < 1.6 && Math.random() < dt * 30) KIT.noise({ dur: 0.08, vol: 0.05, f: 900 + Math.random() * 600, q: 3, wet: 0.2 });
+    // 注ぎ口：切り口の右はしを、傾きに合わせて回す
+    const tr = S.tear, e = tr.pts[tr.pts.length - 1], a = S.tilt, dx = e.x - PCX, dy = e.y - PCY;
+    S.mouth = { x: PCX + dx * Math.cos(a) - dy * Math.sin(a), y: PCY + dx * Math.sin(a) + dy * Math.cos(a) };
+    if (S.pourT > 2.2 && !S.judged) { S.judged = true; showJudge(); }
+  }
+}
+
+/* ---------- 操作 ---------- */
+let ptr = null;
+cv.addEventListener("pointerdown", e => {
+  if (S.state === "judge") { nextRound(); return; }
+  if (S.state !== "play") return;
+  e.preventDefault(); KIT.ensure();
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  const p = toWorld(e);
+  ptr = { id: e.pointerId, x0: p.x, y0: p.y, x: p.x, y: p.y, t0: performance.now(), t: performance.now(), moved: 0, vx: 0 };
+});
+cv.addEventListener("pointermove", e => {
+  if (!ptr || ptr.id !== e.pointerId || S.state !== "play") return;
+  const p = toWorld(e), now = performance.now(), dtm = Math.max(8, now - ptr.t) / 1000;
+  const dx = p.x - ptr.x;
+  ptr.moved += Math.hypot(dx, p.y - ptr.y);
+  ptr.vx = lerp(ptr.vx, dx / dtm, 0.5);
+  if (!ptr.tearing && ptr.moved > 10) {
+    const tr = S.tear;
+    if (!tr && ptr.x0 < PK.x0 + 70 && ptr.x0 > PK.x0 - 80 && ptr.y0 > PK.y0 - 30 && ptr.y0 < PK.y1) startTear(ptr.x0, ptr.y0);
+    else if (tr && Math.hypot(ptr.x0 - tr.pts[tr.pts.length - 1].x, ptr.y0 - tr.pts[tr.pts.length - 1].y) < 80) ptr.tearing = true;
+    else if (tr && !ptr.warned) { ptr.warned = true; say("切れ目のつづきからなぞってね", 1.4); }
+    else if (!tr && !ptr.warned) { ptr.warned = true; say("袋の左はしから、右へなぞってね", 1.6); }
+    if (S.tear && !ptr.tearing && !tr) ptr.tearing = true;
+  }
+  if (ptr.tearing) tearMove(p, dx);
+  ptr.x = p.x; ptr.y = p.y; ptr.t = now;
+});
+const up = e => {
+  if (!ptr || (e && ptr.id !== e.pointerId)) return;
+  if (S.state === "play" && ptr.moved < 10 && performance.now() - ptr.t0 < 400) tap(ptr.x, ptr.y);
+  ptr = null;
+};
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+
+function tap(x, y) {
+  if (x < PK.x0 - 40 || x > PK.x1 + 40 || y < PK.y0 - 40 || y > PK.y1 + 40) return;
+  if (S.tear && S.tear.pts.length > 2) return;
+  const p = P();
+  S.level += (REST - S.level) * p.settle + (S.level < REST ? 4 : 0);
+  if (S.level > REST) S.level = REST;
+  S.wave = 14; S.jig = 1;
+  S.drops.forEach(d => d.a *= 0.5);
+  KIT.tone({ f: 120, to: 70, dur: 0.12, vol: 0.35 }); KIT.noise({ dur: 0.05, vol: 0.12, f: 700, type: "lowpass" });
+  KIT.noise({ t: 0.05, dur: 0.12, vol: 0.05, f: 500 + Math.random() * 300, q: 4 }); // ちゃぷ
+  KIT.vibrate(10);
+  S.taps++;
+}
+function startTear(x, y) {
+  const y0 = clamp(y, PK.y0 + 8, PK.y1 - 20);
+  S.tear = { pts: [{ x: PK.x0, y: y0 }], stretch: 0, prog: 0, done: false, jag: 0 };
+  ptr.tearing = true;
+  KIT.noise({ dur: 0.05, vol: 0.2, f: 3000, q: 2 });
+}
+function tearMove(p, dx) {
+  const tr = S.tear, pk = P();
+  if (!tr || tr.done || dx <= 0) return;
+  const f = tr.pts[tr.pts.length - 1];
+  if (p.x <= f.x) return;
+  const v = ptr.vx;
+  let adv = p.x - f.x;
+  if (v < 140) {           // ゆっくりすぎ：フィルムが伸びるだけ
+    tr.stretch += adv * 0.7; adv *= p.x > PK.x1 ? 1 : 0.5;
+    if (Math.random() < 0.3) KIT.noise({ dur: 0.06, vol: 0.05, f: 300, q: 6, wet: 0 });
+    if (tr.stretch > 90 && !tr.warnedStretch) { tr.warnedStretch = true; say("のびてる…もう少し速く！", 1.4); }
+  } else tr.stretch = Math.max(0, tr.stretch - adv * 0.5);
+  const drift = Math.max(0, v - 900) * pk.drift * 0.25 + (pk.oil ? (Math.random() - 0.35) * 6 : 0);
+  const want = p.y + drift;
+  const maxSlope = 0.55;
+  const step = 6;
+  for (let x = f.x + step, yy = f.y; x <= f.x + adv; x += step) {
+    yy += clamp(want - yy, -maxSlope * step, maxSlope * step) + (Math.random() - 0.5) * (1.2 + tr.stretch * 0.02);
+    yy = clamp(yy, PK.y0 + 4, PK.y1 - 10);
+    tr.pts.push({ x, y: yy });
+    tr.jag += Math.abs(yy - tr.pts[tr.pts.length - 2].y);
+    // 中身より下を切ったら、こぼれる
+    if (yy > PK.in.y0 + 2 && yy > S.level - 3 && x > PK.in.x0 && x < PK.in.x1) { spill(x, yy); return; }
+    if (x >= PK.x1 - 10) { finishTear(); return; }
+  }
+  tr.prog = (tr.pts[tr.pts.length - 1].x - PK.x0) / (PK.x1 - PK.x0);
+  // ビリビリ
+  if (Math.random() < 0.7) KIT.noise({ dur: 0.04, vol: 0.12, f: 2200 + Math.min(3000, v), q: 3, wet: 0 });
+}
+function finishTear() {
+  const tr = S.tear; tr.done = true; tr.prog = 1;
+  KIT.noise({ dur: 0.1, vol: 0.25, f: 4000, to: 2000, q: 2 });
+  S.top = { dx: 0, dy: -6, rot: -0.05, alpha: 1, vx: 240, vy: -520, vr: 4 };
+  S.state = "pour"; S.pourT = 0; S.judged = false;
+  KIT.tone({ f: 660, to: 990, dur: 0.12, vol: 0.12, type: "triangle" });
+  score(false);
+}
+function spill(x, y) {
+  const tr = S.tear, p = P();
+  tr.done = true;
+  S.state = "spill";
+  KIT.noise({ dur: 0.25, vol: 0.35, f: 1200, to: 400, q: 1.5 }); KIT.tone({ f: 900, to: 300, dur: 0.18, vol: 0.12, type: "sawtooth", lp: 1500 });
+  setTimeout(() => KIT.noise({ dur: 0.2, vol: 0.3, f: 300, type: "lowpass" }), 260);
+  KIT.vibrate([40, 30, 60]); S.shake = 14;
+  for (let i = 0; i < 60; i++) { const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, v = 300 + Math.random() * 700; S.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 2 + Math.random() * 5, life: 1.5, dec: 0.8, c: rgba(p.col, 1) }); }
+  const w = cv.width / dpr, h = cv.height / dpr;
+  for (let i = 0; i < 14; i++) S.splats.push({ x: Math.random() * w, y: Math.random() * h * 0.8, r: 10 + Math.random() * 40, life: 1.6 + Math.random(), c: rgba(p.col, 0.95) });
+  S.level = Math.min(PK.in.y1 - 40, S.level + 70);
+  say(p.paste ? "ブリュッ…" : "ピュッ…！", 1.4);
+  score(true);
+  setTimeout(() => { if (S.state === "spill") showJudge(); }, 1300);
+}
+function score(spilled) {
+  const tr = S.tear, ys = tr.pts.map(q => q.y);
+  const avg = ys.reduce((a, b) => a + b, 0) / ys.length;
+  const dev = Math.abs(avg - IDEAL) / PX_MM;
+  const sd = Math.sqrt(ys.reduce((a, b) => a + (b - avg) * (b - avg), 0) / ys.length) / PX_MM;
+  let pt = Math.round(clamp(100 - dev * 5 - sd * 9 - Math.min(20, tr.stretch * 0.08), 5, 100));
+  if (spilled) pt = 0;
+  S.results.push({ name: P().name, pt, dev, sd, spill: spilled, taps: S.taps });
+}
+
+/* ---------- 進行 ---------- */
+function showJudge() {
+  const r = S.results[S.results.length - 1];
+  S.state = "judge"; S.judgeAt = S.t;
+  $("jPt").innerHTML = `${r.pt}<small>点</small>`;
+  const head = r.spill ? "こぼれた…" : r.pt >= 95 ? "完ぺきな開封！" : r.pt >= 80 ? "きれいに開いた" : r.pt >= 60 ? "まあ開いた" : "なんとか開いた";
+  $("jHead").textContent = `${r.name}　${head}`;
+  $("jDetail").textContent = r.spill ? `中身より下を切ってしまいました。トントン ${r.taps}回` : `切り口のズレ ${r.dev.toFixed(1)}mm・ガタガタ ${r.sd.toFixed(1)}mm・トントン ${r.taps}回`;
+  $("judge").hidden = false;
+  if (!r.spill) [0, 4, 7, 12].slice(0, r.pt >= 90 ? 4 : r.pt >= 70 ? 3 : 2).forEach((d, i) => KIT.inst.koto(69 + d, 0.05 + i * 0.08, 0.3, 0.16));
+  else [0, -1, -5].forEach((d, i) => KIT.inst.koto(62 + d, 0.05 + i * 0.12, 0.3, 0.14));
+}
+function nextRound() {
+  if (S.t - S.judgeAt < 0.35) return;
+  $("judge").hidden = true;
+  KIT.tone({ f: 880, dur: 0.05, vol: 0.08, type: "triangle", wet: 0 });
+  if (S.round < 4) startRound(S.round + 1); else finish();
+}
+function startRound(i) {
+  S.round = i; S.state = "play"; S.tear = null; S.top = null; S.tilt = 0; S.drain = 0; S.pool = 0; S.taps = 0; S.splats = [];
+  const p = P();
+  S.level = p.start; S.wave = 10;
+  const r = KIT.rng((Math.random() * 1e9) | 0);
+  S.seeds = Array.from({ length: 40 }, () => ({ x: PK.in.x0 + 10 + r() * (PK.in.x1 - PK.in.x0 - 20), y: REST + r() * 200, a: r() * 3, r: 2 + r() * 4 }));
+  // 上のほうにはりついたしずく（トントンで落ちる）
+  S.drops = Array.from({ length: p.start < REST - 40 ? 16 : 4 }, () => ({ x: PK.in.x0 + 14 + r() * (PK.in.x1 - PK.in.x0 - 28), y: PK.in.y0 + 6 + r() * (p.start - PK.in.y0), r: 2 + r() * 6, a: 0.9 }));
+  KIT.noise({ dur: 0.18, vol: 0.12, f: 2500, q: 0.8 });  // 袋をおく音
+  if (i === 0) say("まずはトントン、それから左から切る", 2.4);
+  else if (p.paste) say("からしは重い。しっかりトントン", 2);
+  else if (p.oil) say("ラスボス：油ですべる液体スープ", 2.2);
+}
+function startGame() {
+  KIT.ensure();
+  $("title").hidden = true; $("result").hidden = true; $("judge").hidden = true;
+  S.results = []; S.parts = [];
+  startMusic(false);
+  KIT.countPlay(GAME_TITLE);
+  startRound(0);
+}
+const RANKS = [[480, "開封の神"], [420, "小袋マスター"], [340, "ふつうに開けられる人"], [240, "ちょっと不器用"], [0, "ハサミを使おう"]];
+function finish() {
+  S.state = "result";
+  const total = S.results.reduce((a, r) => a + r.pt, 0);
+  S.total = total; S.rank = RANKS.find(r => total >= r[0])[1];
+  $("rRank").textContent = S.rank; $("rTotal").textContent = total;
+  $("rLaps").innerHTML = S.results.map(r => `<div class="lap${r.spill ? " spill" : ""}"><small>${r.name}</small><b>${r.spill ? "こぼ" : r.pt}</b></div>`).join("");
+  const sp = S.results.filter(r => r.spill).length;
+  const best = KIT.store.get("kireru-best", 0);
+  if (total > best) KIT.store.set("kireru-best", total);
+  $("rNote").textContent = (sp ? `こぼした袋 ${sp}つ。` : "1つもこぼさなかった！ ") + (total > best ? "自己ベスト更新！" : `自己ベスト ${best}点`);
+  $("result").hidden = false;
+  KIT.music.stop(); setTimeout(() => startMusic(true), 500);
+}
+function shareText() {
+  const sp = S.results.filter(r => r.spill).length;
+  return `「どこからでも切れます」を5袋ためした結果\n${S.total}/500点【${S.rank}】${sp ? `\nこぼした袋 ${sp}つ` : "\n1袋もこぼさなかった"}\n#どこからでも切れます`;
+}
+function shareCanvas() {
+  const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+  const g = c.getContext("2d");
+  if (IMG.bg) g.drawImage(IMG.bg, 0, 120, 720, 756, 0, 0, 600, 630);
+  // 袋（しょうゆ）を斜めに
+  if (IMG.shoyu) { g.save(); g.translate(300, 290); g.rotate(-0.12); g.drawImage(IMG.shoyu, -190, -276, 380, 552); g.restore(); }
+  g.fillStyle = "#fbf6ee"; g.fillRect(600, 0, 600, 630);
+  g.fillStyle = "#c8452f"; g.fillRect(600, 0, 10, 630);
+  g.textAlign = "left";
+  g.fillStyle = "#8d7766"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("こちら側の", 650, 80);
+  g.fillStyle = "#3a2a20"; g.font = '400 40px "RocknRoll One",sans-serif'; g.fillText("どこからでも切れます", 650, 130);
+  g.fillStyle = "#8d7766"; g.font = '700 24px "Zen Maru Gothic",sans-serif'; g.fillText("わたしの開封力は", 650, 210);
+  g.fillStyle = "#c8452f"; g.font = '400 50px "RocknRoll One",sans-serif'; g.fillText(S.rank, 650, 272);
+  g.fillStyle = "#3a2a20"; g.font = '400 64px "RocknRoll One",sans-serif'; g.fillText(String(S.total), 650, 360);
+  const tw = g.measureText(String(S.total)).width; g.font = '700 26px "Zen Maru Gothic",sans-serif'; g.fillStyle = "#8d7766"; g.fillText(" / 500点", 650 + tw, 360);
+  S.results.forEach((r, i) => {
+    const x = 650 + i * 104, y = 410;
+    g.fillStyle = "#fff"; rr(g, x, y, 96, 100, 14); g.fill();
+    g.fillStyle = "#8d7766"; g.font = '700 17px "Zen Maru Gothic",sans-serif'; g.textAlign = "center"; g.fillText(r.name, x + 48, y + 32);
+    g.fillStyle = r.spill ? "#c8452f" : "#3a2a20"; g.font = '400 30px "RocknRoll One",sans-serif'; g.fillText(r.spill ? "こぼ" : String(r.pt), x + 48, y + 76);
+    g.textAlign = "left";
+  });
+  g.fillStyle = "#8d7766"; g.font = '700 20px "Zen Maru Gothic",sans-serif'; g.fillText("#どこからでも切れます ・ picoruno.", 650, 596);
+  return c;
+}
+function startMusic(calm) {
+  KIT.music.start(calm
+    ? { bpm: 76, key: 57, chords: [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]], lead: "koto", chord: "epiano", beat: "none", seed: 44, leadVol: 0.08, density: 0.55, scale: [0, 2, 5, 7, 9] }
+    : { bpm: 96, key: 57, chords: [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]], lead: "koto", chord: "epiano", beat: "lofi", seed: 9, leadVol: 0.09, swing: 0.28, chordVol: 0.07, scale: [0, 2, 5, 7, 9] });
+}
+
+/* ---------- ボタン ---------- */
+$("start").addEventListener("click", startGame);
+$("again").addEventListener("click", startGame);
+$("judge").addEventListener("click", nextRound);
+window.addEventListener("keydown", e => { if ((e.code === "Space" || e.code === "Enter") && S.state === "judge") { e.preventDefault(); nextRound(); } });
+$("xBtn").addEventListener("click", () => KIT.tweet(shareText(), GAME_URL));
+$("imgBtn").addEventListener("click", async () => { const r = await KIT.shareImage(shareCanvas(), "kireru.png", shareText()); if (r === "downloaded") toast("画像を保存しました"); });
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.k); toast.k = setTimeout(() => t.hidden = true, 1800); }
+const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+function muteIcon() { $("mute").innerHTML = KIT.muted ? ICON_OFF : ICON_ON; $("mute").setAttribute("aria-pressed", KIT.muted); }
+$("mute").addEventListener("click", () => { KIT.setMuted(!KIT.muted); muteIcon(); if (!KIT.muted) KIT.ensure(); });
+
+(async function boot() {
+  resize(); muteIcon();
+  S.round = 0; S.level = REST; S.drops = []; S.seeds = [];
+  const best = KIT.store.get("kireru-best", 0);
+  $("best").textContent = best ? `自己ベスト ${best} / 500点` : "5袋で500点満点";
+  IMG = await KIT.loadImages(SRC);
+  requestAnimationFrame(frame);
+})();
+window.__S = S; window.__T = { PK, REST, IDEAL, toScreen: (x, y) => ({ x: (x + offX) * fit, y: (y + offY) * fit }) };
+</script>
+</body>
+</html>
