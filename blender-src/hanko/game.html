@@ -618,10 +618,10 @@ function showResult() {
   $("rChips").innerHTML = S.results.map(r => `<div class="chip"><small>${r.label}</small><b>${r.score}</b><small>${r.dmm.toFixed(1)}mm・${Math.abs(r.ang).toFixed(1)}°</small></div>`).join("");
   const bows = S.results.filter(r => r.ang <= -5 && r.ang >= -28 && r.label !== "部長").length;
   const badge = $("rBadge");
-  if (!S.slam.ok) { badge.hidden = false; badge.textContent = "稟議は差し戻されました。部長「もう少しまっすぐ押してね」"; }
-  else if (bows >= 2) { badge.hidden = false; badge.textContent = "お辞儀ハンコ認定。上の人の欄に向かって、ちゃんと傾いています。"; }
-  else if (S.results.every(r => r.score >= 90)) { badge.hidden = false; badge.textContent = "3つとも90点以上。この稟議書は額に入れて飾られます。"; }
-  else badge.hidden = true;
+  if (!S.slam.ok) { badge.hidden = false; badge.textContent = "稟議は差し戻されました。社長「もう少しまっすぐ押してね」"; }
+  else if (bows >= 2) { badge.hidden = false; badge.textContent = "お辞儀ハンコ認定。社長「上の人の欄に向かって傾けるとは、気がきくね」"; }
+  else if (S.results.every(r => r.score >= 90)) { badge.hidden = false; badge.textContent = "3つとも90点以上。社長「この稟議書は額に入れて飾ろう」"; }
+  else { badge.hidden = false; badge.textContent = "承認されました。社長「うん、次もこの調子で」"; }
   const best = KIT.store.get("hanko-best", 0);
   if (S.total > best) KIT.store.set("hanko-best", S.total);
   $("result").hidden = false;
